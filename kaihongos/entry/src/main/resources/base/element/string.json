@@ -1,0 +1,8 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "entry module" },
+    { "name": "EntryAbility_desc", "value": "uniTerm" },
+    { "name": "EntryAbility_label", "value": "uniTerm" },
+    { "name": "internet_permission_reason", "value": "用于建立 SSH/SFTP 网络连接" }
+  ]
+}
