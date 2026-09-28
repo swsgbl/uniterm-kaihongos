@@ -7,6 +7,8 @@ export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(0x0000, 'hmh', '%{public}s', 'EntryAbility onCreate');
     WantParams.setWant(want);
+    // M5 parity: publish the app sandbox root for SidePanels/FileSidebar rawfile access
+    AppStorage.setOrCreate('ut.filesDir', this.context.filesDir);
   }
 
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {

@@ -1,0 +1,361 @@
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":0,"bundleName":"com.kaihong.atomicservicecenter","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":2,"bundleName":"com.kaihong.calculator","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":3,"bundleName":"com.kaihong.calendar","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":4,"bundleName":"com.kaihong.camera","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":5,"bundleName":"com.kaihong.clock","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":6,"bundleName":"com.kaihong.equipmentcenter","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":7,"bundleName":"com.kaihong.filemanager","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":8,"bundleName":"com.kaihong.imagemanager","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":9,"bundleName":"com.kaihong.inputmethod","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":10,"bundleName":"com.kaihong.khtoolboxui","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":11,"bundleName":"com.kaihong.ohosshellvscode","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":12,"bundleName":"com.kaihong.player","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":14,"bundleName":"com.kaihong.taskmanager","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":15,"bundleName":"com.kaihong.terminal","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":16,"bundleName":"com.kaihong.textviewer","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":17,"bundleName":"com.kaihong.vscodedshmanual","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":18,"bundleName":"com.ohos.miracastplayer","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":19,"bundleName":"com.ohos.settings","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":21,"bundleName":"com.example.dshapp","abilityName":"EntryAbility"}
+09-28 08:13:11.783  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":22,"bundleName":"net.uniterm.poc","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":0,"bundleName":"com.kaihong.atomicservicecenter","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":2,"bundleName":"com.kaihong.calculator","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":3,"bundleName":"com.kaihong.calendar","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":4,"bundleName":"com.kaihong.camera","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":5,"bundleName":"com.kaihong.clock","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":6,"bundleName":"com.kaihong.equipmentcenter","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":7,"bundleName":"com.kaihong.filemanager","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":8,"bundleName":"com.kaihong.imagemanager","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":9,"bundleName":"com.kaihong.inputmethod","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":10,"bundleName":"com.kaihong.khtoolboxui","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":11,"bundleName":"com.kaihong.ohosshellvscode","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":12,"bundleName":"com.kaihong.player","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":14,"bundleName":"com.kaihong.taskmanager","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":15,"bundleName":"com.kaihong.terminal","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":16,"bundleName":"com.kaihong.textviewer","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":17,"bundleName":"com.kaihong.vscodedshmanual","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":18,"bundleName":"com.ohos.miracastplayer","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":19,"bundleName":"com.ohos.settings","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":21,"bundleName":"com.example.dshapp","abilityName":"EntryAbility"}
+09-28 08:13:11.787  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":22,"bundleName":"net.uniterm.poc","abilityName":"EntryAbility"}
+09-28 08:13:11.798  4245  4245 I A00123/HimaLauncher:  [RdbImpl] query list= [{"bundleName":"com.example.dshapp","orderIndex":0},{"bundleName":"com.example.envtest","orderIndex":1},{"bundleName":"com.example.envcheck","orderIndex":2},{"bundleName":"net.uniterm.poc","orderIndex":3}]
+09-28 08:13:11.846  4245  4245 I A00123/HimaLauncher:  [DesktopItemDb] query list= [{"id":"file://docs/storage/Users/currentUser/Desktop/com.kaihong.filemanager.app","x":0,"y":0,"xPosition":16,"yPosition":16,"spaceSize":0,"createTime":1790470136,"filePath":"file://docs/storage/Users/currentUser/Desktop/com.kaihong.filemanager.app","bundleName":"com.kaihong.filemanager","abilityName":"EntryAbility","targetUrl":"","isSelected":false,"isRenaming":false,"renameTempTitle":"","isDownloading":false,"downloadProgress":0,"refreshTime":1790554391846,"type":1,"title":"文件管理器","size":94,"modifyTime":1790470136},{"id":"file://docs/storage/Users/currentUser/Desktop/com.kaihong.browser.app","x":0,"y":1,"xPosition":16,"yPosition":142,"spaceSize":0,"createTime":1790470136,"filePath":"file://docs/storage/Users/currentUser/Desktop/com.kaihong.browser.app","bundleName":"com.kaihong.browser","abilityName":"MainAbility","targetUrl":"","isSelected":false,"isRenaming":false,"renameTempTitle":"","isDownloading":false,"downloadProgress":0,"refreshTime":1790554391846,"type":1,"title":"浏览器","size":83,"modifyTime":1790470136},{"id":"file://docs/storage/Users/currentUser/Desktop/com.ohos.settings.app","x":0,"y":2,"xPosition":16,"yPosition":268,"spaceSize":0,"createTime":1790470136,"filePath":"file://docs/storage/Users/currentUser/Desktop/com.ohos.settings.app","bundleName":"com.ohos.settings","abilityName":"EntryAbility","targetUrl":"","isSelected":false,"isRenaming":false,"renameTempTitle":"","isDownloading":false,"downloadProgress":0,"refreshTime":1790554391846,"type":1,"title":"设置","size":79,"modifyTime":1790470136},{"id":"file://docs/storage/Users/currentUser/Desktop/com.ohos.miracastplayer.app","x":0,"y":3,"xPosition":16,"yPosition":394,"spaceSize":0,"createTime":1790470136,"filePath":"file://docs/storage/Users/currentUser/Desktop/com.ohos.miracastplayer.app","bundleName":"com.ohos.miracastplayer","abilityName":"EntryAbility","targetUrl":"","isSelected":false,"isRenaming":false,"renameTempTitle":"","isDownloading":false,"downloadProgress":0,"refreshTime":1790554391846,"type":1,"title":"Miracast投屏助手","size":99,"modifyTime":1790470136},{"id":"file://docs/storage/Users/currentUser/Desktop/com.kaihong.khtoolboxui.app","x":0,"y":4,"xPosition":16,"yPosition":520,"spaceSize":0,"createTime":1790470136,"filePath":"file://docs/storage/Users/currentUser/Desktop/com.kaihong.khtoolboxui.app","bundleName":"com.kaihong.khtoolboxui","abilityName":"EntryAbility","targetUrl":"","isSelected":false,"isRenaming":false,"renameTempTitle":"","isDownloading":false,"downloadProgress":0,"refreshTime":1790554391846,"type":1,"title":"组件管理","size":91,"modifyTime":1790470136},{"id":"file://docs/storage/Users/currentUser/Desktop/com.kaihong.ohosshellvscode.app","x":0,"y":5,"xPosition":16,"yPosition":646,"spaceSize":0,"createTime":1790470136,"filePath":"file://docs/storage/Users/currentUser/Desktop/com.kaihong.ohosshellvscode.app","bundleName":"com.kaihong.ohosshellvscode","abilityName":"EntryAbility","targetUrl":"","isSelected":false,"isRenaming":false,"renameTempTitle":"","isDownloading":false,"downloadProgress":0,"refreshTime":1790554391846,"type":1,"title":"VS Code","size":90,"modifyTime":1790470136},{"id":"file://docs/storage/Users/currentUser/Desktop/com.kaihong.vscodedshmanual.app","x":0,"y":6,"xPosition":16,"yPosition":772,"spaceSize":0,"createTime":1790470136,"filePath":"file://docs/storage/Users/currentUser/Desktop/com.kaihong.vscodedshmanual.app","bundleName":"com.kaihong.vscodedshmanual","abilityName":"EntryAbility","targetUrl":"","isSelected":false,"isRenaming":false,"renameTempTitle":"","isDownloading":false,"downloadProgress":0,"refreshTime":1790554391846,"type":1,"title":"使用帮助","size":95,"modifyTime":1790470136}]
+09-28 08:13:11.870  4245  4245 I A00123/HimaLauncher:  [DockDbModel] setAppIndex bundleName: net.uniterm.poc, orderIndex: 3
+09-28 08:13:11.870  4245  4245 I A00123/HimaLauncher:  [RdbImpl] insert data= {"bundleName":"net.uniterm.poc","orderIndex":3}
+09-28 08:13:11.907  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.example.dshapp abilityName123: EntryAbility
+09-28 08:13:11.908  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.atomicservicecenter abilityName123: EntryAbility
+09-28 08:13:11.914  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.calculator abilityName123: EntryAbility
+09-28 08:13:11.917  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.calendar abilityName123: EntryAbility
+09-28 08:13:11.918  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.camera abilityName123: EntryAbility
+09-28 08:13:11.920  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.clock abilityName123: EntryAbility
+09-28 08:13:11.924  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.equipmentcenter abilityName123: EntryAbility
+09-28 08:13:11.925  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.filemanager abilityName123: EntryAbility
+09-28 08:13:11.929  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.imagemanager abilityName123: EntryAbility
+09-28 08:13:11.933  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.inputmethod abilityName123: EntryAbility
+09-28 08:13:11.934  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.khtoolboxui abilityName123: EntryAbility
+09-28 08:13:11.936  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.ohosshellvscode abilityName123: EntryAbility
+09-28 08:13:11.937  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.player abilityName123: EntryAbility
+09-28 08:13:11.941  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.taskmanager abilityName123: EntryAbility
+09-28 08:13:11.942  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.terminal abilityName123: EntryAbility
+09-28 08:13:11.945  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.textviewer abilityName123: EntryAbility
+09-28 08:13:11.946  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.kaihong.vscodedshmanual abilityName123: EntryAbility
+09-28 08:13:11.948  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.ohos.miracastplayer abilityName123: EntryAbility
+09-28 08:13:11.949  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo com.ohos.settings abilityName123: EntryAbility
+09-28 08:13:11.955  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo net.uniterm.poc abilityName123: EntryAbility
+09-28 08:13:11.956  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo net.uniterm.poc label: uniTerm
+09-28 08:13:11.956  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo net.uniterm.poc badgeNumber: 0
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] list=["DeepSeek 助手","uniTerm","应用市场","浏览器","计算器","日历","相机","时钟","设备管理","文件管理器","图片查看器","开鸿输入法","组件管理","VS Code","视频播放器","超级截屏","任务管理器","终端","文本编辑器","使用帮助","Miracast投屏","设置","系统观测台"]
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":0,"bundleName":"com.kaihong.atomicservicecenter","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":2,"bundleName":"com.kaihong.calculator","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":3,"bundleName":"com.kaihong.calendar","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":4,"bundleName":"com.kaihong.camera","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":5,"bundleName":"com.kaihong.clock","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":6,"bundleName":"com.kaihong.equipmentcenter","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":7,"bundleName":"com.kaihong.filemanager","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":8,"bundleName":"com.kaihong.imagemanager","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":9,"bundleName":"com.kaihong.inputmethod","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":10,"bundleName":"com.kaihong.khtoolboxui","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":11,"bundleName":"com.kaihong.ohosshellvscode","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":12,"bundleName":"com.kaihong.player","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":14,"bundleName":"com.kaihong.taskmanager","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":15,"bundleName":"com.kaihong.terminal","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":16,"bundleName":"com.kaihong.textviewer","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":17,"bundleName":"com.kaihong.vscodedshmanual","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":18,"bundleName":"com.ohos.miracastplayer","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":19,"bundleName":"com.ohos.settings","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":21,"bundleName":"com.example.dshapp","abilityName":"EntryAbility"}
+09-28 08:13:11.957  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":22,"bundleName":"net.uniterm.poc","abilityName":"EntryAbility"}
+09-28 08:19:36.896  2200  2200 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 0
+09-28 08:19:37.032  2200  2200 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 5
+09-28 08:24:50.820  2200  2200 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 0
+09-28 08:24:50.941  2200  2200 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 5
+09-28 08:25:11.670  2200  2200 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 0
+09-28 08:25:11.773  2200  2200 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 5
+09-28 08:26:19.326  2200  2200 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 0
+09-28 08:26:19.448  2200  2200 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 5
+09-28 08:26:59.984  4245  4245 I A00123/HimaLauncher:  [FileAccessBasic] access file://docs/storage/Users/currentUser/Desktop/net.uniterm.poc.app
+09-28 08:26:59.984  4245  4245 I A00123/HimaLauncher:  [AppDockView] onRemoveAppChange bundleName: net.uniterm.poc, userId: 100
+09-28 08:26:59.985  4279  4279 I A00001/ExternalFileManager: uri is file://docs/storage/Users/currentUser/Desktop/net.uniterm.poc.app
+09-28 08:26:59.985  2200  2200 I A04f4f/systemuiApp: comp/TBContainer bundel-on-remove bundleName: net.uniterm.poc userId:100
+09-28 08:26:59.985  4279  4279 I A00001/ExternalFileManager: getPath after /storage/Users/currentUser/Desktop/net.uniterm.poc.app
+09-28 08:26:59.985  2200  2200 I A04f4f/systemuiApp: comp/TBContainer onRemoveAppChange bundleName: net.uniterm.poc, userId: 100
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":0,"bundleName":"com.kaihong.atomicservicecenter","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":2,"bundleName":"com.kaihong.calculator","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":3,"bundleName":"com.kaihong.calendar","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":4,"bundleName":"com.kaihong.camera","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":5,"bundleName":"com.kaihong.clock","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":6,"bundleName":"com.kaihong.equipmentcenter","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":7,"bundleName":"com.kaihong.filemanager","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":8,"bundleName":"com.kaihong.imagemanager","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":9,"bundleName":"com.kaihong.inputmethod","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":10,"bundleName":"com.kaihong.khtoolboxui","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":11,"bundleName":"com.kaihong.ohosshellvscode","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":12,"bundleName":"com.kaihong.player","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":14,"bundleName":"com.kaihong.taskmanager","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":15,"bundleName":"com.kaihong.terminal","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":16,"bundleName":"com.kaihong.textviewer","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":17,"bundleName":"com.kaihong.vscodedshmanual","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":18,"bundleName":"com.ohos.miracastplayer","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":19,"bundleName":"com.ohos.settings","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":21,"bundleName":"com.example.dshapp","abilityName":"EntryAbility"}
+09-28 08:26:59.986  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":22,"bundleName":"net.uniterm.poc","abilityName":"EntryAbility"}
+09-28 08:27:08.854   788  8978 I C01711/CONTINUOUS_TASK: [OnReceiveEventContinuousTask:96] get common event action = usual.event.PACKAGE_ADDED, bundleName = net.uniterm.poc, uid = 20010055
+09-28 08:27:08.854   788  8978 I C01712/WORK_SCHEDULER: [OnReceiveEvent:40]OnReceiveEvent get action: usual.event.PACKAGE_ADDED, bundleName: net.uniterm.poc , uid: 20010055
+09-28 08:27:08.854  1067  8987 I C01610/ZDDS: InstallerImpl::OnReceiveEvent: bundleName:net.uniterm.poc, user:100, appIndex:0
+09-28 08:27:08.854   894  8719 I C01203/Ans: [notification_clone_disturb_service.cpp(HandlerBundleEvent:167)]Handler bundle event net.uniterm.poc 0 20010055 0.
+09-28 08:27:08.854   894  8719 I C01203/Ans: [notification_clone_bundle_service.cpp(HandleBundleEvent:121)]Handle bundle event net.uniterm.poc 0 20010055 0.
+09-28 08:27:08.854   586  8981 I C01d00/accessibility: [accessibility_common_event.cpp(HandlePackageAdd:180)]bundleName is net.uniterm.poc
+09-28 08:27:08.854  1397  8985 I C01120/BMS: [bundle_monitor.cpp(OnReceiveEvent:64)]OnReceiveEvent action = usual.event.PACKAGE_ADDED, bundle = net.uniterm.poc, userId = 100, appIndex = 0
+09-28 08:27:08.855  2200  2200 I A04f4f/systemuiApp: comp/TBContainer bundel-on-add bundleName: net.uniterm.poc userId:100
+09-28 08:27:08.855  4245  4245 I A00123/HimaLauncher:  [AppDockView] onAddAppChange bundleName: net.uniterm.poc, userId: 100
+09-28 08:27:08.855  2200  2200 I A04f4f/systemuiApp: comp/TBContainer onAddAppChange: bundleChangedInfo == {"bundleName":"net.uniterm.poc","userId":100,"appIndex":0}
+09-28 08:27:08.855   564  1231 I C01718/StandbyService: [HandleCommonEvent:1069] HandleCommonEvent resType = 15, value = 1, sceneInfo = {"appIndex":0,"bundleName":"net.uniterm.poc","uid":20010055}
+09-28 08:27:08.856  2200  2200 I A04f4f/systemuiApp: BundleAPI getApplicationInfo bundleName:net.uniterm.poc  appFlags:0 userId:100 success, appInfo {"name":"net.uniterm.poc","bundleType":0,"debug":false,"description":"","descriptionId":0,"enabled":true,"label":"$string:app_name","labelId":16777219,"icon":"$media:app_icon","iconId":16777217,"process":"net.uniterm.poc","permissions":[],"entryDir":"","codePath":"/data/app/el1/bundle/public/net.uniterm.poc","metadata":{},"metadataArray":[],"removable":true,"accessTokenId":537636716,"uid":20010055,"iconResource":{"bundleName":"net.uniterm.poc","moduleName":"entry","id":16777217},"labelResource":{"bundleName":"net.uniterm.poc","moduleName":"entry","id":16777219},"descriptionResource":{"bundleName":"net.uniterm.poc","moduleName":"entry","id":0},"appDistributionType":"os_integration","appProvisionType":"release","systemApp":true,"dataUnclearable":false,"nativeLibraryPath":"/data/storage/el1/bundle/libs/x86_64","appIndex":0,"multiAppMode":{"multiAppModeType":0,"maxCount":0},"installSource":"unknown","releaseType":"Release","cloudFileSyncEnabled":false,"flags":1}
+09-28 08:27:08.856  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo net.uniterm.poc abilityName123: EntryAbility
+09-28 08:27:08.858  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo net.uniterm.poc label: uniTerm
+09-28 08:27:08.858  4245  4245 I A00123/HimaLauncher:  [ApplicationApi] handleAbilityInfo net.uniterm.poc badgeNumber: 0
+09-28 08:27:08.859  4245  4245 I A00123/HimaLauncher:  [DockDbModel] moveToLast bundleName: net.uniterm.poc
+09-28 08:27:08.859  4245  4245 I A00123/HimaLauncher:  [DockDbModel] setAppIndex bundleName: net.uniterm.poc, orderIndex: 4
+09-28 08:27:08.859  4245  4245 I A00123/HimaLauncher:  [RdbImpl] insert data= {"bundleName":"net.uniterm.poc","orderIndex":4}
+09-28 08:27:08.865  8995  8995 W C02c11/APPSPAWN_CLIENT: [appspawn_mount_permission.c:149]LoadPermission 0
+09-28 08:27:08.866  8995  8995 W C02c11/APPSPAWN_CLIENT: [appspawn_permission.c:57]Permission name ohos.permission.FILE_ACCESS_MANAGER has been exist
+09-28 08:27:08.866  8995  8995 W C02c11/APPSPAWN_CLIENT: [appspawn_permission.c:57]Permission name ohos.permission.READ_IMAGEVIDEO has been exist
+09-28 08:27:08.866  8995  8995 W C02c11/APPSPAWN_CLIENT: [appspawn_mount_permission.c:149]LoadPermission 1
+09-28 08:27:08.868  8995  8999 I C04501/app_fwk_update_service: [app_fwk_update_service.cpp:161] AppFwkUpdateService bundleName: net.uniterm.poc
+09-28 08:27:08.879  4245  4245 I A00123/HimaLauncher:  [AppListPaged] list=["DeepSeek 助手","应用市场","浏览器","计算器","日历","相机","时钟","设备管理","文件管理器","图片查看器","开鸿输入法","组件管理","VS Code","视频播放器","超级截屏","任务管理器","终端","文本编辑器","使用帮助","Miracast投屏","设置","系统观测台","uniTerm"]
+09-28 08:27:08.879  4245  4245 I A00123/HimaLauncher:  [AppListPaged] unOrderedList=["uniTerm"]
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":0,"bundleName":"com.kaihong.atomicservicecenter","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":2,"bundleName":"com.kaihong.calculator","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":3,"bundleName":"com.kaihong.calendar","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":4,"bundleName":"com.kaihong.camera","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":5,"bundleName":"com.kaihong.clock","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":6,"bundleName":"com.kaihong.equipmentcenter","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":7,"bundleName":"com.kaihong.filemanager","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":8,"bundleName":"com.kaihong.imagemanager","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":9,"bundleName":"com.kaihong.inputmethod","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":10,"bundleName":"com.kaihong.khtoolboxui","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":11,"bundleName":"com.kaihong.ohosshellvscode","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":12,"bundleName":"com.kaihong.player","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":14,"bundleName":"com.kaihong.taskmanager","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":15,"bundleName":"com.kaihong.terminal","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":16,"bundleName":"com.kaihong.textviewer","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":17,"bundleName":"com.kaihong.vscodedshmanual","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":18,"bundleName":"com.ohos.miracastplayer","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":19,"bundleName":"com.ohos.settings","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] savedOrderItem={"pageIndex":0,"index":21,"bundleName":"com.example.dshapp","abilityName":"EntryAbility"}
+09-28 08:27:08.880  4245  4245 I A00123/HimaLauncher:  [AppListPaged] fill unOrderedItem=uniTerm to pageIndex=0
+09-28 08:27:15.182   468   468 I C02c11/APPSPAWN: [appspawn_kickdog.c:79]kick appspawn dog start
+09-28 08:27:15.182   468   468 I C02c11/APPSPAWN: [appspawn_kickdog.c:63]kick proc begin
+09-28 08:27:15.182   468   468 I C02c11/APPSPAWN: [appspawn_kickdog.c:72]kick end,result:4
+09-28 08:27:15.532  1403  6033 I C02d13/HDC_LOG: [async_cmd.cpp:264] ExecuteCommand cmd:aa start -a EntryAbility -b net.uniterm.poc fd:59 pid:9037
+09-28 08:27:15.559  9037  9037 I C01303/AATool: [ability_command.cpp:153]argv_[3]: EntryAbility
+09-28 08:27:15.559  9037  9037 I C01303/AATool: [ability_command.cpp:153]argv_[5]: net.uniterm.poc
+09-28 08:27:15.568   894  2113 I C017d7/ERMS: ERMS_MAIN::QueryStartExperience::77 want bundle name = net.uniterm.poc, uri = 
+09-28 08:27:15.569   894  2113 W C01336/AMS: [mission_info_mgr.cpp:334]can not find target singleton mission:#net.uniterm.poc:entry:EntryAbility
+09-28 08:27:15.583   894  2113 I C01336/AMS: [ability_record.cpp:310]LoadLifecycle: abilityName:EntryAbility.
+09-28 08:27:15.583   894  2113 I C01311/AppMS: [ams_mgr_scheduler.cpp:87]SubmitLoadTask: net.uniterm.poc-EntryAbility
+09-28 08:27:15.585   894  9045 I C01311/AppMS: [app_mgr_service_inner.cpp:570]LoadAbility name:net.uniterm.poc-EntryAbility processName = net.uniterm.poc
+09-28 08:27:15.585   894  9045 I C01311/AppMS: [app_mgr_service_inner.cpp:825]pname:net.uniterm.poc, isPreload:0
+09-28 08:27:15.585  2155  2155 I C0d502/KHWMS: GetWindowPosition: GetWindowPosition key=net.uniterm.poc_EntryAbility, isColdStart=1
+09-28 08:27:15.585   894  1673 E C04200/KHWindowManagerAnimation: (145)UpdateKHStartingWindowAnimation: FindKHWindowPosition failed bundle:net.uniterm.poc_EntryAbility,coldStart:1
+09-28 08:27:15.586   894  9045 I C01311/AppMS: [app_mgr_service_inner.cpp:3335]apl: system_core, bundleName: net.uniterm.poc, startFlags: 2048
+09-28 08:27:15.586   894  9045 I C02c11/APPSPAWN_CLIENT: [appspawn_client.c:349]AppSpawnClientSendMsg reqId: 21 msgLen: 932 net.uniterm.poc
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: [appspawn_service.c:434]OnReceiveRequest connectionId: 1 start: 0xef201234 buffLen 932
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: [appspawn_service.c:1576]Recv message header magic 0xef201234 type 0 id 21 len 932 net.uniterm.poc
+09-28 08:27:15.586   468   468 E C02c11/APPSPAWN: [sandbox_utils.cpp:1969]sharefs mount /mnt/user/100/sharefs/docs to /mnt/sandbox/100/net.uniterm.poc//storage/Users failed, error 2
+09-28 08:27:15.586   468   468 E C02c11/APPSPAWN: [sandbox_utils.cpp:2026]Update storage dir, ret 218103834
+09-28 08:27:15.586   468   468 E C02c11/APPSPAWN: [sandbox_utils.cpp:1869]Failed to umount path /mnt/sandbox/100/net.uniterm.poc/data/storage/el1/bundle, errno 22
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: [sandbox_utils.cpp:1882]mount path /mnt/sandbox/100/net.uniterm.poc/data/storage/el1/bundle to shared success
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: [sandbox_utils.cpp:1831]bundleName:net.uniterm.poc this is unlock status
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: App spawn msg msgId: 21 msgLen: 932 tlvCount: 4 processName: net.uniterm.poc
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: processName: net.uniterm.poc 0 App flags flags: 0x800
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: processName: net.uniterm.poc 1 App flags flags: 0x0
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: processName: net.uniterm.poc 0 App permission bits flags: 0x0
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: App dac info uid: 20010055 gid: 20010055 count: 1
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: gid group[0]: 1097
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: App bundle info name: "net.uniterm.poc" index: 0
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: App domain info hap: 0x0 apl: "system_core"
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: App extend info name: MaxChildProcess len: 1
+09-28 08:27:15.586   468   468 I C02c11/APPSPAWN: [appspawn_server.c:199]AppSpawnProcessMsg id: 21 mode: 0 sandboxNsFlags: 0x40000000
+09-28 08:27:15.589   468   468 I C02c11/APPSPAWN: [appspawn_service.c:626]Get spawn timeout: 30.
+09-28 08:27:15.589  9047  9047 I C02c11/APPSPAWN: [appspawn_server.c:94]AppSpawnChild id 21 flags: 0xc
+09-28 08:27:15.589  9047  9047 E C02c11/APPSPAWN: [appspawn_common.c:526]no need set fd info 1, 0
+09-28 08:27:15.590  9047  9047 E C02c11/APPSPAWN: [sandbox_utils.cpp:214]errno is 30, mkdir /mnt/sandbox/100/net.uniterm.poc/system/lib/ld-musl-arm.so.1 failed
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /system/lib/ld-musl-arm.so.1 to /mnt/sandbox/100/net.uniterm.poc/system/lib/ld-musl-arm.so.1
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /system/data to /mnt/sandbox/100/net.uniterm.poc/system/data
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:241]file /mnt/sandbox/100/net.uniterm.poc/data/service/el1/network/hosts_user/hosts already exist
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /system/etc/hosts to /mnt/sandbox/100/net.uniterm.poc/data/service/el1/network/hosts_user/hosts
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /system/resource to /mnt/sandbox/100/net.uniterm.poc/system/resource
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /vendor/lib to /mnt/sandbox/100/net.uniterm.poc/vendor/lib
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /chip_prod/lib to /mnt/sandbox/100/net.uniterm.poc/chip_prod/lib
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /vendor/etc/hiai to /mnt/sandbox/100/net.uniterm.poc/vendor/etc/hiai
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /data/data/hiai to /mnt/sandbox/100/net.uniterm.poc/data/data/hiai
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /vendor/etc/vulkan to /mnt/sandbox/100/net.uniterm.poc/vendor/etc/vulkan
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /data/local/ark-cache/net.uniterm.poc to /mnt/sandbox/100/net.uniterm.poc/data/storage/ark-cache
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /data/local/shader_cache/cloud/net.uniterm.poc to /mnt/sandbox/100/net.uniterm.poc/data/storage/shader_cache/cloud
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /data/local/shader_cache/cloud/common to /mnt/sandbox/100/net.uniterm.poc/data/storage/shader_cache/common
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /data/service/el1/public/themes/100/a/app to /mnt/sandbox/100/net.uniterm.poc/data/themes/a/app
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /data/service/el1/public/themes/100/b/app to /mnt/sandbox/100/net.uniterm.poc/data/themes/b/app
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /mnt/hmdfs/100/cloud/data/net.uniterm.poc to /mnt/sandbox/100/net.uniterm.poc/data/storage/el2/cloud
+09-28 08:27:15.590  9047  9047 E C02c11/APPSPAWN: [sandbox_utils.cpp:214]errno is 30, mkdir /mnt/sandbox/100/net.uniterm.poc/system/lib/ld-musl-aarch64.so.1 failed
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /system/lib/ld-musl-aarch64.so.1 to /mnt/sandbox/100/net.uniterm.poc/system/lib/ld-musl-aarch64.so.1
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /system/asan/lib64 to /mnt/sandbox/100/net.uniterm.poc/system/asan/lib64
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /chip_prod/lib64 to /mnt/sandbox/100/net.uniterm.poc/chip_prod/lib64
+09-28 08:27:15.590  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /vendor/asan/lib64 to /mnt/sandbox/100/net.uniterm.poc/vendor/asan/lib64
+09-28 08:27:15.591  9047  9047 I C02c11/APPSPAWN: [sandbox_utils.cpp:283]errno is: 2, bind mount /system/app/SystemResources to /mnt/sandbox/100/net.uniterm.poc/data/global/systemResources
+09-28 08:27:15.591  9047  9047 E C02c11/APPSPAWN: [appspawn_silk.c:118]Load silk library failed for configItems is NULL
+09-28 08:27:15.591  9047  9047 I C02c11/APPSPAWN: [appspawn_server.c:34]NotifyResToParent: 0
+09-28 08:27:15.591   468   468 I C02c11/APPSPAWN: [appspawn_service.c:970]Child process net.uniterm.poc success pid 9047 appId: 21 result: 0
+09-28 08:27:15.591   468   468 I C02c11/APPSPAWN: [appspawn_appmgr.c:159]Add net.uniterm.poc, pid=9047 success
+09-28 08:27:15.591   468   468 I C02c11/APPSPAWN: [appspawn_service.c:593]watch app process pid 9047, pidFd 36
+09-28 08:27:15.591   468   468 I C02c11/APPSPAWN: [appspawn_service.c:257]SendMessageComplete connectionId: 1 result 0 app net.uniterm.poc pid 9047
+09-28 08:27:15.591   894  9045 I C02c11/APPSPAWN_CLIENT: [appspawn_client.c:357]AppSpawnClientSendMsg reqId: 21 end result: 0x0 pid: 9047
+09-28 08:27:15.591   894  9045 I C01311/AppMS: [app_mgr_service_inner.cpp:3472]Start process success, pid: 9047, processName: net.uniterm.poc.
+09-28 08:27:15.592   894  9045 I C01311/AppMS: [app_running_record.cpp:866]The ability(bundle:net.uniterm.poc, ability:EntryAbility) state will change.
+09-28 08:27:15.593   894  9024 I C01311/AppMS: [app_state_observer_manager.cpp:586]Process Create, bundle:net.uniterm.poc, pid:9047, uid:20010055, processType:0, extensionType:255, processName:net.uniterm.poc, renderUid:-1, isTestMode:0
+09-28 08:27:15.593   680   680 I C01799/MemMgr: AppStateObserver::OnProcessCreated uid=20010055, pid=9047, processName=net.uniterm.poc, bundle=net.uniterm.poc
+09-28 08:27:15.593   680  1872 I C01799/MemMgr: AppStateObserver::OnProcessCreated uid=20010055, pid=9047, processName=net.uniterm.poc, bundle=net.uniterm.poc
+09-28 08:27:15.593   680   680 I C01799/MemMgr: AppStateObserver::OnAbilityStateChanged called, uid=20010055, pid=9047, bundleName=net.uniterm.poc Skiped!
+09-28 08:27:15.593   680  2991 I C01799/MemMgr: AppStateObserver::OnAbilityStateChanged called, uid=20010055, pid=9047, bundleName=net.uniterm.poc Skiped!
+09-28 08:27:15.593   564  9042 I C01706/ueaServer-IntelliSenseServer: Get app info:9047 20010055 net.uniterm.poc 0
+09-28 08:27:15.594   564  9049 I C01702/CGS: recordIsContinuousStartup uid: 20010055 bundleName: net.uniterm.poc
+09-28 08:27:15.594  2200  2200 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 0
+09-28 08:27:15.594   680   682 I C01799/MemMgr: AppStateObserver::OnProcessCreated uid=20010055, pid=9047, processName=net.uniterm.poc, bundle=net.uniterm.poc
+09-28 08:27:15.594   680   682 I C01799/MemMgr: AppStateObserver::OnAbilityStateChanged called, uid=20010055, pid=9047, bundleName=net.uniterm.poc Skiped!
+09-28 08:27:15.594   680   747 I C01799/MemMgr: BundlePriorityInfo::UpdatePriority bundleName=net.uniterm.poc, priority=0
+09-28 08:27:15.594   680   747 I C01799/MemMgr: ReclaimPriorityManager::HandleCreateProcess create: bundleName=net.uniterm.poc, prio=0
+09-28 08:27:15.594   680  1808 I C01799/MemMgr: ReclaimStrategyManager::HandleAppStateChanged_ pid:9047 bundle:20010055 net.uniterm.poc userId:100 score:0 action:CREATE_PROCESS_AND_APP
+09-28 08:27:15.594  9047  9047 W C02c11/APPSPAWN: [appspawn_begetctl.c:73]Enter begetctl boot without BEGETCTL_BOOT flag set
+09-28 08:27:15.594   680  1808 I C01799/MemMgr: ReclaimStrategyManager::HandleProcessCreate_ succ, pid:9047 bundle:20010055 net.uniterm.poc userId:100 score:0 action:CREATE_PROCESS_AND_APP
+09-28 08:27:15.594   680   747 I C01799/MemMgr: BundlePriorityInfo::UpdatePriority bundleName=net.uniterm.poc, priority=0
+09-28 08:27:15.594   680   747 I C01799/MemMgr: ReclaimPriorityManager::HandleCreateProcess create: bundleName=net.uniterm.poc, prio=0
+09-28 08:27:15.594   680  1808 I C01799/MemMgr: ReclaimStrategyManager::HandleAppStateChanged_ pid:9047 bundle:20010055 net.uniterm.poc userId:100 score:0 action:CREATE_PROCESS_ONLY
+09-28 08:27:15.594   680  1808 I C01799/MemMgr: ReclaimStrategyManager::HandleProcessCreate_ succ, pid:9047 bundle:20010055 net.uniterm.poc userId:100 score:0 action:CREATE_PROCESS_ONLY
+09-28 08:27:15.594   680   747 I C01799/MemMgr: BundlePriorityInfo::UpdatePriority bundleName=net.uniterm.poc, priority=0
+09-28 08:27:15.595   680   747 I C01799/MemMgr: ReclaimPriorityManager::HandleCreateProcess create: bundleName=net.uniterm.poc, prio=0
+09-28 08:27:15.595   680  1808 I C01799/MemMgr: ReclaimStrategyManager::HandleAppStateChanged_ pid:9047 bundle:20010055 net.uniterm.poc userId:100 score:0 action:CREATE_PROCESS_ONLY
+09-28 08:27:15.595   680  1808 I C01799/MemMgr: ReclaimStrategyManager::HandleProcessCreate_ succ, pid:9047 bundle:20010055 net.uniterm.poc userId:100 score:0 action:CREATE_PROCESS_ONLY
+09-28 08:27:15.596   894  9046 I C01311/AppMS: [app_mgr_service_inner.cpp:993]attach pid:9047, bundle:net.uniterm.poc
+09-28 08:27:15.597  9047  9052 I C01317/AppKit: [main_thread.cpp:724]ScheduleLaunchAbility called, ability EntryAbility, type is 1.
+09-28 08:27:15.597  9047  9047 I C03900/ACE_UIContent: [74]AceForwardCompatibility [net.uniterm.poc] force:1 newpipe:1
+09-28 08:27:15.598  9047  9047 I C03f00/ArkCompiler: [ecmascript] asmint: 1, aot: 0, jit: 1, baseline jit: 0, bundle name: net.uniterm.poc
+09-28 08:27:15.601  9047  9062 I C02d13/HDC_LOG: Send2Jdwp send pid:9047, pp:net.uniterm.poc, isDebug:0, msglen:27
+09-28 08:27:15.602  1403  1403 I C02d13/HDC_LOG: [jdwp.cpp:159] JDWP accept pid:9047-pkg:net.uniterm.poc isDebug:0
+09-28 08:27:15.606  9047  9047 I C03f00/ArkCompiler: [ecmascript] start to execute module buffer with secure memory: /data/storage/el1/bundle/entry/ets/entryability/EntryAbility.abc
+09-28 08:27:15.606  9047  9047 I C02d11/DfxSignalHandler: DFX_SigchainHandler :: sig(6), pid(9047), processName(net.uniterm.poc), threadName(net.uniterm.poc).
+09-28 08:27:15.614  9068  9068 I C02d11/DfxFaultLogger: Start main function of processdump
+09-28 08:27:15.614  9068  9068 I C02d11/DfxFaultLogger: Start alarm 8 seconds for processdump
+09-28 08:27:15.614  9068  9068 I C02d11/DfxProcessDump: Processdump SigVal(0), TargetPid(9047:9047), TargetTid(9047), threadname(net.uniterm.poc).
+09-28 08:27:15.621   456   456 I C02d11/DfxFaultLogger: FaultLoggerd :: file path(/data/log/faultlog/temp/cppcrash-9047-1790555235606).
+09-28 08:27:15.622  9068  9068 I C02d11/DfxFaultLogger: UnwindStack, unwind tid(9047) start.
+09-28 08:27:15.641  9068  9068 I C02d11/DfxFaultLogger: UnwindStack, unwind tid(9047) finish ret(1).
+09-28 08:27:15.652  9068  9068 I C02d11/DfxFaultLogger: success unwind thread cnt is 15
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: Build info:KaihongOS 5.0.2.58
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: Timestamp:2026-09-28 08:27:15.606
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: Pid:9047
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: Uid:20010055
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: Process name:net.uniterm.poc
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: Reason:Signal:SIGABRT(SI_TKILL)@0x0131544700002357 from:9047:20010055
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: LastFatalMessage:[ecmascript] Unable to open file '1692007120411339639' with abc file version 24.0.0.0. Maximum supported abc file version on the current system image is 12.0.6.0. Please upgrade the system image or use former version of SDK tools to generate abc files
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: Fault thread info:
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: Tid:9047, Name:net.uniterm.poc
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #00 pc 00000000000f491d /system/lib/ld-musl-x86_64.so.1(raise+173)(27c79333bf461b2a3f61acb5394b95e9)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #01 pc 000000000009fee1 /system/lib/ld-musl-x86_64.so.1(abort+17)(27c79333bf461b2a3f61acb5394b95e9)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #02 pc 000000000051d58e /system/lib64/platformsdk/libark_jsruntime.so(panda::ecmascript::Log::PrintLogger(int, int, char const*, char const*, char const*)+2158)(7429fbb44964302e0cec398e8a55639d)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #03 pc 00000000007734f9 /system/lib64/platformsdk/libark_jsruntime.so(panda::Logger::WriteMobileLog(panda::Logger::Level, char const*, char const*)+345)(7429fbb44964302e0cec398e8a55639d)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #04 pc 0000000000773365 /system/lib64/platformsdk/libark_jsruntime.so(panda::Logger::Log(panda::Logger::Level, panda::Logger::Component, std::__h::basic_string<char, std::__h::char_traits<char>, std::__h::allocator<char>> const&)+581)(7429fbb44964302e0cec398e8a55639d)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #05 pc 0000000000773022 /system/lib64/platformsdk/libark_jsruntime.so(panda::Logger::Message::~Message()+242)(7429fbb44964302e0cec398e8a55639d)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #06 pc 000000000076f5de /system/lib64/platformsdk/libark_jsruntime.so(panda::panda_file::CheckFileVersion(std::__h::array<unsigned char, 4ul> const&, std::__h::basic_string_view<char, std::__h::char_traits<char>> const&)+1518)(7429fbb44964302e0cec398e8a55639d)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #07 pc 000000000076eb53 /system/lib64/platformsdk/libark_jsruntime.so(panda::panda_file::CheckHeader(panda::os::mem::MapPtr<std::byte, (panda::os::mem::MapPtrType)0> const&, std::__h::basic_string_view<char, std::__h::char_traits<char>> const&)+627)(7429fbb44964302e0cec398e8a55639d)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #08 pc 000000000076be62 /system/lib64/platformsdk/libark_jsruntime.so(panda::panda_file::File::OpenFromMemory(panda::os::mem::MapPtr<std::byte, (panda::os::mem::MapPtrType)0>&&, std::__h::basic_string_view<char, std::__h::char_traits<char>>)+258)(7429fbb44964302e0cec398e8a55639d)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #09 pc 000000000076e010 /system/lib64/platformsdk/libark_jsruntime.so(panda::panda_file::OpenPandaFileFromSecureMemory(unsigned char*, unsigned long)+720)(7429fbb44964302e0cec398e8a55639d)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #10 pc 00000000004561ae /system/lib64/platformsdk/libark_jsruntime.so(7429fbb44964302e0cec398e8a55639d)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #11 pc 000000000047b4ac /system/lib64/platformsdk/libark_jsruntime.so(panda::ecmascript::JSPandaFileExecutor::ExecuteModuleBufferSecure(panda::ecmascript::JSThread*, unsigned char*, unsigned long, std::__h::basic_string<char, std::__h::char_traits<char>, panda::ecmascript::CAddressAllocator<char>> const&, bool)+1132)(7429fbb44964302e0cec398e8a55639d)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #12 pc 000000000061fcd5 /system/lib64/platformsdk/libark_jsruntime.so(panda::JSNApi::ExecuteModuleBufferSecure(panda::ecmascript::EcmaVM*, unsigned char*, int, std::__h::basic_string<char, std::__h::char_traits<char>, std::__h::allocator<char>> const&, bool)+1061)(7429fbb44964302e0cec398e8a55639d)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #13 pc 000000000004e9fa /system/lib64/platformsdk/libace_napi.z.so(ArkNativeEngine::RunScriptBuffer(std::__h::basic_string<char, std::__h::char_traits<char>, std::__h::allocator<char>> const&, unsigned char*, unsigned long, bool)+314)(24fe562c77c736f3192b5fd79f87f824)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #14 pc 0000000000063501 /system/lib64/platformsdk/libruntime.z.so(049bb1f7ae8d54e7ab650f4e83ccde63)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #15 pc 0000000000068eed /system/lib64/platformsdk/libruntime.z.so(049bb1f7ae8d54e7ab650f4e83ccde63)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #16 pc 0000000000067863 /system/lib64/platformsdk/libruntime.z.so(049bb1f7ae8d54e7ab650f4e83ccde63)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #17 pc 0000000000067ec3 /system/lib64/platformsdk/libruntime.z.so(049bb1f7ae8d54e7ab650f4e83ccde63)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #18 pc 0000000000068818 /system/lib64/platformsdk/libruntime.z.so(049bb1f7ae8d54e7ab650f4e83ccde63)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #19 pc 0000000000043b76 /system/lib64/platformsdk/libuiabilitykit_native.z.so(efe7002f4326c0b6c187769a590fcdd9)
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: #20 pc 0000000000105f6f [stack]
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger: Registers:
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger:   rax:0000000000000000 rdx:0000000000000000 rcx:00007fe237e7c91d rbx:0000000000000000
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger:   rsi:00007fff042078d8 rdi:0000000000000002 rbp:00007fff04207970 rsp:00007fff042078d0
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger:   r8:00007fe237dde8f0 r9:0000000000000000 r10:0000000000000008 r11:0000000000000246
+09-28 08:27:15.653  9068  9068 I C02d11/DfxFaultLogger:   r12:00007fe1b2c67590 r13:00007fe1ac8680a0 r14:0000000000000006 r15:00007fff042079c0 rip:00007fe237e7c91d
+09-28 08:27:15.653  9068  9068 I C02d11/DfxProcessDump: Finish dump stacktrace for net.uniterm.poc(9047:9047).
+09-28 08:27:15.655  9068  9068 I C02d11/DfxFaultLogger: Finish report fault to FaultLogger net.uniterm.poc(9047,20010055)
+09-28 08:27:15.656   466  1909 I C02d11/Faultlogger: AddFaultLogIfNeed: Start saving Faultlog of Process:9047, Name:net.uniterm.poc, Reason:Signal:SIGABRT(SI_TKILL)@0x0131544700002357 from:9047:20010055
+09-28 08:27:15.656   466  1909 I C02d11/Faultlogger: .
+09-28 08:27:15.657   466  1909 I C02d12/Sanitizer: bundleName of uid:20010055 is net.uniterm.poc
+09-28 08:27:15.658   466  1909 I C02d12/Sanitizer: The version of net.uniterm.poc is 1.0.0
+09-28 08:27:15.658   466  1909 I C02d10/ExtractRule: IsMatchPath: sourceFile is /data/log/faultlog/CPP_CRASH1790555235606, name is /data/log/faultlog/faultlogger/, pattern is cppcrash-.*-\d+-\d+.
+09-28 08:27:15.683   466  1909 I C02d11/Faultlogger: GetHilog: read hilog finished
+09-28 08:27:15.683   466  1909 I C02d11/Faultlogger: GetHilog: get hilog waitpid 9074 success
+09-28 08:27:15.688   466  1909 I C02d10/HiView-LogStoreEx: DoDeleteLogFiles: Remove file:/data/log/faultlog/faultlogger/cppcrash-net.uniterm.poc-20010055-20260928034526.
+09-28 08:27:15.688   466  1909 I C02d11/FaultLogManager: SaveFaultLogToFile: create log cppcrash-net.uniterm.poc-20010055-20260928082715
+09-28 08:27:15.688   466  1909 I C02d11/Faultlogger: AddFaultLogIfNeed: 
+09-28 08:27:15.688   466  1909 I C02d11/Faultlogger: Save Faultlog of Process:9047
+09-28 08:27:15.688   466  1909 I C02d11/Faultlogger: ModuleName:net.uniterm.poc
+09-28 08:27:15.688   466  1909 I C02d11/Faultlogger: Reason:Signal:SIGABRT(SI_TKILL)@0x0131544700002357 from:9047:20010055
+09-28 08:27:15.689   894  2113 I C01336/AMS: [app_exit_reason_data_manager.cpp:266]value: {"ability_list":["EntryAbility"],"exit_msg":"Signal:SIGABRT(SI_TKILL)@0x0131544700002357 from:9047:20010055\n","reason":2,"time_stamp":1790555235689}
+09-28 08:27:15.689   466  1909 I C02d11/Faultlogger: ReportCppCrashToAppEvent: report cppcrash to appevent, pid:9047 len:38620
+09-28 08:27:15.705  9068  9068 W C02d11/DfxFaultLogger: hisysevent write result=0, send event [FRAMEWORK,PROCESS_KILL], pid=9047 processName=net.uniterm.poc, msg=Kill Reason:Cpp Crash
+09-28 08:27:15.706   456   456 W C02d11/DfxFaultLogger: FaultLoggerd :: CheckCallerUID :: Caller Uid(20010055) is unexpectly.
+09-28 08:27:15.707   456   456 I C02d11/DfxFaultLogger: FaultLoggerd :: file path(/data/log/faultlog/temp/ffrtlog-9047-1790555235706).
+09-28 08:27:15.709   468   468 I C02c11/APPSPAWN: [appspawn_service.c:557]Clear process group with pid 9047, pidFd 36
+09-28 08:27:15.709   468   468 W C02c11/APPSPAWN: [appspawn_cgroup.c:131]SetForkDenied 9047 open failed 
+09-28 08:27:15.710   468   468 I C02c11/APPSPAWN: [appspawn_service.c:176]ProcessSignal signum 17 9047
+09-28 08:27:15.710   468   468 W C02c11/APPSPAWN: [appspawn_service.c:133]net.uniterm.poc with pid 9047 exit with signal:6
+09-28 08:27:15.710   468   468 W C02c11/APPSPAWN: [appspawn_cgroup.c:131]SetForkDenied 9047 open failed 
+09-28 08:27:15.710   468   468 E C02c11/APPSPAWN: [appspawn_cgroup.c:148]Open file fail /dev/pids/100/net.uniterm.poc/app_9047/cgroup.procs errno: 2
+09-28 08:27:15.710   894  9023 I C01311/AppMS: [app_running_manager.cpp:438]pname: net.uniterm.poc
+09-28 08:27:15.710   894  9023 I C01336/AMS: [ability_manager_service.cpp:11194]App OnRemoteDied, ability is EntryAbility, app is net.uniterm.poc
+09-28 08:27:15.710   468   468 I C02c11/APPSPAWN: [sandbox_utils.cpp:2094]Umount2 sandbox path /mnt/sandbox/100/net.uniterm.poc/data/storage/el1/bundle success
+09-28 08:27:15.710   894  9023 I C01336/AMS: [ability_record.cpp:2611]OnProcessDied: 'EntryAbility'
+09-28 08:27:15.710   894  9023 I C01311/AppMS: [app_running_record.cpp:866]The ability(bundle:net.uniterm.poc, ability:EntryAbility) state will change.
+09-28 08:27:15.710   466  1283 I C02d11/HiView-CrashValidator: OnEvent: Add MatchEvent task, process pid = 9047, name = net.uniterm.poc, exitSigno = 6
+09-28 08:27:15.710   680  1872 I C01799/MemMgr: AppStateObserver::OnAbilityStateChanged called, uid=20010055, pid=9047, bundleName=net.uniterm.poc Skiped!
+09-28 08:27:15.710   680  2991 I C01799/MemMgr: AppStateObserver::OnAbilityStateChanged called, uid=20010055, pid=9047, bundleName=net.uniterm.poc Skiped!
+09-28 08:27:15.710   788  6218 I C01710/BUNDLE_ACTIVE: [bundle_active_app_state_obsever.cpp(OnAbilityStateChanged):73]OnAblityStateChanged userid is 100, bundle name is net.uniterm.poc, uid is 20010055, event is 4, timestamp is 1022766
+09-28 08:27:15.711   680  2991 I C01799/MemMgr: AppStateObserver::OnAbilityStateChanged called, uid=20010055, pid=9047, bundleName=net.uniterm.poc Skiped!
+09-28 08:27:15.711   788   795 I C01711/CONTINUOUS_TASK: [OnAbilityStateChanged:42] ability state changed, uid: 20010055 abilityName: EntryAbility, abilityState: 5, abilityId: 47
+09-28 08:27:15.711  2200  2200 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 5
+09-28 08:27:15.711   680  2991 I C01799/MemMgr: AppStateObserver::OnProcessDied uid=20010055, pid=9047, processName=net.uniterm.poc, bundle=net.uniterm.poc
+09-28 08:27:15.711   680  1872 I C01799/MemMgr: AppStateObserver::OnProcessDied uid=20010055, pid=9047, processName=net.uniterm.poc, bundle=net.uniterm.poc
+09-28 08:27:15.711   680   747 I C01799/MemMgr: ReclaimPriorityManager::HandleTerminateProcess terminated: bundleName=net.uniterm.poc, pid=9047
+09-28 08:27:15.711   680  1808 I C01799/MemMgr: ReclaimStrategyManager::HandleAppStateChanged_ pid:9047 bundle:20010055 net.uniterm.poc userId:100 score:0 action:APP_DIED
+09-28 08:27:15.711   680  1872 I C01799/MemMgr: AppStateObserver::OnProcessDied uid=20010055, pid=9047, processName=net.uniterm.poc, bundle=net.uniterm.poc
+09-28 08:27:15.711   762   766 I C02220/SocketSessionManager: in OnProcessDied, 'net.uniterm.poc' died, pid:9047
+09-28 08:27:15.712   564  9042 I C01702/CgroupEventHandler: HandleOnAppStopped : 20010055, net.uniterm.poc
+09-28 08:27:17.694   452   452 I C02e01/: module_update_main.cpp 121 : OnProcessCrash net.uniterm.poc
+09-28 08:27:25.183   468   468 I C02c11/APPSPAWN: [appspawn_kickdog.c:79]kick appspawn dog start
+09-28 08:27:25.183   468   468 I C02c11/APPSPAWN: [appspawn_kickdog.c:63]kick proc begin
+09-28 08:27:25.183   468   468 I C02c11/APPSPAWN: [appspawn_kickdog.c:72]kick end,result:4
+09-28 08:27:27.715  1403  6033 I C02d13/HDC_LOG: [async_cmd.cpp:264] ExecuteCommand cmd:ls -t /data/log/faultlog/faultlogger/ fd:59 pid:9154
+09-28 08:27:33.077  1403  6033 I C02d13/HDC_LOG: [async_cmd.cpp:264] ExecuteCommand cmd:head -30 /data/log/faultlog/faultlogger/cppcrash-net.uniterm.poc-20010055-20260928082715 fd:59 pid:9187
+09-28 08:27:35.183   468   468 I C02c11/APPSPAWN: [appspawn_kickdog.c:79]kick appspawn dog start
+09-28 08:27:35.183   468   468 I C02c11/APPSPAWN: [appspawn_kickdog.c:63]kick proc begin
+09-28 08:27:35.184   468   468 I C02c11/APPSPAWN: [appspawn_kickdog.c:72]kick end,result:4

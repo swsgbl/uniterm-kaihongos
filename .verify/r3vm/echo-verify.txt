@@ -1,0 +1,61 @@
+09-28 14:26:42.637  2379  2379 I A04f4f/systemuiApp: khWindow_api setAnimationPositionSync start, bundleName: net.uniterm.poc, abilityName: EntryAbility, posX: 1111.406001235761, posY: 1268.2481016682775, isCold: false
+09-28 14:26:42.664  2308  2308 I A00123/HimaLauncher:  [WindowSwitchVM] init onAppStateChanged bundleName: net.uniterm.poc, state: 2
+09-28 14:26:42.666  2308  2308 I A00123/HimaLauncher:  [WindowSwitchVM] 14:26:42 getWindowMissionList getAppInfo start, net.uniterm.poc
+09-28 14:26:42.667  2308  2308 I A00123/HimaLauncher:  [WindowSwitchVM] 14:26:42 getWindowMissionList getAppInfo success, net.uniterm.poc
+09-28 14:26:42.668  2308  2308 I A00123/HimaLauncher:  [WindowSwitchVM] 14:26:42 getWindowMissionList createResourceManager success, net.uniterm.poc
+09-28 14:26:42.668  2308  2308 I A00123/HimaLauncher:  [WindowSwitchVM] 14:26:42 getWindowMissionList getAppName success, net.uniterm.poc
+09-28 14:26:42.668  2308  2308 I A00123/HimaLauncher:  [WindowSwitchVM] 14:26:42 getWindowMissionList getAppIcon success, net.uniterm.poc
+09-28 14:26:48.666  2379  2379 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 5
+09-28 14:26:48.666  2379  2379 I A04f4f/systemuiApp: [NoticeIcon] missionClose net.uniterm.poc
+09-28 14:26:48.666  2379  2379 I A04f4f/systemuiApp: DateTimeComponent missionClose net.uniterm.poc 
+09-28 14:26:48.666  2379  2379 I A04f4f/systemuiApp: comp/TBContainer missionClose  net.uniterm.poc
+09-28 14:26:48.666  2379  2379 I A04f4f/systemuiApp: MissionAPI getMissionListByBundleName net.uniterm.poc 100 []
+09-28 14:26:48.667  2379  2379 I A04f4f/systemuiApp: comp/TBButton onUpdate: bundleName == net.uniterm.poc
+09-28 14:26:48.667  2379  2379 I A04f4f/systemuiApp: comp/TBContainer net.uniterm.poc 0
+09-28 14:26:48.758  2379  2379 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 0
+09-28 14:26:48.776  2308  2308 I A00123/HimaLauncher:  [AppManagerModel] onForegroundApplicationChanged appStateData: {"bundleName":"net.uniterm.poc","state":2}
+09-28 14:26:48.776  2379  2379 I A04f4f/systemuiApp: AppManagerAPI [appManager] onForegroundApplicationChanged: net.uniterm.poc 2
+09-28 14:26:48.776  2379  2379 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 2
+09-28 14:26:48.785  2379  2379 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 2
+09-28 14:26:48.785  2308  2308 I A00123/HimaLauncher:  [AppManagerModel] onForegroundApplicationChanged appStateData: {"bundleName":"net.uniterm.poc","state":2}
+09-28 14:26:48.785  2379  2379 I A04f4f/systemuiApp: AppManagerAPI [appManager] onForegroundApplicationChanged: net.uniterm.poc 2
+09-28 14:26:48.858 13576 13576 I A00110/uniterm.ident: revealSecrets fail=0
+09-28 14:26:48.858 13576 13576 I A00110/uniterm.import: credmgr hasMaster=1 unlocked=0
+09-28 14:26:48.859 13576 13576 I A00110/uniterm.import: want autoimport conns=1 groups=0
+09-28 14:26:48.859 13576 13576 I A00110/uniterm.store: load #1 file-missing path=/data/storage/el2/base/haps/entry/files/connections.json
+09-28 14:26:48.859 13576 13576 I A00110/uniterm.import: want autoimport upserted=1
+09-28 14:26:48.859 13576 13576 I A00110/uniterm.store: save #1 ok groups=0 conns=1 bytes=340
+09-28 14:26:48.859 13576 13576 I A00110/uniterm.import: connectNow -> SSH-REGRESS
+09-28 14:26:48.875 13576 13576 I A00110/uniterm.session: connect SSH-REGRESS uterm@10.0.2.2:2222 cols=226 rows=59 auth=password pwlen=12 keylen=0
+09-28 14:26:48.920 13576 13592 I A00000/libssh-1.0.3: TerminalOpen auth=password host=10.0.2.2 user=uterm (keyText=0)
+09-28 14:26:48.986  2308  2308 I A00123/HimaLauncher:  [WindowSwitchVM] init onAppStateChanged bundleName: net.uniterm.poc, state: 2
+09-28 14:26:48.990  2308  2308 I A00123/HimaLauncher:  [WindowSwitchVM] 14:26:48 getWindowMissionList getAppInfo start, net.uniterm.poc
+09-28 14:26:48.991  2308  2308 I A00123/HimaLauncher:  [WindowSwitchVM] 14:26:48 getWindowMissionList getAppInfo success, net.uniterm.poc
+09-28 14:26:48.993  2308  2308 I A00123/HimaLauncher:  [WindowSwitchVM] 14:26:48 getWindowMissionList createResourceManager success, net.uniterm.poc
+09-28 14:26:48.993  2308  2308 I A00123/HimaLauncher:  [WindowSwitchVM] 14:26:48 getWindowMissionList getAppName success, net.uniterm.poc
+09-28 14:26:48.994  2308  2308 I A00123/HimaLauncher:  [WindowSwitchVM] 14:26:48 getWindowMissionList getAppIcon success, net.uniterm.poc
+09-28 14:26:49.029  2379  2379 I A04f4f/systemuiApp: MissionAPI onMissionCreated mission {"missionId":3,"runningState":0,"lockedState":false,"continuable":false,"timestamp":"1790576808787098084","want":{"deviceId":"","bundleName":"net.uniterm.poc","abilityName":"EntryAbility","uri":"","type":"","flags":0,"action":"","parameters":{"connectNow":"SSH-REGRESS","credUnlock":"mp-735","importText":"{\"version\":1,\"groups\":[],\"connections\":[{\"id\":\"ssh-regress\",\"name\":\"SSH-REGRESS\",\"type\":\"ssh\",\"host\":\"10.0.2.2\",\"port\":2222,\"user\":\"uterm\",\"authType\":\"password\",\"password\":\"uterm-pw-735\",\"encoding\":\"utf-8\",\"backspaceKey\":\"del\",\"postLoginScript\":\"echo SSH-REGRESS-OK\"}]}","moduleName":"entry","ohos.aafwk.param.callerAbilityName":"","ohos.aafwk.param.callerBundleName":"","ohos.aafwk.param.callerNativeName":"_hdcd","ohos.aafwk.param.callerPid":13563,"ohos.aafwk.param.callerToken":805717470,"ohos.aafwk.param.callerUid":0,"ohos.dlp.params.sandbox":false,"ohos.param.callerAppCloneIndex":0},"entities":[]},"label":"uniTerm","iconPath":"$media:app_icon","abilityState":9,"unclearable":false}
+09-28 14:26:49.029  2379  2379 I A04f4f/systemuiApp: MissionAPI mission 3 is "net.uniterm.poc" uniTerm $media:app_icon 100
+09-28 14:26:49.029  2379  2379 I A04f4f/systemuiApp: [NoticeIcon] missionCreate 3 net.uniterm.poc
+09-28 14:26:49.029  2379  2379 I A04f4f/systemuiApp: DateTimeComponent missionCreate 3 net.uniterm.poc
+09-28 14:26:49.030  2379  2379 I A04f4f/systemuiApp: comp/TBContainer missionCreate 3 net.uniterm.poc 100 true
+09-28 14:26:49.030  2379  2379 I A04f4f/systemuiApp: MissionAPI getMissionListByBundleName net.uniterm.poc 100 [3]
+09-28 14:26:49.031  2379  2379 I A04f4f/systemuiApp: MissionAPI addRecentApp: bundleName == net.uniterm.poc
+09-28 14:26:49.036  2379  2379 I A04f4f/systemuiApp: comp/TBContainer virtualBundleButtonMap: bundleName == net.uniterm.poc page == 1
+09-28 14:26:49.037  2379  2379 I A04f4f/systemuiApp: comp/TBContainer bundleName: net.uniterm.poc, bundleMission: 1 buttonIndex: 0, buttonWindowX: 1091.406001235761, posX: 1111.406001235761, posY: 1268.2481016682775
+09-28 14:26:49.037  2379  2379 I A04f4f/systemuiApp: khWindow_api setAnimationPositionSync start, bundleName: net.uniterm.poc, abilityName: EntryAbility, posX: 1111.406001235761, posY: 1268.2481016682775, isCold: false
+09-28 14:26:49.401 13576 13592 I A00000/libssh-1.0.3: TerminalOpenEx encoding=utf-8 keepalive=30s
+09-28 14:26:49.403 13576 13576 I A00110/uniterm.session: connect ok id=1 auth= SSH-REGRESS uterm@10.0.2.2:2222
+09-28 14:26:49.404 13576 13576 I A00110/uniterm.store: save #2 ok groups=0 conns=1 bytes=375
+09-28 14:26:49.404 13576 13576 I A00110/uniterm.session: data chunks=1 bytes=777 lines=20
+09-28 14:26:50.604 13576 13576 I A00000/libssh-1.0.3: uniterm.napi write id=1 bytes=20
+09-28 14:26:50.604 13576 13576 I A00110/uniterm.session: write bytes=20 asked=20
+09-28 14:26:50.604 13576 13576 I A00110/uniterm.term: postLoginScript sent 20 bytes
+09-28 14:27:20.620 13576 13617 I A00000/libssh-1.0.3: uniterm.napi keepalive sent id=1 seq=1
+09-28 14:27:50.622 13576 13617 I A00000/libssh-1.0.3: uniterm.napi keepalive sent id=1 seq=2
+09-28 14:28:20.625 13576 13617 I A00000/libssh-1.0.3: uniterm.napi keepalive sent id=1 seq=3
+09-28 14:28:50.632 13576 13617 I A00000/libssh-1.0.3: uniterm.napi keepalive sent id=1 seq=4
+09-28 14:29:20.642 13576 13617 I A00000/libssh-1.0.3: uniterm.napi keepalive sent id=1 seq=5
+09-28 14:29:50.646 13576 13617 I A00000/libssh-1.0.3: uniterm.napi keepalive sent id=1 seq=6
+09-28 14:30:20.648 13576 13617 I A00000/libssh-1.0.3: uniterm.napi keepalive sent id=1 seq=7
+====DONE

@@ -1,0 +1,39 @@
+toybox: Unknown command tr
+== tools ==
+hvigorw: /data/local/home/.local/bin/hvigorw
+hvigor: MISSING
+ohos_packing_tool: /data/local/home/.local/bin/ohos_packing_tool
+hap-sign-tool: /data/local/home/.local/bin/hap-sign-tool
+node: /data/local/home/.ohos/node/bin/node
+cmake: /data/local/home/.ohos/sdk/14/native/build-tools/cmake/bin/cmake
+ninja: /data/local/home/.ohos/sdk/14/native/build-tools/cmake/bin/ninja
+clang: MISSING
+== sdk14 native ==
+ets
+js
+native
+previewer
+toolchains
+NDK_STAGE_INFO.txt
+build
+build-tools
+compatible_config.json
+llvm
+nativeapi_syscap_config.json
+ndk_system_capability.json
+oh-uni-package.json
+sysroot
+== native bin ==
+clang
+clang++
+clang-19
+clang-cl
+clang-cpp
+ld.lld
+ld64.lld
+lld
+lld-link
+lldb
+== build-tools ==
+ls: /data/local/home/.ohos/sdk/14/build-tools: No such file or directory
+DONE

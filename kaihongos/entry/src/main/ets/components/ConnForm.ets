@@ -35,9 +35,34 @@ export struct ConnForm {
   @State fEncIdx: number = 0;
   @State fBkIdx: number = 0;
   @State fKeepalive: string = '30';
+  @State fTypeIdx: number = 0; // M5 parity: 0 ssh 1 telnet 2 raw 3 local
   @State err: string = '';
 
   private editId: string = '';
+
+  /** M5 parity: protocol type picker options. */
+  private typeOptions(): Array<SelectOption> {
+    return [
+      { value: 'SSH' } as SelectOption,
+      { value: 'Telnet' } as SelectOption,
+      { value: 'Raw TCP' } as SelectOption,
+      { value: '本地终端' } as SelectOption
+    ];
+  }
+
+  /** M5 parity: protocol type from picker index. */
+  private connType(): string {
+    if (this.fTypeIdx === 1) {
+      return 'telnet';
+    }
+    if (this.fTypeIdx === 2) {
+      return 'raw';
+    }
+    if (this.fTypeIdx === 3) {
+      return 'local';
+    }
+    return 'ssh';
+  }
 
   aboutToAppear(): void {
     this.resetForm();
@@ -77,6 +102,7 @@ export struct ConnForm {
       this.fEncIdx = Math.max(0, ENCODINGS.indexOf(this.editing.encoding));
       this.fBkIdx = Math.max(0, BACKSPACE_KEYS.indexOf(this.editing.backspaceKey));
       this.fKeepalive = this.editing.keepaliveSec > 0 ? this.editing.keepaliveSec.toString() : '30';
+      this.fTypeIdx = this.editing.type === 'telnet' ? 1 : (this.editing.type === 'raw' ? 2 : (this.editing.type === 'local' ? 3 : 0));
     } else {
       this.editId = '';
       this.fName = '';
@@ -94,6 +120,7 @@ export struct ConnForm {
       this.fEncIdx = 0;
       this.fBkIdx = 0;
       this.fKeepalive = '30';
+      this.fTypeIdx = 0;
     }
     this.err = '';
   }
@@ -107,6 +134,7 @@ export struct ConnForm {
     }
     c.name = this.fName.trim().length > 0 ? this.fName.trim() : this.fHost.trim();
     c.host = this.fHost.trim();
+    c.type = this.connType();
     const p = parseInt(this.fPort, 10);
     c.port = isNaN(p) ? 22 : p;
     c.user = this.fUser.trim();
@@ -125,6 +153,7 @@ export struct ConnForm {
     c.backspaceKey = BACKSPACE_KEYS[this.fBkIdx] ?? 'del';
     const ka = parseInt(this.fKeepalive, 10);
     c.keepaliveSec = (isNaN(ka) || ka < 0) ? 30 : ka;
+    c.initialShell = c.type === 'local' ? '/bin/sh' : '';
     // preserve favorite/lastUsedAt on edit (not editable in this form)
     if (this.editing !== null) {
       c.favorite = this.editing.favorite;
@@ -254,6 +283,31 @@ export struct ConnForm {
       Text(this.editId.length > 0 ? '编辑主机' : '新增主机')
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
+
+      // M5 parity: protocol type selector
+      Row({ space: 8 }) {
+        Text('协议')
+          .fontSize(12)
+          .fontColor(0x9ea3ae)
+          .width(48)
+        Select(this.typeOptions())
+          .selected(this.fTypeIdx)
+          .value(this.connType())
+          .fontColor(0xe6e8ed)
+          .font({ size: 12 })
+          .backgroundColor(0x1f222b)
+          .borderRadius(6)
+          .layoutWeight(1)
+          .onSelect((idx: number) => {
+            this.fTypeIdx = idx;
+            if (idx === 1 || idx === 2) {
+              this.fPort = '23';
+            } else {
+              this.fPort = '22';
+            }
+          })
+      }
+      .width('100%')
 
       TextInput({ placeholder: '名称(可空,默认用 host)', text: this.fName })
         .onChange((v) => {

@@ -1,0 +1,53 @@
+# ===== 本地克隆与外部内容(不入库) =====
+/upstream/
+/evidence/
+# 官方 PDF 提取文本与 API 参考(版权内容,不入库)
+/docs/research_pdf/
+/docs/api-ref-stan/
+# 调研过程的网页转储与临时脚本
+/docs/*.html
+/docs/*.txt
+/docs/*.js
+/docs/_*
+/docs/*.json
+
+# ===== 构建产物与缓存 =====
+**/build/
+**/oh_modules/
+**/.hvigor/
+**/.hvigor */
+**/.hvigor?*/
+**/.cxx/
+**/.clangd/
+**/.idea/
+**/.preview/
+**/node_modules/
+**/.cache/
+/kaihongos/dist/
+/kaihongos/entry/build/
+/kaihongos/thirdparty/out/
+/kaihongos/thirdparty/downloads/
+# HAR 内部暂存副本(libs/ 为最终打包产物,保留;这些是重编脚本的中间落点)
+/kaihongos/thirdparty/libssh-x86_64-har/src/main/cpp/thirdparty/openssl/arm64-v8a/
+/kaihongos/thirdparty/libssh-x86_64-har/src/main/cpp/thirdparty/openssl/x86_64/
+/kaihongos/thirdparty/libssh-x86_64-har/src/main/cpp/thirdparty/libssh/arm64-v8a/
+/kaihongos/thirdparty/libssh-x86_64-har/src/main/cpp/thirdparty/libssh/x86_64/
+/kaihongos/thirdparty/libssh-x86_64-har/src/main/cpp/thirdparty/openssl/src/
+/kaihongos/thirdparty/libssh-x86_64-har/src/main/cpp/thirdparty/libssh/src/
+**/*.log
+**/*.hap
+**/*.app
+**/hap6/
+*.zip
+
+# ===== 密钥与签名材料(永不入库) =====
+**/*.p12
+**/*.p7b
+**/*.cer
+**/*.csr
+**/*.pem
+**/signing/release/
+
+# ===== 系统文件 =====
+Thumbs.db
+.DS_Store

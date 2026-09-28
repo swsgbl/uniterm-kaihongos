@@ -1,0 +1,307 @@
+#!/system/bin/sh
+# Device-side: hvigor CompileArkTS + C++ pack/sign (bypass Java PackageHap).
+# OpenHarmony x86_64 — native ABI: x86_64
+#
+# One-shot (env auto-loaded, no need to source env.sh first):
+#   pack_hap.sh /data/local/home/MyApp
+#   pack_hap.sh -b com.foo.bar -o app.hap /path/to/proj
+#
+# Default output: <project>/out_release.hap or out_debug.hap (see -m/--mode)
+# Default bundle: AppScope/app.json5 → bundleName
+set -e
+
+# Resolve HOME from this script: .../.local/bin/pack_hap.sh → home root
+_SCRIPT="$0"
+case "$_SCRIPT" in
+  */*) _SCRIPT_DIR="$(CDPATH= cd -- "$(dirname "$_SCRIPT")" && pwd)" ;;
+  *) _SCRIPT_DIR="$(pwd)" ;;
+esac
+if [ -f "$_SCRIPT_DIR/../../env.sh" ]; then
+  # .../.local/bin → home
+  HOME_ROOT="$(CDPATH= cd -- "$_SCRIPT_DIR/../.." && pwd)"
+elif [ -f "$_SCRIPT_DIR/env.sh" ]; then
+  HOME_ROOT="$_SCRIPT_DIR"
+elif [ -f "$_SCRIPT_DIR/../env.sh" ]; then
+  HOME_ROOT="$(CDPATH= cd -- "$_SCRIPT_DIR/.." && pwd)"
+else
+  HOME_ROOT="${HOME:-/data/local/home}"
+fi
+export HOME="$HOME_ROOT"
+export OHOS_HOME="${OHOS_HOME:-$HOME/.ohos}"
+export KH_EXT="${KH_EXT:-$HOME}"
+unset _SCRIPT _SCRIPT_DIR
+
+# Always load toolchain env (HOME/node/PATH); mute banner for one-liner use
+if [ -f "$HOME/env.sh" ]; then
+  # shellcheck disable=SC1090
+  . "$HOME/env.sh" >/dev/null
+fi
+
+usage() {
+  echo "usage: pack_hap.sh [-b|--bundle <name>] [-o|--out <file.hap>] [-m|--mode release|debug] <project_dir>" >&2
+  echo "       BUILD_MODE=debug pack_hap.sh [-o <file.hap>] <project_dir>" >&2
+  echo "example: pack_hap.sh -m debug \$HOME/Calculator" >&2
+  exit 1
+}
+
+BUNDLE_OVERRIDE=""
+OUT_OVERRIDE=""
+BUILD_MODE="${BUILD_MODE:-release}"
+[ -n "${BUNDLE:-}" ] && BUNDLE_OVERRIDE="$BUNDLE"
+[ -n "${BUNDLE_NAME:-}" ] && BUNDLE_OVERRIDE="$BUNDLE_NAME"
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -b|--bundle)
+      [ -n "${2:-}" ] || usage
+      BUNDLE_OVERRIDE="$2"
+      shift 2
+      ;;
+    -o|--out)
+      [ -n "${2:-}" ] || usage
+      OUT_OVERRIDE="$2"
+      shift 2
+      ;;
+    -m|--mode)
+      [ -n "${2:-}" ] || usage
+      BUILD_MODE="$2"
+      shift 2
+      ;;
+    -h|--help) usage ;;
+    --) shift; break ;;
+    -*)
+      echo "ERROR: unknown option: $1" >&2
+      usage
+      ;;
+    *) break ;;
+  esac
+done
+
+case "$BUILD_MODE" in
+  release|debug) ;;
+  *) echo "ERROR: -m/--mode must be release or debug (got: $BUILD_MODE)" >&2; exit 1 ;;
+esac
+
+PROJ="${1:-}"
+[ -n "$PROJ" ] || usage
+[ -z "${2:-}" ] || { echo "ERROR: unexpected argument: $2 (use -o for output)" >&2; usage; }
+case "$PROJ" in
+  /*) ;;
+  *) PROJ="$(pwd)/$PROJ" ;;
+esac
+[ -d "$PROJ" ] || { echo "ERROR: not a directory: $PROJ" >&2; exit 1; }
+[ -f "$PROJ/build-profile.json5" ] || [ -f "$PROJ/hvigorfile.ts" ] || \
+  echo "WARN: $PROJ may not be an OHOS project root" >&2
+
+SIGNED="${OUT_OVERRIDE:-$PROJ/out_${BUILD_MODE}.hap}"
+case "$SIGNED" in
+  /*) ;;
+  *) SIGNED="$(pwd)/$SIGNED" ;;
+esac
+
+SIG="${OHOS_HOME}/signature"
+INTER="$PROJ/entry/build/default/intermediates"
+OUT="$PROJ/entry/build/default/outputs/default"
+UNSIGNED="$OUT/entry-default-unsigned.hap"
+MODULE_ABC="$INTER/loader_out/default/ets/modules.abc"
+MODULE_JSON="$INTER/res/default/module.json"
+API_LEVEL="${API_LEVEL:-14}"
+ABI="${NATIVE_ABI:-x86_64}"
+
+BUNDLE_FROM_APP=$(grep -o '"bundleName"[[:space:]]*:[[:space:]]*"[^"]*"' "$PROJ/AppScope/app.json5" 2>/dev/null \
+  | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
+BUNDLE_FROM_APP="${BUNDLE_FROM_APP:-com.example.myapplication}"
+
+if [ -n "$BUNDLE_OVERRIDE" ]; then
+  BUNDLE="$BUNDLE_OVERRIDE"
+else
+  BUNDLE="$BUNDLE_FROM_APP"
+fi
+
+echo "[pack_hap] project=$PROJ"
+echo "[pack_hap] out=$SIGNED"
+echo "[pack_hap] bundle=$BUNDLE"
+echo "[pack_hap] abi=$ABI api=$API_LEVEL"
+
+# Bundle name is baked into modules.abc at CompileArkTS time. Must update
+# AppScope/app.json5 BEFORE hvigor, otherwise Ace reports "page not found".
+if [ -n "$BUNDLE_OVERRIDE" ] && [ "$BUNDLE" != "$BUNDLE_FROM_APP" ]; then
+  echo "[pack_hap] note: writing bundleName into app.json5 before compile ($BUNDLE_FROM_APP -> $BUNDLE)"
+  if [ -f "$PROJ/AppScope/app.json5" ]; then
+    sed -i "s/\"bundleName\"[[:space:]]*:[[:space:]]*\"[^\"]*\"/\"bundleName\": \"$BUNDLE\"/" \
+      "$PROJ/AppScope/app.json5"
+  fi
+fi
+
+export HVIGOR_USER_HOME="$PROJ/.ext_hvigor"
+if [ -d "$HVIGOR_USER_HOME/project_caches" ] && [ ! -w "$HVIGOR_USER_HOME/project_caches" ]; then
+  rm -rf "$HVIGOR_USER_HOME/project_caches" 2>/dev/null || true
+fi
+if [ ! -x "$HVIGOR_USER_HOME/wrapper/tools/node_modules/.bin/pnpm" ]; then
+  mkdir -p "$HVIGOR_USER_HOME"
+  if [ -d "$OHOS_HOME/hvigor_user_home/wrapper/tools/node_modules/pnpm" ]; then
+    cp -a "$OHOS_HOME/hvigor_user_home/." "$HVIGOR_USER_HOME/" 2>/dev/null || true
+  elif [ -d "$HOME/.hvigor/wrapper/tools/node_modules/pnpm" ]; then
+    cp -a "$HOME/.hvigor/." "$HVIGOR_USER_HOME/" 2>/dev/null || true
+  fi
+fi
+chmod -R a+rwX "$PROJ" "$HVIGOR_USER_HOME" 2>/dev/null || true
+if ! touch "$HVIGOR_USER_HOME/.pack_hap_write_test" 2>/dev/null; then
+  rm -rf "$HVIGOR_USER_HOME" 2>/dev/null || true
+  mkdir -p "$HVIGOR_USER_HOME"
+  if [ -d "$OHOS_HOME/hvigor_user_home/wrapper/tools/node_modules/pnpm" ]; then
+    cp -a "$OHOS_HOME/hvigor_user_home/." "$HVIGOR_USER_HOME/" 2>/dev/null || true
+  fi
+fi
+rm -f "$HVIGOR_USER_HOME/.pack_hap_write_test" 2>/dev/null || true
+echo "[pack_hap] HVIGOR_USER_HOME=$HVIGOR_USER_HOME"
+echo "[pack_hap] NODE_OPTIONS=$NODE_OPTIONS"
+echo "[pack_hap] buildMode=$BUILD_MODE"
+
+rm -rf "$PROJ/entry/build" \
+  "$PROJ/entry/oh_modules/.ohpm" \
+  2>/dev/null || true
+if [ -d "$PROJ/.hvigor" ]; then
+  find "$PROJ/.hvigor" -mindepth 1 -maxdepth 1 ! -name 'pack_hap_hvigor.log' -exec rm -rf {} + 2>/dev/null || \
+    rm -rf "$PROJ/.hvigor/cache" "$PROJ/.hvigor/outputs" 2>/dev/null || true
+fi
+mkdir -p "$PROJ/entry/build" "$PROJ/.hvigor"
+chmod -R a+rwX "$PROJ/entry" "$PROJ/.hvigor" 2>/dev/null || true
+
+# --- 1) hvigor (CompileArkTS); PackageHap may fail without Java ---
+cd "$PROJ"
+HVIGOR_LOG="$PROJ/.hvigor/pack_hap_hvigor.log"
+mkdir -p "$(dirname "$HVIGOR_LOG")"
+chmod -R a+rwX "$PROJ/.hvigor" 2>/dev/null || true
+set +e
+hvigorw assembleHap --mode module -p module=entry@default \
+  -p product=default -p "buildMode=$BUILD_MODE" --no-daemon \
+  >"$HVIGOR_LOG" 2>&1
+HVIGOR_RC=$?
+set -e
+cat "$HVIGOR_LOG"
+
+dump_compile_errors() {
+  echo "" >&2
+  echo "[pack_hap] ===== BUILD FAILED (rc=$HVIGOR_RC) =====" >&2
+  echo "[pack_hap] log: $HVIGOR_LOG" >&2
+  if grep -qE 'ArkTS Compiler Error|Error Message:|COMPILE RESULT:FAIL|ERROR: Failed :' "$HVIGOR_LOG" 2>/dev/null; then
+    echo "[pack_hap] ----- compile errors -----" >&2
+    grep -E 'ERROR:|Error Message:|ArkTS Compiler Error|COMPILE RESULT:|At File:|Failed :' "$HVIGOR_LOG" | sed 's/\x1b\[[0-9;]*m//g' >&2
+    echo "[pack_hap] ----- end compile errors -----" >&2
+  elif grep -qE 'Fatal error|SIGTRAP|V8_Fatal|Check failed' "$HVIGOR_LOG" 2>/dev/null; then
+    echo "[pack_hap] Node/V8 crashed (often need --jitless under agent UID). Tail of log:" >&2
+    tail -n 40 "$HVIGOR_LOG" | sed 's/\x1b\[[0-9;]*m//g' >&2
+  else
+    echo "[pack_hap] Tail of log:" >&2
+    tail -n 60 "$HVIGOR_LOG" | sed 's/\x1b\[[0-9;]*m//g' >&2
+  fi
+}
+
+if [ ! -f "$MODULE_ABC" ]; then
+  dump_compile_errors
+  echo "ERROR: hvigor failed (rc=$HVIGOR_RC) and modules.abc missing" >&2
+  exit 1
+fi
+
+if grep -qE 'COMPILE RESULT:FAIL|Failed :entry:default@CompileArkTS' "$HVIGOR_LOG" 2>/dev/null; then
+  dump_compile_errors
+  exit 1
+fi
+
+if [ "$HVIGOR_RC" -ne 0 ]; then
+  if grep -qE 'spawn java ENOENT|Failed :entry:default@PackageHap' "$HVIGOR_LOG" 2>/dev/null; then
+    echo "[pack_hap] hvigor exited $HVIGOR_RC (PackageHap/java); continuing with C++ pack"
+  else
+    dump_compile_errors
+    exit 1
+  fi
+fi
+
+# Naily ETS debugger expects NDJSON {key,val} lines; hvigor emits one JSON object.
+if [ "$BUILD_MODE" = "debug" ]; then
+  _SM="$PROJ/entry/build/default/cache/default/default@CompileArkTS/esmodule/debug/sourceMaps.json"
+  if [ -f "$_SM" ] && [ -x "$HOME/.local/bin/fix_ets_sourcemaps.js" ]; then
+    node "$HOME/.local/bin/fix_ets_sourcemaps.js" "$_SM" || true
+  elif [ -f "$_SM" ]; then
+    node -e '
+const fs=require("fs"); const p=process.argv[1];
+const raw=fs.readFileSync(p,"utf8").trim();
+let o; try{o=JSON.parse(raw)}catch(e){process.exit(0)}
+if(!o||typeof o!=="object"||Array.isArray(o)||typeof o.key==="string") process.exit(0);
+fs.writeFileSync(p, Object.entries(o).map(([k,v])=>JSON.stringify({key:k,val:v})).join("\n")+"\n");
+console.log("[pack_hap] converted sourceMaps.json to NDJSON");
+' "$_SM" || true
+  fi
+  unset _SM
+fi
+
+if [ -n "$BUNDLE_OVERRIDE" ] && [ -f "$MODULE_JSON" ]; then
+  sed -i "s/\"bundleName\"[[:space:]]*:[[:space:]]*\"[^\"]*\"/\"bundleName\": \"$BUNDLE\"/" \
+    "$MODULE_JSON"
+  if [ -f "$OUT/pack.info" ]; then
+    sed -i "s/\"bundleName\"[[:space:]]*:[[:space:]]*\"[^\"]*\"/\"bundleName\": \"$BUNDLE\"/" \
+      "$OUT/pack.info" 2>/dev/null || true
+  fi
+fi
+
+# --- 2) C++ pack ---
+cp -f "$INTER/source_map/default/sourceMaps.map" "$INTER/loader_out/default/ets/" 2>/dev/null || true
+
+LIB_ARGS=""
+if [ -f "$INTER/stripped_native_libs/default/$ABI/libentry.so" ]; then
+  LIBDIR="$INTER/libs/default"
+  mkdir -p "$LIBDIR/$ABI"
+  cp -f "$INTER/stripped_native_libs/default/$ABI/"*.so "$LIBDIR/$ABI/" 2>/dev/null || true
+  STL="$OHOS_HOME/sdk/$API_LEVEL/native/llvm/lib/x86_64-linux-ohos/c++/libc++_shared.so"
+  [ -f "$STL" ] && cp -f "$STL" "$LIBDIR/$ABI/"
+  LIB_ARGS="--lib-path $LIBDIR"
+fi
+
+ohos_packing_tool pack --mode hap \
+  --json-path "$MODULE_JSON" \
+  --resources-path "$INTER/res/default/resources" \
+  --ets-path "$INTER/loader_out/default/ets" \
+  --index-path "$INTER/res/default/resources.index" \
+  --rpcid-path "$INTER/syscap/default/rpcid.sc" \
+  --pack-info-path "$OUT/pack.info" \
+  --pkg-context-path "$INTER/loader/default/pkgContextInfo.json" \
+  $LIB_ARGS \
+  --out-path "$UNSIGNED" --force true
+
+# --- 3) sign ---
+[ -f "$SIG/OpenHarmony.p12" ] || { echo "ERROR: missing $SIG (signature mats)" >&2; exit 1; }
+[ -x "$(command -v hap-sign-tool)" ] || { echo "ERROR: hap-sign-tool not on PATH" >&2; exit 1; }
+
+sed -i "s/\"bundle-name\"[[:space:]]*:[[:space:]]*\"[^\"]*\"/\"bundle-name\": \"$BUNDLE\"/" \
+  "$SIG/app1-profile-release.json"
+
+hap-sign-tool sign-profile \
+  -keyAlias "OpenHarmony Application Release" \
+  -signAlg SHA256withECDSA -mode localSign \
+  -profileCertFile "$SIG/OpenHarmonyApplication.pem" \
+  -inFile "$SIG/app1-profile-release.json" \
+  -keystoreFile "$SIG/OpenHarmony.p12" \
+  -outFile "$SIG/app1-profile-release.p7b" \
+  -keyPwd 123456 -keystorePwd 123456
+
+mkdir -p "$(dirname "$SIGNED")"
+hap-sign-tool sign-app \
+  -keyAlias "OpenHarmony Application Release" \
+  -signAlg SHA256withECDSA -mode localSign \
+  -appCertFile "$SIG/OpenHarmonyApplication.pem" \
+  -profileFile "$SIG/app1-profile-release.p7b" \
+  -inFile "$UNSIGNED" -keystoreFile "$SIG/OpenHarmony.p12" \
+  -outFile "$SIGNED" -keyPwd 123456 -keystorePwd 123456
+
+echo "[pack_hap] SIGNED=$SIGNED BUNDLE=$BUNDLE"
+ls -lh "$SIGNED"
+
+ABILITY=$(sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*Ability\)".*/\1/p' "$MODULE_JSON" 2>/dev/null | head -1)
+ABILITY="${ABILITY:-EntryAbility}"
+
+echo ""
+echo "[pack_hap] install & run:"
+echo "  bm uninstall -n $BUNDLE"
+echo "  bm install -p $SIGNED"
+echo "  aa start -a $ABILITY -b $BUNDLE"

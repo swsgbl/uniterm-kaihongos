@@ -76,12 +76,16 @@ const DEV_IMPORT_PATH: string = '/data/local/tmp/import-test.utm';
 
 @Component
 export struct ConnList {
+  onOpenConn: (id: string) => void = (id: string) => {
+  };
   @State groups: GroupRec[] = [];
   @State conns: ConnRec[] = [];
   @State formVisible: boolean = false;
   @State editing: ConnRec | null = null;
   @State testing: ConnRec | null = null;
   @State testVisible: boolean = false;
+  @State rowActionConn: ConnRec | null = null;
+  @State rowActionVisible: boolean = false;
   @State groupDialogMode: number = 0; // 0 none, 1 add, 2 rename
   @State groupName: string = '';
   @State renamingId: string = '';
@@ -218,7 +222,7 @@ export struct ConnList {
         if (hit !== undefined) {
           WantParams.setWant({} as Want);
           hilog.info(IDOMAIN, ITAG, 'connectNow -> %{public}s', connNow);
-          router.pushUrl({ url: 'pages/TerminalPage', params: { connId: hit.id } });
+          this.onOpenConn(hit.id);
           return;
         }
       }
@@ -623,36 +627,44 @@ export struct ConnList {
   build() {
     Stack({ alignContent: Alignment.Center }) {
       Column() {
-        // header
+        // header(官方 sidebar-header 紧凑风:深色、小字号)
         Row({ space: 8 }) {
-          Text('连接管理')
-            .fontSize(22)
-            .fontWeight(FontWeight.Bold)
+          Text('连接')
+            .fontSize(13)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(0xe6e8ed)
           Blank()
-          Button('+ 分组')
-            .fontSize(14)
-            .backgroundColor(0x576b95)
+          Text('+ 分组')
+            .fontSize(11)
+            .fontColor(0x949aa5)
+            .padding({ left: 8, right: 8, top: 4, bottom: 4 })
+            .borderRadius(4)
             .onClick(() => {
               this.groupDialogMode = 1;
               this.groupName = '';
             })
-          Button('+ 主机')
-            .fontSize(14)
+          Text('+ 主机')
+            .fontSize(11)
+            .fontColor(0x22d3ee)
+            .padding({ left: 8, right: 8, top: 4, bottom: 4 })
+            .backgroundColor('#1422d3ee')
+            .borderRadius(4)
             .onClick(() => {
               this.beginAdd();
             })
         }
         .width('100%')
-        .padding({ left: 20, right: 20, top: 14 })
+        .padding({ left: 12, right: 12, top: 8, bottom: 6 })
 
         Row({ space: 8 }) {
-          Text('凭据:')
-            .fontSize(13)
-            .fontColor(0x909399)
+          Text('🔒 ' + (this.hasMaster ? (this.unlocked ? '已解锁' : '主密码未解锁') : '未设主密码'))
+            .fontSize(10)
+            .fontColor(this.hasMaster && this.unlocked ? 0x34d399 : 0xf59e0b)
           if (!this.hasMaster) {
-            Button('设置主密码')
-              .fontSize(13)
-              .backgroundColor(0xe6a23c)
+            Text('设置')
+              .fontSize(10).fontColor(0xe6e8ed)
+              .padding({ left: 8, right: 8, top: 3, bottom: 3 })
+              .borderRadius(4).backgroundColor('#33ffffff')
               .onClick(() => {
                 this.credPass1 = '';
                 this.credPass2 = '';
@@ -661,20 +673,20 @@ export struct ConnList {
               })
           } else {
             if (!this.unlocked) {
-              Text('主密码未解锁').fontSize(13).fontColor(0xe6a23c)
-              Button('解锁')
-                .fontSize(13)
-                .backgroundColor(0x2f9e6e)
+              Text('解锁')
+                .fontSize(10).fontColor(0xe6e8ed)
+                .padding({ left: 8, right: 8, top: 3, bottom: 3 })
+                .borderRadius(4).backgroundColor('#33ffffff')
                 .onClick(() => {
                   this.credPass1 = '';
                   this.credErr = '';
                   this.credDialog = 2;
                 })
             } else {
-              Text('已解锁').fontSize(13).fontColor(0x2f9e6e)
-              Button('锁定')
-                .fontSize(13)
-                .backgroundColor(0x909399)
+              Text('锁定')
+                .fontSize(10).fontColor(0x9ea3ae)
+                .padding({ left: 8, right: 8, top: 3, bottom: 3 })
+                .borderRadius(4).backgroundColor('#26ffffff')
                 .onClick(() => {
                   this.cred!.lock();
                   this.unlocked = false;
@@ -690,9 +702,10 @@ export struct ConnList {
                   this.showToast('已锁定:凭据已从内存清除');
                 })
             }
-            Button('忘记主密码')
-              .fontSize(13)
-              .backgroundColor(0xf56c6c)
+            Text('忘记主密码')
+              .fontSize(10).fontColor(0xf87171)
+              .padding({ left: 8, right: 8, top: 3, bottom: 3 })
+              .borderRadius(4).backgroundColor('#26f87171')
               .onClick(() => {
                 this.cred!.reset();
                 this.hasMaster = false;
@@ -702,51 +715,55 @@ export struct ConnList {
           }
         }
         .width('100%')
-        .padding({ left: 20, right: 20, bottom: 4 })
+        .padding({ left: 12, right: 12, bottom: 4 })
 
         Flex({ wrap: FlexWrap.Wrap, direction: FlexDirection.Row }) {
           Text('导入:')
-            .fontSize(13)
-            .fontColor(0x909399)
-            .margin({ right: 8 })
-            .fontSize(13)
-            .fontColor(0x909399)
-          Button('选择文件(.utm/.json)')
-            .fontSize(13)
-            .backgroundColor(0x2f9e6e)
+            .fontSize(10)
+            .fontColor(0x6b7280)
+            .margin({ right: 6 })
+          Text('选择文件(.utm/.json)')
+            .fontSize(10).fontColor(0x9ea3ae)
+            .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+            .borderRadius(3).backgroundColor('#26ffffff')
+            .margin({ right: 4 })
             .onClick(() => {
               this.pickAndImport();
             })
-          Button('开发者导入')
-            .fontSize(13)
-            .backgroundColor(0x909399)
-            .margin({ right: 8, bottom: 4 })
+          Text('开发者导入')
+            .fontSize(10).fontColor(0x9ea3ae)
+            .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+            .borderRadius(3).backgroundColor('#26ffffff')
+            .margin({ right: 4 })
             .onClick(() => {
               this.devImport();
             })
-          Button('导出.utm')
-            .fontSize(13)
-            .backgroundColor(0x576b95)
+          Text('导出.utm')
+            .fontSize(10).fontColor(0x9ea3ae)
+            .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+            .borderRadius(3).backgroundColor('#26ffffff')
+            .margin({ right: 4 })
             .onClick(() => {
               this.exportPassword = '';
               this.exportErr = '';
               this.exportDialog = true;
             })
-          Button('身份')
-            .fontSize(13)
-            .backgroundColor(0x9a6ecc)
+          Text('身份')
+            .fontSize(10).fontColor(0x9ea3ae)
+            .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+            .borderRadius(3).backgroundColor('#26ffffff')
             .onClick(() => {
               this.identVisible = true;
             })
         }
         .width('100%')
-        .padding({ left: 20, right: 20, bottom: 10 })
+        .padding({ left: 12, right: 12, bottom: 10 })
 
         if (this.toast.length > 0) {
           Text(this.toast)
-            .fontSize(13)
-            .fontColor(0x67c23a)
-            .padding({ left: 20 })
+            .fontSize(11)
+            .fontColor(0x34d399)
+            .padding({ left: 12 })
             .alignSelf(ItemAlign.Start)
         }
 
@@ -769,6 +786,9 @@ export struct ConnList {
       }
       .width('100%')
       .height('100%')
+      .backgroundColor('#15191f')
+
+      this.RowActionMenu()
 
       if (this.formVisible) {
         Column() {
@@ -980,6 +1000,41 @@ export struct ConnList {
     .height('100%')
   }
 
+  /** 官方外壳:行内操作收进长按菜单(连接/测试/编辑/删除),深色样式 */
+  @Builder
+  RowActionMenu() {
+    if (this.rowActionVisible && this.rowActionConn !== null) {
+      Column() {
+        Column({ space: 2 }) {
+          Text('连接 ' + this.rowActionConn.name)
+            .fontSize(12).fontColor(0xe6e8ed)
+            .width('100%').padding(8).borderRadius(4).textAlign(TextAlign.Start)
+            .onClick(() => { this.rowActionVisible = false; this.onOpenConn(this.rowActionConn!.id); })
+          Text('测试连通')
+            .fontSize(12).fontColor(0xe6e8ed)
+            .width('100%').padding(8).borderRadius(4).textAlign(TextAlign.Start)
+            .onClick(() => { this.testing = this.rowActionConn; this.testVisible = true; this.rowActionVisible = false; })
+          Text('编辑')
+            .fontSize(12).fontColor(0xe6e8ed)
+            .width('100%').padding(8).borderRadius(4).textAlign(TextAlign.Start)
+            .onClick(() => { this.beginEdit(this.rowActionConn!); this.rowActionVisible = false; })
+          Divider().strokeWidth(1).color('#33ffffff').margin({ top: 2, bottom: 2 })
+          Text('删除')
+            .fontSize(12).fontColor(0xf87171)
+            .width('100%').padding(8).borderRadius(4).textAlign(TextAlign.Start)
+            .onClick(() => { this.doDeleteConn(this.rowActionConn!); this.rowActionVisible = false; })
+        }
+        .width(150)
+        .padding(6)
+        .borderRadius(8)
+        .backgroundColor('#252933')
+        .border({ width: 1, color: '#33ffffff' })
+      }
+      .position({ x: 100, y: 200 })
+      .onClick(() => { this.rowActionVisible = false; })
+    }
+  }
+
   @Builder
   CredDialog() {
     if (this.credDialog > 0) {
@@ -1081,33 +1136,41 @@ export struct ConnList {
   @Builder
   GroupSection(g: GroupRec) {
     Column() {
-      Row({ space: 8 }) {
+      Row({ space: 6 }) {
         Text('▸ ' + g.name)
-          .fontSize(16)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(0x303133)
-          .layoutWeight(1)
-        Text('重命名')
           .fontSize(12)
-          .fontColor(0x576b95)
-          .padding(4)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(0x9ea3ae)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .layoutWeight(1)
+        Text(this.connsOf(g.id).length.toString())
+          .fontSize(9)
+          .fontColor(0x6b7280)
+          .backgroundColor('#26ffffff')
+          .padding({ left: 5, right: 5, top: 1, bottom: 1 })
+          .borderRadius(8)
+        Text('⋯')
+          .fontSize(13)
+          .fontColor(0x6b7280)
+          .width(22)
+          .textAlign(TextAlign.Center)
           .onClick(() => {
             this.renamingId = g.id;
             this.groupName = g.name;
             this.groupDialogMode = 2;
           })
-        Text('删除组')
-          .fontSize(12)
-          .fontColor(0xf56c6c)
-          .padding(4)
-          .onClick(() => {
-            this.store.deleteGroup(g.id);
-            this.persist();
-            this.showToast('已删除分组 ' + g.name + ',成员移到根级');
-          })
+          .gesture(
+            LongPressGesture({ repeat: false, duration: 500 })
+              .onAction(() => {
+                this.store.deleteGroup(g.id);
+                this.persist();
+                this.showToast('已删除分组 ' + g.name + ',成员移到根级');
+              })
+          )
       }
       .width('100%')
-      .padding({ left: 16, right: 16, top: 8, bottom: 6 })
+      .padding({ left: 12, right: 10, top: 8, bottom: 4 })
 
       ForEach(this.connsOf(g.id), (c: ConnRec) => {
         this.ConnRow(c)
@@ -1124,16 +1187,33 @@ export struct ConnList {
       Column() {
         Flex({ wrap: FlexWrap.Wrap, direction: FlexDirection.Row }) {
           ForEach(this.quickItems(), (c: ConnRec) => {
-            Text((c.favorite ? '★ ' : '') + c.name)
-              .fontSize(13)
-              .fontColor(0x576b95)
-              .backgroundColor(0xf0f2f5)
-              .borderRadius(14)
-              .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-              .margin({ right: 8, bottom: 8 })
-              .onClick(() => {
-                router.pushUrl({ url: 'pages/TerminalPage', params: { connId: c.id } });
-              })
+            Row({ space: 8 }) {
+              Text('◷')
+                .fontSize(13)
+                .fontColor(0x22d3ee)
+                .width(16)
+                .textAlign(TextAlign.Center)
+              Column({ space: 1 }) {
+                Text(c.name)
+                  .fontSize(12)
+                  .fontColor(0xe6e8ed)
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                Text(this.hostLineOf(c))
+                  .fontSize(10)
+                  .fontColor(0x949aa5)
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+              }
+              .alignItems(HorizontalAlign.Start)
+              .layoutWeight(1)
+            }
+            .width('100%')
+            .padding({ left: 10, right: 10, top: 5, bottom: 5 })
+            .borderRadius(4)
+            .onClick(() => {
+              this.onOpenConn(c.id);
+            })
           }, (c: ConnRec) => c.id + (c.favorite ? 'F' : 'R') + c.name + c.lastUsedAt.toString())
         }
         .width('100%')
@@ -1141,6 +1221,11 @@ export struct ConnList {
       .width('100%')
       .padding({ left: 16, right: 16, top: 8 })
     }
+  }
+
+  /** host line helper reused by quick strip (dark theme). */
+  private hostLineOf(c: ConnRec): string {
+    return this.hostLine(c);
   }
 
   /** favorites first (definition order), then recents (lastUsedAt desc), deduped, max 8. */
@@ -1166,11 +1251,11 @@ export struct ConnList {
   RootSection() {    Column() {
       if (this.connsOf(null).length > 0) {
         Text('▸ 未分组')
-          .fontSize(16)
+          .fontSize(12)
           .fontWeight(FontWeight.Medium)
-          .fontColor(0x303133)
+          .fontColor(0x9ea3ae)
           .width('100%')
-          .padding({ left: 16, top: 8, bottom: 6 })
+          .padding({ left: 12, top: 8, bottom: 4 })
       }
       ForEach(this.connsOf(null), (c: ConnRec) => {
         this.ConnRow(c)
@@ -1183,82 +1268,75 @@ export struct ConnList {
   @Builder
   ConnRow(c: ConnRec) {
     Row({ space: 8 }) {
+      // 左侧协议小图标(官方 conn-icon 16px, muted)
+      Text(c.type === 'ssh' ? '⌗' : (c.type === 'rdp' ? '▤' : (c.type === 'vnc' ? '▣' : '○')))
+        .fontSize(13)
+        .fontColor(0x949aa5)
+        .width(16)
+        .textAlign(TextAlign.Center)
       if (c.undecryptable) {
         Text('密文不可读')
-          .fontSize(10)
+          .fontSize(9)
           .fontColor(Color.White)
           .backgroundColor(0xe6a23c)
-          .borderRadius(4)
-          .padding({ left: 5, right: 5, top: 2, bottom: 2 })
+          .borderRadius(3)
+          .padding({ left: 4, right: 4, top: 1, bottom: 1 })
       }
       if (c.authType === 'identity' && !this.identityExists(c.identityId)) {
         Text('身份缺失')
-          .fontSize(10)
+          .fontSize(9)
           .fontColor(Color.White)
           .backgroundColor(0xf56c6c)
-          .borderRadius(4)
-          .padding({ left: 5, right: 5, top: 2, bottom: 2 })
+          .borderRadius(3)
+          .padding({ left: 4, right: 4, top: 1, bottom: 1 })
       }
-      Text(c.type.length > 0 ? c.type.toUpperCase() : 'SSH')
-        .fontSize(11)
-        .fontColor(Color.White)
-        .backgroundColor(EDITABLE_TYPES_SET.indexOf(c.type) >= 0 ? 0x2f9e6e : 0x909399)
-        .borderRadius(4)
-        .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-      Column({ space: 2 }) {
+      Column({ space: 1 }) {
         Text(c.name)
-          .fontSize(15)
-          .fontColor(0x1f2d3d)
+          .fontSize(12)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(0xe6e8ed)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
         Text(EDITABLE_TYPES_SET.indexOf(c.type) >= 0 ? this.hostLine(c) :
           this.hostLine(c) + '(暂不支持连接)')
-          .fontSize(12)
-          .fontColor(0x909399)
+          .fontSize(10)
+          .fontColor(0x949aa5)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
       }
       .alignItems(HorizontalAlign.Start)
       .layoutWeight(1)
 
-      Text('连接')
-        .fontSize(13)
-        .fontColor(0x2f9e6e)
-        .fontWeight(FontWeight.Bold)
-        .padding(6)
-        .onClick(() => {
-          router.pushUrl({ url: 'pages/TerminalPage', params: { connId: c.id } });
-        })
+      // 官方:右缘仅星标;连接=整行点击
       Text(c.favorite ? '★' : '☆')
-        .fontSize(15)
-        .fontColor(c.favorite ? 0xe6a23c : 0x909399)
-        .padding(6)
+        .fontSize(13)
+        .fontColor(c.favorite ? 0xf59e0b : 0x6b7280)
+        .width(24)
+        .height(24)
+        .textAlign(TextAlign.Center)
         .onClick(() => {
           const nowFav = this.store.toggleFavorite(c.id);
           this.persist();
           this.showToast(nowFav ? '已收藏 ' + c.name : '已取消收藏 ' + c.name);
         })
-      Text('测试')
-        .fontSize(13)
-        .fontColor(0x2f9e6e)
-        .padding(6)
-        .onClick(() => {
-          this.testing = c;
-          this.testVisible = true;
-        })
-      Text('编辑')
-        .fontSize(13)
-        .fontColor(0x576b95)
-        .padding(6)
-        .onClick(() => {
-          this.beginEdit(c);
-        })
-      Text('删除')
-        .fontSize(13)
-        .fontColor(0xf56c6c)
-        .padding(6)
-        .onClick(() => {
-          this.doDeleteConn(c);
-        })
     }
     .width('100%')
-    .padding({ left: 28, right: 16, top: 4, bottom: 4 })
+    .padding({ left: 14, right: 10, top: 7, bottom: 7 })
+    .borderRadius(4)
+    .margin({ bottom: 2 })
+    .onClick(() => {
+      if (EDITABLE_TYPES_SET.indexOf(c.type) >= 0) {
+        this.onOpenConn(c.id);
+      }
+    })
+    .gesture(
+      LongPressGesture({ repeat: false, duration: 500 })
+        .onAction((e: GestureEvent) => {
+          // 长按弹出操作菜单(编辑/测试/删除)——保留 M1-M4 全部能力
+          this.rowActionConn = c;
+          this.rowActionVisible = true;
+        })
+    )
   }
 }
 

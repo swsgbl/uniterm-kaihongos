@@ -1,0 +1,51 @@
+09-28 13:59:17.023  2379  2379 I C01d02/accessibility_asacfwk: [accessibility_system_ability_client_impl.cpp(DeregisterElementOperator:329)]Deregister windowId[13] start
+09-28 13:59:17.023  2379  2379 I C01d02/accessibility_asacfwk: [accessibility_system_ability_client_impl.cpp(DeregisterElementOperator:329)]Deregister windowId[14] start
+09-28 13:59:17.023  2379  2379 I C01d02/accessibility_asacfwk: [accessibility_system_ability_client_impl.cpp(DeregisterElementOperator:329)]Deregister windowId[15] start
+09-28 13:59:17.023  2379  2379 I C01d02/accessibility_asacfwk: [accessibility_system_ability_client_impl.cpp(DeregisterElementOperator:329)]Deregister windowId[16] start
+09-28 13:59:17.023  2379  2379 I C01d02/accessibility_asacfwk: [accessibility_system_ability_client_impl.cpp(DeregisterElementOperator:329)]Deregister windowId[17] start
+09-28 13:59:17.023  2379  2379 I C01d02/accessibility_asacfwk: [accessibility_system_ability_client_impl.cpp(DeregisterElementOperator:329)]Deregister windowId[18] start
+09-28 13:59:17.023  2379  2379 I C01d02/accessibility_asacfwk: [accessibility_system_ability_client_impl.cpp(DeregisterElementOperator:329)]Deregister windowId[19] start
+09-28 13:59:17.023   585  4769 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[6]
+09-28 13:59:17.023   585  4769 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 6
+09-28 13:59:17.023   585  4769 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[1]
+09-28 13:59:17.024   585  4769 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 1
+09-28 13:59:17.024   585  4769 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[2]
+09-28 13:59:17.024   585  4769 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 2
+09-28 13:59:17.024   585  4769 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[8]
+09-28 13:59:17.024   585  4769 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 8
+09-28 13:59:17.024   585  4769 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[7]
+09-28 13:59:17.024   585  4769 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 7
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[24]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 24
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3077)]StopCallbackWait start windowId: 24 treeId: 0
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[4]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 4
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[10]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 10
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3077)]StopCallbackWait start windowId: 10 treeId: 0
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[9]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 9
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[11]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 11
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[3]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 3
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[12]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 12
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[13]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 13
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[14]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 14
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[15]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 15
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[16]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 16
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[17]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 17
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[18]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 18
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(operator():989)]Deregister windowId[19]
+09-28 13:59:17.024   585  4762 I C01d00/accessibility: [accessible_ability_manager_service.cpp(StopCallbackWait:3063)]StopCallbackWait start windowId: 19
+09-28 13:59:18.218  4796  4796 I C01810/SAFWK: AddAbility set profile attr for SA:511
+09-28 13:59:18.221  4796  4800 I C01810/SAFWK: StartSystemAbilityTask installs SA:511 init finished, 10 ms
+09-28 13:59:18.221   472   515 W C057c2/IPCObjectProxy: SendObituary 530: handle:167 desc:*.ISystemAbilityStatusChange 14040144
+====DONE

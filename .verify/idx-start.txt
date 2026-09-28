@@ -1,0 +1,195 @@
+﻿226:       })
+227:   }
+228: 
+229:   // ===== 官方 StartTabContent:brand 2rem accent / 搜索行 / 按钮行 / 分节标签 / 240px 卡片网格 =====
+230:   cardMeta(c: ConnRec): string {
+231:     if (c.type === 'local') return 'local';
+232:     let s = c.user + '@' + c.host;
+233:     if (c.port !== 22) s += ':' + c.port.toString();
+234:     return s;
+235:   }
+236: 
+237:   cardIcon(c: ConnRec): string {
+238:     if (c.type === 'local') return '▤';
+239:     if (c.type === 'rdp') return '▣';
+240:     if (c.type === 'vnc') return '◫';
+241:     if (c.type === 'k8s') return '☸';
+242:     if (c.type === 'redis' || c.type === 'mysql' || c.type === 'pg') return '⬮';
+243:     return '⌗';
+244:   }
+245: 
+246:   cardIconColor(c: ConnRec): string {
+247:     if (c.type === 'local') return '#34d399';
+248:     if (c.type === 'rdp') return '#60a5fa';
+249:     if (c.type === 'vnc') return '#a78bfa';
+250:     if (c.type === 'redis') return '#f87171';
+251:     if (c.type === 'mysql' || c.type === 'pg') return '#f59e0b';
+252:     return '#22d3ee';
+253:   }
+254: 
+255:   @Builder
+256:   StartConnCard(c: ConnRec) {
+257:     Row({ space: 10 }) {
+258:       Text(this.cardIcon(c))
+259:         .fontSize(20)
+260:         .fontColor(this.cardIconColor(c))
+261:         .width(36)
+262:         .height(36)
+263:         .textAlign(TextAlign.Center)
+264:         .borderRadius(7)
+265:         .backgroundColor(this.th.bgOverlay)
+266:       Column({ space: 2 }) {
+267:         Text(c.name)
+268:           .fontSize(13)
+269:           .fontWeight(FontWeight.Medium)
+270:           .fontColor(this.th.textPrimary)
+271:           .maxLines(1)
+272:           .textOverflow({ overflow: TextOverflow.Ellipsis })
+273:         Text(this.cardMeta(c))
+274:           .fontSize(11)
+275:           .fontColor(this.th.textSecondary)
+276:           .maxLines(1)
+277:           .textOverflow({ overflow: TextOverflow.Ellipsis })
+278:       }
+279:       .alignItems(HorizontalAlign.Start)
+280:       .layoutWeight(1)
+281:     }
+282:     .width(240)
+283:     .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+284:     .borderRadius(10)
+285:     .backgroundColor(this.th.bgSurface)
+286:     .border({ width: 1, color: this.th.border })
+287:     .alignItems(VerticalAlign.Center)
+288:     .onClick(() => {
+289:       if (c.type === 'ssh') {
+290:         this.openConnTab(c.id)
+291:       }
+292:     })
+293:   }
+294: 
+295:   @Builder
+296:   StartPane() {
+297:     Column() {
+298:       Scroll() {
+299:         Column() {
+300:           Text('uniTerm')
+301:             .fontSize(30)
+302:             .fontWeight(FontWeight.Bold)
+303:             .fontColor(this.th.accent)
+304:             .margin({ top: 56, bottom: 32 })
+305:           Row({ space: 8 }) {
+306:             Row({ space: 5 }) {
+307:               Text('⏷')
+308:                 .fontSize(11)
+309:                 .fontColor(this.th.textSecondary)
+310:               Text('All')
+311:                 .fontSize(12)
+312:                 .fontColor(this.th.textSecondary)
+313:             }
+314:             .height(32)
+315:             .padding({ left: 12, right: 12 })
+316:             .borderRadius(6)
+317:             .backgroundColor(this.th.bgSurface)
+318:             .border({ width: 1, color: this.th.border })
+319:             .alignItems(VerticalAlign.Center)
+320:             TextInput({ placeholder: 'Search or quick connect...', text: this.searchText })
+321:               .onChange((v: string) => {
+322:                 this.searchText = v
+323:               })
+324:               .fontSize(13)
+325:               .fontColor(this.th.textPrimary)
+326:               .placeholderColor(this.th.textSecondary)
+327:               .height(32)
+328:               .backgroundColor(this.th.bgSurface)
+329:               .borderRadius(6)
+330:               .padding({ left: 12, right: 12 })
+331:               .layoutWeight(1)
+332:               .underlineColor(Color.Transparent)
+333:               .caretColor(this.th.accent)
+334:           }
+335:           .width(440)
+336:           Row({ space: 10 }) {
+337:             Row({ space: 6 }) {
+338:               Text('+')
+339:                 .fontSize(14)
+340:                 .fontWeight(FontWeight.Bold)
+341:                 .fontColor(this.th.bgBase)
+342:               Text('New Connection')
+343:                 .fontSize(13)
+344:                 .fontColor(this.th.bgBase)
+345:             }
+346:             .height(32)
+347:             .padding({ left: 16, right: 16 })
+348:             .borderRadius(6)
+349:             .backgroundColor(this.th.accent)
+350:             .alignItems(VerticalAlign.Center)
+351:             .onClick(() => {
+352:               this.sideView = 0
+353:               this.sidebarVisible = true
+354:             })
+355:             Row({ space: 6 }) {
+356:               Text('▤')
+357:                 .fontSize(13)
+358:                 .fontColor(this.th.textPrimary)
+359:               Text('Local Terminal')
+360:                 .fontSize(13)
+361:                 .fontColor(this.th.textPrimary)
+362:             }
+363:             .height(32)
+364:             .padding({ left: 16, right: 16 })
+365:             .borderRadius(6)
+366:             .backgroundColor(this.th.bgSurface)
+367:             .border({ width: 1, color: this.th.border })
+368:             .alignItems(VerticalAlign.Center)
+369:           }
+370:           .margin({ top: 16, bottom: 20 })
+371: 
+372:           Text('RECENT')
+373:             .fontSize(11)
+374:             .fontColor(this.th.textSecondary)
+375:             .letterSpacing(1)
+376:             .alignSelf(ItemAlign.Start)
+377:             .margin({ left: 40, bottom: 8 })
+378:           Column({ space: 10 }) {
+379:             Text('暂无连接,点击 New Connection 开始')
+380:               .fontSize(13)
+381:               .fontColor(this.th.textSecondary)
+382:               .margin({ top: 40 })
+383:           }
+384:           .width('100%')
+385:         }
+386:         .width('100%')
+387:       }
+388:       .layoutWeight(1)
+389:       .scrollBar(BarState.Off)
+390:     }
+391:     .width('100%')
+392:     .height('100%')
+393:     .backgroundColor(this.th.bgBase)
+394:     .alignItems(HorizontalAlign.Center)
+395:   }
+396: 
+397:   // ===== 官方设置下拉菜单(顶栏齿轮) =====
+398:   @Builder
+399:   SettingsMenu() {
+400:     Column({ space: 1 }) {
+401:       Text('主题')
+402:         .fontSize(11)
+403:         .fontColor(this.th.textSecondary)
+404:         .padding({ left: 10, right: 10, top: 6, bottom: 4 })
+405:         .alignSelf(ItemAlign.Start)
+406:       ForEach(['dark', 'navy', 'light'], (n: string) => {
+407:         Text(n === 'dark' ? '● 暗色' : (n === 'navy' ? '● 深蓝' : '● 浅色'))
+408:           .fontSize(12)
+409:           .fontColor(this.themeName === n ? this.th.accent : this.th.textPrimary)
+410:           .padding({ left: 24, right: 10, top: 6, bottom: 6 })
+411:           .borderRadius(4)
+412:           .backgroundColor(this.themeName === n ? this.th.bgSurface : Color.Transparent)
+413:           .alignSelf(ItemAlign.Start)
+414:           .onClick(() => this.applyTheme(n))
+415:       }, (n: string) => n)
+416:       Divider()
+417:         .strokeWidth(1)
+418:         .color(this.th.border)
+419:         .margin({ top: 4, bottom: 4 })
+420:       Text('设置')

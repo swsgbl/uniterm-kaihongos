@@ -56,6 +56,8 @@ export class ConnRec {
   proxyId: string = '';
   /** M3: true when an enc:v1 field could not be decrypted (wrong master password). */
   undecryptable: boolean = false;
+  /** M5 parity: initial shell command (e.g. '/bin/sh' for telnet). */
+  initialShell: string = '';
 }
 
 /** Parsed store file. */
@@ -69,7 +71,7 @@ const CONN_FIELDS: string[] = ['id', 'name', 'remark', 'type', 'host', 'port', '
   'identityId', 'password', 'keyPath', 'keyContent', 'groupId', 'encoding', 'backspaceKey',
   'keepaliveSec', 'favorite', 'lastUsedAt',
   'initialCols', 'initialRows', 'postLoginScript', 'logOnConnect',
-  'tunnelSSHConnId', 'proxyId'];
+  'tunnelSSHConnId', 'proxyId', 'initialShell'];
 
 function toStr(v: Object | undefined, d: string): string {
   const s = v as string;
@@ -300,6 +302,7 @@ export class ConnectionStore {
         c.logOnConnect = toBool(r['logOnConnect'], false);
         c.tunnelSSHConnId = toStr(r['tunnelSSHConnId'], '');
         c.proxyId = toStr(r['proxyId'], '');
+        c.initialShell = toStr(r['initialShell'], '');
         out.connections.push(c);
       }
     }
@@ -414,6 +417,9 @@ export class ConnectionStore {
       obj['logOnConnect'] = c.logOnConnect;
       if (c.tunnelSSHConnId.length > 0) {
         obj['tunnelSSHConnId'] = c.tunnelSSHConnId;
+      }
+      if (c.initialShell.length > 0) {
+        obj['initialShell'] = c.initialShell;
       }
       if (c.proxyId.length > 0) {
         obj['proxyId'] = c.proxyId;

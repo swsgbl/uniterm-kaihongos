@@ -1,0 +1,4 @@
+#!/system/bin/sh
+# Convenience wrapper next to pack_hap.sh
+_SCRIPT_DIR="$(CDPATH= cd -- "$(dirname "$0")" && pwd)"
+exec "$_SCRIPT_DIR/pack_hap.sh" "$@"

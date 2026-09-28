@@ -1,0 +1,1 @@
+{"@ohos/libssh":{"version":"1.0.4","type":"har","isDirectDep":true},"liblocalpty.so":{"version":"1.0.0","type":"so","isDirectDep":true},"librdpproxy.so":{"version":"1.0.0","type":"so","isDirectDep":true},"libssh_ohos_napi.so":{"version":"1.0.0","type":"so","isDirectDep":false},"entry":{"version":"1.0.0","type":"entry","isDirectDep":false}}

@@ -13,7 +13,6 @@
  * Trimmed this relay: owner/group mapping (uid shown instead), recursive
  * transfers, resume, pause, exec-sftp-server fallback.
  */
-import { router } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import { fileIo } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -33,9 +32,9 @@ interface SftpListResp {
   files: SftpEntry[];
 }
 
-@Entry
 @Component
-struct SftpPanel {
+export struct SftpPanel {
+  @Prop connIdIn: string = ''
   @State cwd: string = '.';
   @State entries: SftpEntry[] = [];
   @State status: string = 'idle';
@@ -44,6 +43,8 @@ struct SftpPanel {
   @State xferText: string = '';
   @State lastOp: string = '';
   @State title: string = 'SFTP';
+  onClose: () => void = () => {
+  };
   private ssh: libssh | null = null;
   private sid: number = -1;
 
@@ -54,10 +55,6 @@ struct SftpPanel {
       this.status = 'error';
       this.errText = 'no live session - connect a host first';
       return;
-    }
-    const p = router.getParams() as Record<string, string>;
-    if (p !== undefined && p !== null && typeof p['title'] === 'string') {
-      this.title = p['title'];
     }
     this.openAndList();
   }
@@ -238,7 +235,7 @@ struct SftpPanel {
     if (this.ssh !== null && this.sid >= 0) {
       this.ssh.sftpClose(this.sid);
     }
-    router.back();
+    this.onClose();
   }
 
   build() {

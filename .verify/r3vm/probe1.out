@@ -1,0 +1,182 @@
+== env.sh ==
+#!/system/bin/sh
+# Device toolchain env — unpack into /data/local/home then:
+#   . /data/local/home/env.sh
+#
+# Layout:
+#   $HOME/env.sh
+#   $HOME/.local/bin/          CLIs (pack_hap, hvigorw, hdc, es2abc, ...)
+#   $HOME/.ohos/sdk            OpenHarmony SDK
+#   $HOME/.ohos/deveco_sdk     DevEco layout (default/openharmony -> ../sdk)
+#   $HOME/.ohos/{hvigor,ohpm,node,signature,...}
+
+# Resolve home root from this file's location.
+_ENV_SELF="$0"
+case "$_ENV_SELF" in
+  */*) _ENV_DIR="$(CDPATH= cd -- "$(dirname "$_ENV_SELF")" && pwd)" ;;
+  *) _ENV_DIR="$(pwd)" ;;
+esac
+if [ -f "$_ENV_DIR/env.sh" ] || [ -d "$_ENV_DIR/.ohos" ]; then
+  HOME_ROOT="$_ENV_DIR"
+elif [ -d /data/local/home/.ohos ]; then
+  HOME_ROOT="/data/local/home"
+else
+  HOME_ROOT="${HOME:-/data/local/home}"
+fi
+unset _ENV_SELF _ENV_DIR
+
+export HOME="$HOME_ROOT"
+export OHOS_HOME="${OHOS_HOME:-$HOME/.ohos}"
+# Back-compat alias used by older scripts / docs.
+export KH_EXT="${KH_EXT:-$HOME}"
+
+# Bundled Node — no agent_env required.
+if [ -z "${DEVECO_NODE_HOME:-}" ]; then
+  if [ -x "$OHOS_HOME/node/bin/node" ]; then
+    export DEVECO_NODE_HOME="$OHOS_HOME/node"
+  fi
+fi
+export NODE_HOME="${NODE_HOME:-$DEVECO_NODE_HOME}"
+
+# Agent/sandbox (non-shell UID) often cannot mprotect RWX → V8 SIGTRAP at Isolate::Initialize.
+== OHOS_HOME tree ==
+deveco_sdk
+hvigor
+hvigor_user_home
+node
+ohpm
+sdk
+signature
+symlink_to_copy.cjs
+== sdk versions ==
+14
+== signature ==
+OpenHarmony.p12
+OpenHarmonyApplication.pem
+UnsgnedReleasedProfileTemplate.json
+app1-profile-release.json
+app1-profile-release.p7b
+profile.p7b
+== tools on PATH ==
+== tmp dir ==
+app
+probe1.sh
+s.log
+== fix-hap.cjs ==
+ls: /data/local/home/tmp/fix-hap.cjs: No such file or directory
+== app/entry libs ==
+/data/local/home/tmp/app/entry/libs:
+arm64-v8a
+x86_64
+
+/data/local/home/tmp/app/entry/libs/arm64-v8a:
+liblocalpty.so
+librdpproxy.so
+
+/data/local/home/tmp/app/entry/libs/x86_64:
+liblocalpty.so
+librdpproxy.so
+== app/entry cpp ==
+CMakeLists.txt
+localpty.cpp
+rdpproxy.cpp
+types
+== thirdparty har ==
+BuildProfile.ets
+Index.ets
+build
+build-profile.json5
+consumer-rules.txt
+hvigorfile.ts
+libs
+obfuscation-rules.txt
+oh-package-lock.json5
+oh-package.json5
+oh_modules
+src
+== har module.json5 ==
+sed: /data/local/home/tmp/app/thirdparty/libssh-x86_64-har/module.json5: No such file or directory
+== har oh-package ==
+{
+  "name": "@ohos/libssh",
+  "version": "1.0.4",
+  "description": "A HarmonyOS third-party library that supports both SFTP servers and SSH clients, encapsulated based on the libssh-0.11.1 C++ library.",
+  "main": "Index.ets",
+  "author": "ohos_tpc",
+  "repository": "https://gitcode.com/openharmony-tpc/openharmony_tpc_samples/tree/master/ohos_ssh",
+  "license": "LGPL-2.1",
+  "dependencies": {},
+  "devDependencies": {
+    "libssh_ohos_napi.so": "file:./src/main/cpp/types/libentry"
+  }
+}== prior build projects (028) ==
+/data/local/home/tmp/app/
+ls: /data/local/home/tmp/app/.hvigor: No such file or directory
+== app.json5 ==
+{
+  "app": {
+    "bundleName": "net.uniterm.poc",
+    "vendor": "hmharness",
+    "versionCode": 1000000,
+    "versionName": "1.0.0",
+    "icon": "$media:app_icon",
+    "label": "$string:app_name"
+  }
+}
+== entry module.json5 (head) ==
+{
+  "module": {
+    "name": "entry",
+    "type": "entry",
+    "description": "$string:module_desc",
+    "mainElement": "EntryAbility",
+    "deviceTypes": [ "default", "phone", "tablet", "2in1" ],
+    "deliveryWithInstall": true,
+    "installationFree": false,
+    "pages": "$profile:main_pages",
+    "requestPermissions": [
+      {
+        "name": "ohos.permission.INTERNET",
+        "reason": "$string:internet_permission_reason",
+        "usedScene": {
+          "abilities": [ "EntryAbility" ],
+          "when": "always"
+        }
+      }
+    ],
+    "abilities": [
+      {
+        "name": "EntryAbility",
+        "srcEntry": "./ets/entryability/EntryAbility.ets",
+        "exported": true,
+        "description": "$string:EntryAbility_desc",
+        "icon": "$media:app_icon",
+        "skills": [
+          {
+            "entities": [ "entity.system.home" ],
+            "actions": [ "action.system.home" ]
+          }
+        ],
+        "startWindowIcon": "$media:startIcon",
+        "startWindowBackground": "$color:start_window_background",
+        "label": "$string:EntryAbility_label"
+      }
+    ]
+  }
+}
+== disk ==
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/block/vda6  59G  5.0G   54G   9% /mnt/sandbox/100/com.kaihong.publicservice/data/storage/el1/bundle
+== ets imports of libssh (sample) ==
+/data/local/home/tmp/app/entry/src/main/ets/pages/SftpPanel.ets
+/data/local/home/tmp/app/entry/src/main/ets/components/TestConn.ets
+/data/local/home/tmp/app/entry/src/main/ets/store/EncCrypto.ets
+/data/local/home/tmp/app/entry/src/main/ets/store/UtmExport.ets
+/data/local/home/tmp/app/entry/src/main/ets/service/SessionService.ets
+== node ver ==
+/data/local/home/tmp/probe1.sh[24]: node: inaccessible or not found
+== hvigor home wrapper ==
+node_modules
+package-lock.json
+package.json
+DONE

@@ -14,10 +14,13 @@
  *  - only the visible window (rows+overscan) of the scrollback is snapshotted
  *    into @State winRows each poll, keeps 20000-line floods smooth.
  */
-import { MeasureText, MeasureOptions, router, display } from '@kit.ArkUI';
+import { MeasureText, MeasureOptions, display } from '@kit.ArkUI';
+import { router } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import { ConnRec, ConnectionStore, getSharedStore } from '../store/ConnStore';
 import { SessionService, TermStats, TermView } from '../service/SessionService';
+import { TelnetService, TelKind } from '../service/TelnetService';
+import { LocalTerminalService } from '../service/LocalTerminalService';
 import { TermModel, TermLine, lineToSpans, SpanRun, TERM_DEFAULT_FG, TERM_DEFAULT_BG } from '../components/TermModel';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
@@ -52,11 +55,11 @@ interface Dims {
   charWidth: number;
 }
 
-@Entry
 @Component
-struct TerminalPage {
+export struct TerminalPage {
   @StorageProp('ut.term.status') storageStatus: string = 'idle';
   @StorageProp('ut.term.reason') storageReason: string = '';
+  @Prop connIdIn: string = '';
   @State title: string = '';
   @State input: string = '';
   @State cols: number = 80;
@@ -81,7 +84,7 @@ struct TerminalPage {
   aboutToAppear(): void {
     this.view.attach(this.model);
     SessionService.attachView(this.view);
-    const p = router.getParams() as Record<string, string>;
+    const p = (this.connIdIn !== '') ? { 'connId': this.connIdIn } as Record<string, string> : router.getParams() as Record<string, string>;
     if (p !== undefined && p !== null) {
       const cid = p['connId'];
       if (typeof cid === 'string') {
@@ -111,7 +114,42 @@ struct TerminalPage {
       AppStorage.setOrCreate('ut.term.reason', 'conn not found: ' + this.connId);
       return;
     }
-    this.title = conn.user + '@' + conn.host + ':' + conn.port.toString();
+    this.title = conn.type === 'telnet' ? 'telnet ' + conn.host + ':' + conn.port.toString()
+      : (conn.type === 'raw' ? 'raw ' + conn.host + ':' + conn.port.toString()
+        : conn.user + '@' + conn.host + ':' + conn.port.toString());
+    // Telnet / Raw TCP:走 TelnetService(@ohos.net.socket),不经 libssh
+    if (conn.type === 'telnet' || conn.type === 'raw') {
+      const c2: ConnRec = conn;
+      const kind: TelKind = conn.type === 'telnet' ? 'telnet' : 'raw';
+      this.title = conn.name !== '' ? conn.name : this.title;
+      TelnetService.connect(kind, conn.host, conn.port).then(() => {
+        this.opened = true;
+        AppStorage.setOrCreate('ut.term.status', 'connected');
+        if (c2.postLoginScript !== null && c2.postLoginScript.length > 0) {
+          setTimeout(() => {
+            TelnetService.write(c2.postLoginScript + '\n');
+          }, 800);
+        }
+      }).catch((e: Object) => {
+        AppStorage.setOrCreate('ut.term.status', 'error');
+        AppStorage.setOrCreate('ut.term.reason', e.toString().substring(0, 300));
+      });
+      return;
+    }
+    // 本地终端:liblocalpty.so(forkpty + /bin/sh)
+    if (conn.type === 'local') {
+      this.title = conn.name !== '' ? conn.name : '本地终端';
+      const m0 = this.measureDims();
+      const ok = LocalTerminalService.open(m0.cols, m0.rows);
+      if (ok) {
+        this.opened = true;
+        AppStorage.setOrCreate('ut.term.status', 'connected');
+      } else {
+        AppStorage.setOrCreate('ut.term.status', 'error');
+        AppStorage.setOrCreate('ut.term.reason', 'localpty 加载失败(检查 libs/x86_64/liblocalpty.so)');
+      }
+      return;
+    }
     const m = this.measureDims();
     this.cols = m.cols;
     this.rows = m.rows;
@@ -310,7 +348,13 @@ struct TerminalPage {
 
   private send(): void {
     const text = this.input + '\r';
-    SessionService.write(text);
+    if (TelnetService.active()) {
+      TelnetService.write(text);
+    } else if (LocalTerminalService.active()) {
+      LocalTerminalService.write(text);
+    } else {
+      SessionService.write(text);
+    }
     this.input = '';
   }
 
@@ -385,7 +429,13 @@ struct TerminalPage {
     }
     const s = this.mapKey(ev.keyCode, ev);
     if (s.length > 0) {
-      SessionService.write(s);
+      if (TelnetService.active()) {
+        TelnetService.write(s);
+      } else if (LocalTerminalService.active()) {
+        LocalTerminalService.write(s);
+      } else {
+        SessionService.write(s);
+      }
       return true; // consumed: no focus navigation side effect
     }
     return false;
@@ -492,14 +542,17 @@ struct TerminalPage {
             .backgroundColor(0x2c6fbb)
             .enabled(this.storageStatus === 'connected')
             .onClick(() => {
-              router.pushUrl({ url: 'pages/SftpPanel', params: { title: this.title } });
+              AppStorage.setOrCreate('ut.openSftp', this.connId);
             })
           Button('close')
             .fontSize(13)
             .backgroundColor(0x8a2f3d)
             .onClick(() => {
+              if (TelnetService.active()) {
+                TelnetService.disconnect();
+              }
               SessionService.close();
-              router.back();
+              AppStorage.setOrCreate('ut.closeTab', this.connId);
             })
         }
         .width('100%')
@@ -619,5 +672,9 @@ class TermBufferView implements TermView {
     const d = this.dirty;
     this.dirty = false;
     return d;
+  }
+
+  modelOf(): TermModel | null {
+    return this.model;
   }
 }

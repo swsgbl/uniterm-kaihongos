@@ -1,0 +1,61 @@
+09-28 14:10:35.113  8240  8240 I C03900/Ace: [ui_content_impl.cpp(2690)-(-2:100000:singleton)] [net.uniterm.poc][entry][100000]: UpdateWindowMode: 102, hasDeco: 1
+09-28 14:10:35.113  8240  8240 I C03900/Ace: [ui_content_impl.cpp(2715)-(-2:100000:singleton)] [net.uniterm.poc][entry][100000]: UpdateWindowVisible: 1, hasDeco: 1
+09-28 14:10:35.114  8240  8240 I C03900/Ace: [ui_content_impl.cpp(2141)-(-2:100000:singleton)] [net.uniterm.poc][entry][100000]: window foreground
+09-28 14:10:35.114  8240  8240 I C03900/Ace: [ui_content_impl.cpp(2795)-(-2:100000:singleton)] [net.uniterm.poc][entry][100000]: HideWindowTitleButton hideSplit: 0, hideMaximize: 0, hideMinimize: 0, hideClose: 0
+09-28 14:10:35.114   906  8231 I C01202/Ces: [inner_common_event_manager.cpp(SubscribeCommonEvent:348)]SubscribeCommonEvent net.uniterm.poc(pid = 8240, uid = 20010055, userId = -3, instanceKey = -1, subId = 8240_20010055_-1_147_14016685, ffrtCost = 0, taskCost = 1
+09-28 14:10:35.114  8240  8240 I C03900/Ace: [ui_content_impl.cpp(2533)-(-2:100000:singleton)] [net.uniterm.poc][entry][100000]: UpdateViewportConfig Viewport config: size: (1072, 603) orientation: 1 density: 0.831250 position: (264, 122) transformHint: 0
+09-28 14:10:35.137  8240  8240 I C03925/AceRouter: [jsi_declarative_engine.cpp(1732)-(100000:100000:scope)] add named router record, name: , bundleName: net.uniterm.poc, moduleName: entry, pagePath: pages/Index, pageFullPath: entry/src/main/ets/pages/Index, ohmUrl: @bundle:net.uniterm.poc/entry/ets/pages/Index
+09-28 14:10:35.142  8240  8240 I A00110/uniterm.ident: revealSecrets fail=0
+09-28 14:10:35.142  8240  8240 I A00110/uniterm.import: credmgr hasMaster=1 unlocked=0
+09-28 14:10:35.142  8240  8240 I A00110/uniterm.store: load #1 ok groups=0 conns=1
+09-28 14:10:35.143  8240  8240 I A00110/uniterm.import: connectNow -> SSH-REGRESS
+09-28 14:10:35.146   906  8261 W C01311/AppMS: [app_mgr_service_inner.cpp:5829]name: TypeError, faultType: 1, uid: 20010055, pid: 8240, bundleName: net.uniterm.poc, processName: net.uniterm.poc, faultData.forceExit==0, faultData.waitSaveState==0
+09-28 14:10:35.146  8240  8240 E C01317/AppKit: net.uniterm.poc is about to exit due to RuntimeError
+09-28 14:10:35.146  8240  8240 W C01317/AppKit: [main_thread.cpp:1619]hisysevent write result=0, send event [FRAMEWORK,PROCESS_KILL], pid=8240, processName=net.uniterm.poc, msg=Kill Reason:Js Error, foreground=1
+09-28 14:10:35.146   467  1327 I C02d11/Faultlogger: OnEvent: Receive JS_ERROR Event:{"domain_":"AAFWK","name_":"JS_ERROR","type_":1,"time_":1790575835146,"tz_":"+0800","pid_":8240,"tid_":8240,"uid_":20010055,"log_":0,"id_":"12793681780832166440","PACKAGE_NAME":"net.uniterm.poc","VERSION":"1000000","TYPE":3,"HAPPEN_TIME":1790575835,"REASON":"TypeError","JSVM":"ARK","SUMMARY":"Error name:TypeError\nError message:is not callable\nStacktrace:\n    at SynchedPropertyTwoWayPU (/home/compile/kh_x86_5.0.1_k5.10/foundation/arkui/ace_engine/frameworks/bridge/declarative_frontend/engine/stateMgmt.js:5808:1)\n    at SynchedPropertySimpleTwoWayPU (/home/compile/kh_x86_5.0.1_k5.10/foundation/arkui/ace_engine/frameworks/bridge/declarative_frontend/engine/stateMgmt.js:0:1)\n    at TerminalPage (entry/src/main/ets/pages/TerminalPage.ets:61:60)\n    at anonymous (entry/src/main/ets/pages/Index.ets:622:56)\n    at updateFunc (/home/compile/kh_x86_5.0.1_k5.10/foundation/arkui/ace_engine/frameworks/bridge/declarative_frontend/engine/stateMgmt.js:6812:1)\n    at observeComponentCreation2 (/home/compile/kh_x86_5.0.1_k5.10/foundation/arkui/ace_engine/frameworks/bridge/declarative_frontend/engine/stateMgmt.js:6839:1)\n    at anonymous (entry/src/main/ets/pages/Index.ets:622:56)\n    at ifElseBranchUpdateFunction (/home/compile/kh_x86_5.0.1_k5.10/foundation/arkui/ace_engine/frameworks/bridge/declarative_frontend/engine/stateMgmt.js:4300:1)\n    at anonymous (entry/src/main/ets/pages/Index.ets:622:56)\n    at updateFunc (/home/compile/kh_x86_5.0.1_k5.10/foundation/arkui/ace_engine/frameworks/bridge/declarative_frontend/engine/stateMgmt.js:6812:1)\n    at UpdateElement (/home/compile/kh_x86_5.0.1_k5.10/foundation/arkui/ace_engine/frameworks/bridge/declarative_frontend/engine/stateMgmt.js:6514:1)\n    at anonymous (/home/compile/kh_x86_5.0.1_k5.10/foundation/arkui/ace_engine/frameworks/bridge/declarative_frontend/engine/stateMgmt.js:6741:1)\n    at updateDirtyElements (/home/compile/kh_x86_5.0.1_k5.10/foundation/arkui/ace_engine/frameworks/bridge/declarative_frontend/engine/stateMgmt.js:6736:1)\n    at rerender (entry/src/main/ets/pages/Index.ets:1474:1)\n","PNAME":"net.uniterm.poc","APP_RUNNING_UNIQUE_ID":"14016620","tag_":"STABILITY","level_":"CRITICAL"}.
+09-28 14:10:35.146   467  1327 I C02d11/Faultlogger: AddFaultLogIfNeed: Start saving Faultlog of Process:8240, Name:net.uniterm.poc, Reason:TypeError.
+09-28 14:10:35.146   467  1327 I C02d12/Sanitizer: bundleName of uid:20010055 is net.uniterm.poc
+09-28 14:10:35.147   467  1327 I C02d12/Sanitizer: The version of net.uniterm.poc is 1.0.0
+09-28 14:10:35.159   632  1684 W C02801/MMIService: [][OnDisconnected:584] Enter, session desc:fd = 50, programName = net.uniterm.poc, moduleType = 0, opened, uid = 20010055, pid = 8240, tokenType = -1
+09-28 14:10:35.159   906  8261 I C01311/AppMS: [app_running_record.cpp:866]The ability(bundle:net.uniterm.poc, ability:EntryAbility) state will change.
+09-28 14:10:35.159   469   469 W C02c11/APPSPAWN: [appspawn_service.c:136]net.uniterm.poc with pid 8240 exit with code:0
+09-28 14:10:35.159   469   469 E C02c11/APPSPAWN: [appspawn_cgroup.c:148]Open file fail /dev/pids/100/net.uniterm.poc/app_8240/cgroup.procs errno: 2
+09-28 14:10:35.159   469   469 I C02c11/APPSPAWN: [sandbox_utils.cpp:2094]Umount2 sandbox path /mnt/sandbox/100/net.uniterm.poc/data/storage/el1/bundle success
+09-28 14:10:35.159   678  2966 I C01799/MemMgr: AppStateObserver::OnAbilityStateChanged called, uid=20010055, pid=8240, bundleName=net.uniterm.poc FOREGROUND
+09-28 14:10:35.159   678   740 I C01799/MemMgr: BundlePriorityInfo::UpdatePriority bundleName=net.uniterm.poc, priority=0
+09-28 14:10:35.159   678  1821 I C01799/MemMgr: ReclaimStrategyManager::HandleAppStateChanged_ pid:8240 bundle:20010055 net.uniterm.poc userId:100 score:0 action:APP_FOREGROUND
+09-28 14:10:35.159   678   678 I C01799/MemMgr: AppStateObserver::OnAbilityStateChanged called, uid=20010055, pid=8240, bundleName=net.uniterm.poc FOREGROUND
+09-28 14:10:35.159   678   740 I C01799/MemMgr: BundlePriorityInfo::UpdatePriority bundleName=net.uniterm.poc, priority=0
+09-28 14:10:35.159   678  1821 I C01799/MemMgr: ReclaimStrategyManager::HandleAppStateChanged_ pid:8240 bundle:20010055 net.uniterm.poc userId:100 score:0 action:APP_FOREGROUND
+09-28 14:10:35.160   678   678 I C01799/MemMgr: AppStateObserver::OnAbilityStateChanged called, uid=20010055, pid=8240, bundleName=net.uniterm.poc FOREGROUND
+09-28 14:10:35.160  2379  2379 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 2
+09-28 14:10:35.160   678   740 I C01799/MemMgr: BundlePriorityInfo::UpdatePriority bundleName=net.uniterm.poc, priority=0
+09-28 14:10:35.160   678  1821 I C01799/MemMgr: ReclaimStrategyManager::HandleAppStateChanged_ pid:8240 bundle:20010055 net.uniterm.poc userId:100 score:0 action:APP_FOREGROUND
+09-28 14:10:35.160   906  8261 I C01311/AppMS: [app_running_manager.cpp:438]pname: net.uniterm.poc
+09-28 14:10:35.160   906  8261 I C01311/AppMS: [app_running_record.cpp:866]The ability(bundle:net.uniterm.poc, ability:EntryAbility) state will change.
+09-28 14:10:35.160  2379  2379 I A04f4f/systemuiApp: [NoticeIcon] missionClose net.uniterm.poc
+09-28 14:10:35.160   678   678 I C01799/MemMgr: AppStateObserver::OnForegroundApplicationChanged uid=20010055, bundleName=net.uniterm.poc, state=2, 
+09-28 14:10:35.160   678   678 I C01799/MemMgr: AppStateObserver::OnForegroundApplicationChanged uid=20010055, bundleName=net.uniterm.poc, state=2, 
+09-28 14:10:35.160  2379  2379 I A04f4f/systemuiApp: DateTimeComponent missionClose net.uniterm.poc 
+09-28 14:10:35.160  2379  2379 I A04f4f/systemuiApp: comp/TBContainer missionClose  net.uniterm.poc
+09-28 14:10:35.160  1749  2242 I C01560/WifiAppStateAware: OnForegroundApplicationChanged bundleName: net.uniterm.poc, uid: 20010055, state: 2, isFocused: 0
+09-28 14:10:35.160  2308  2308 I A00123/HimaLauncher:  [AppManagerModel] onForegroundApplicationChanged appStateData: {"bundleName":"net.uniterm.poc","state":2}
+09-28 14:10:35.160  1749  1756 I C01560/WifiAppStateAware: OnForegroundApplicationChanged bundleName: net.uniterm.poc, uid: 20010055, state: 2, isFocused: 0
+09-28 14:10:35.160   678  2966 I C01799/MemMgr: AppStateObserver::OnForegroundApplicationChanged uid=20010055, bundleName=net.uniterm.poc, state=2, 
+09-28 14:10:35.160   563  8235 I C01706/ueaServer-IntelliSenseServer: Get app info:8240 20010055 net.uniterm.poc 2
+09-28 14:10:35.161  2379  2379 I A04f4f/systemuiApp: AppManagerAPI [appManager] onForegroundApplicationChanged: net.uniterm.poc 2
+09-28 14:10:35.161   678   678 I C01799/MemMgr: AppStateObserver::OnAbilityStateChanged called, uid=20010055, pid=8240, bundleName=net.uniterm.poc Skiped!
+09-28 14:10:35.161   678   678 I C01799/MemMgr: AppStateObserver::OnAbilityStateChanged called, uid=20010055, pid=8240, bundleName=net.uniterm.poc Skiped!
+09-28 14:10:35.161   678   678 I C01799/MemMgr: AppStateObserver::OnAbilityStateChanged called, uid=20010055, pid=8240, bundleName=net.uniterm.poc Skiped!
+09-28 14:10:35.161   678  2966 I C01799/MemMgr: AppStateObserver::OnProcessDied uid=20010055, pid=8240, processName=net.uniterm.poc, bundle=net.uniterm.poc
+09-28 14:10:35.161   809  3004 I C01710/BUNDLE_ACTIVE: [bundle_active_app_state_obsever.cpp(OnAbilityStateChanged):73]OnAblityStateChanged userid is 100, bundle name is net.uniterm.poc, uid is 20010055, event is 4, timestamp is 14016731
+09-28 14:10:35.161   678   740 I C01799/MemMgr: ReclaimPriorityManager::HandleTerminateProcess terminated: bundleName=net.uniterm.poc, pid=8240
+09-28 14:10:35.161   678   679 I C01799/MemMgr: AppStateObserver::OnProcessDied uid=20010055, pid=8240, processName=net.uniterm.poc, bundle=net.uniterm.poc
+09-28 14:10:35.161   678  1821 I C01799/MemMgr: ReclaimStrategyManager::HandleAppStateChanged_ pid:8240 bundle:20010055 net.uniterm.poc userId:100 score:0 action:APP_DIED
+09-28 14:10:35.161   777   782 I C02220/SocketSessionManager: in OnProcessDied, 'net.uniterm.poc' died, pid:8240
+09-28 14:10:35.161  2379  2379 I A04f4f/systemuiApp: AppManagerAPI [appManager] onAbilityStateChanged: net.uniterm.poc EntryAbility 5
+09-28 14:10:35.162   678   679 I C01799/MemMgr: AppStateObserver::OnProcessDied uid=20010055, pid=8240, processName=net.uniterm.poc, bundle=net.uniterm.poc
+09-28 14:10:35.162   563  8234 I C01702/CgroupEventHandler: HandleOnAppStopped : 20010055, net.uniterm.poc
+09-28 14:10:35.164   467  1327 I C02d11/FaultLogManager: SaveFaultLogToFile: create log jscrash-net.uniterm.poc-20010055-20260928141035
+09-28 14:10:35.164   467  1327 I C02d11/Faultlogger: ModuleName:net.uniterm.poc
+====DONE

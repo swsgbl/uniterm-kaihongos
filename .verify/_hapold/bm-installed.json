@@ -1,0 +1,411 @@
+net.uniterm.poc:
+{
+    "appId": "net.uniterm.poc_BMj4lYzMvq7kfvzKuFCByN3SLYzJPEYGA21kynTavP7h7VawQ+yCGS4IyvkGNwUNH35NwiSD5UiAa2AA5N8gltBy19W4l6SUTBc97i/kU5QIUeNJjE715s/iHtCMjty10Q==",
+    "appIdentifier": "",
+    "appIndex": 0,
+    "applicationInfo": {
+        "GWPAsanEnabled": false,
+        "accessTokenId": 537188995,
+        "accessTokenIdEx": 4832156291,
+        "accessible": false,
+        "allowAppRunWhenDeviceFirstLocked": false,
+        "allowCommonEvent": [],
+        "allowEnableNotification": false,
+        "apiCompatibleVersion": 14,
+        "apiReleaseType": "Release",
+        "apiTargetVersion": 14,
+        "appDetailAbilityLibraryPath": "",
+        "appDistributionType": "os_integration",
+        "appEnvironments": [],
+        "appIndex": 0,
+        "appPrivilegeLevel": "system_core",
+        "appProvisionType": "release",
+        "appQuickFix": {
+            "bundleName": "",
+            "deployedAppqfInfo": {
+                "cpuAbi": "",
+                "hqfInfos": [],
+                "nativeLibraryPath": "",
+                "type": 0,
+                "versionCode": 0,
+                "versionName": ""
+            },
+            "deployingAppqfInfo": {
+                "cpuAbi": "",
+                "hqfInfos": [],
+                "nativeLibraryPath": "",
+                "type": 0,
+                "versionCode": 0,
+                "versionName": ""
+            },
+            "versionCode": 0,
+            "versionName": ""
+        },
+        "applicationFlags": 1,
+        "applicationReservedFlag": 0,
+        "arkNativeFileAbi": "",
+        "arkNativeFilePath": "",
+        "asanEnabled": false,
+        "asanLogPath": "",
+        "associatedWakeUp": false,
+        "bundleName": "net.uniterm.poc",
+        "bundleType": 0,
+        "cacheDir": "",
+        "cloudFileSyncEnabled": false,
+        "codePath": "/data/app/el1/bundle/public/net.uniterm.poc",
+        "compileSdkType": "OpenHarmony",
+        "compileSdkVersion": "5.0.2.123",
+        "configuration": "",
+        "cpuAbi": "x86_64",
+        "crowdtestDeadline": -1,
+        "dataBaseDir": "/data/app/el2/database/net.uniterm.poc",
+        "dataDir": "",
+        "debug": false,
+        "description": "",
+        "descriptionId": 0,
+        "descriptionResource": {
+            "bundleName": "net.uniterm.poc",
+            "id": 0,
+            "moduleName": "entry"
+        },
+        "deviceId": "PHONE-001",
+        "distributedNotificationEnabled": true,
+        "enabled": true,
+        "entityType": "unspecified",
+        "entryDir": "",
+        "entryModuleName": "",
+        "fingerprint": "56241C6191C614273287FBB791147ECB0734A632B89C459DAEC79EDDAEEDD2B2",
+        "flags": 0,
+        "formVisibleNotify": false,
+        "hideDesktopIcon": false,
+        "hnpPackages": {},
+        "hwasanEnabled": false,
+        "icon": "",
+        "iconId": 16777217,
+        "iconPath": "$media:app_icon",
+        "iconResource": {
+            "bundleName": "net.uniterm.poc",
+            "id": 16777217,
+            "moduleName": "entry"
+        },
+        "installSource": "unknown",
+        "isCompressNativeLibs": true,
+        "isFreeInstallApp": false,
+        "isLauncherApp": false,
+        "isSystemApp": true,
+        "keepAlive": false,
+        "label": "$string:app_name",
+        "labelId": 16777219,
+        "labelResource": {
+            "bundleName": "net.uniterm.poc",
+            "id": 16777219,
+            "moduleName": "entry"
+        },
+        "maxChildProcess": 1,
+        "metaData": {},
+        "metadata": {},
+        "minCompatibleVersionCode": 1000000,
+        "moduleInfos": [
+            {
+                "moduleName": "entry",
+                "moduleSourceDir": "",
+                "preloads": []
+            }
+        ],
+        "moduleSourceDirs": [],
+        "multiAppMode": {
+            "maxCount": 0,
+            "multiAppModeType": 0
+        },
+        "multiProjects": false,
+        "name": "net.uniterm.poc",
+        "nativeLibraryPath": "libs/x86_64",
+        "needAppDetail": false,
+        "organization": "Organization",
+        "overlayState": 0,
+        "permissions": [],
+        "process": "net.uniterm.poc",
+        "removable": true,
+        "resourcesApply": [],
+        "runningResourcesApply": false,
+        "signatureKey": "",
+        "singleton": false,
+        "supportedModes": 0,
+        "targetBundleList": [],
+        "targetBundleName": "",
+        "targetPriority": 0,
+        "tsanEnabled": false,
+        "uid": 20010055,
+        "userDataClearable": true,
+        "vendor": "hmharness",
+        "versionCode": 1000000,
+        "versionName": "1.0.0"
+    },
+    "compatibleVersion": 14,
+    "cpuAbi": "",
+    "defPermissions": [],
+    "description": "",
+    "entryInstallationFree": false,
+    "entryModuleName": "entry",
+    "gid": 20010055,
+    "hapModuleInfos": [
+        {
+            "abilityInfos": [
+                {
+                    "appIndex": 0,
+                    "applicationName": "net.uniterm.poc",
+                    "backgroundModes": 0,
+                    "bundleName": "net.uniterm.poc",
+                    "codePath": "",
+                    "compileMode": 1,
+                    "configChanges": [],
+                    "continuable": false,
+                    "continueBundleName": [],
+                    "continueType": [
+                        "EntryAbility"
+                    ],
+                    "defaultFormHeight": 0,
+                    "defaultFormWidth": 0,
+                    "description": "$string:EntryAbility_desc",
+                    "descriptionId": 16777218,
+                    "deviceCapabilities": [],
+                    "deviceTypes": [
+                        "default",
+                        "tablet"
+                    ],
+                    "enabled": true,
+                    "excludeFromDock": false,
+                    "excludeFromMissions": false,
+                    "extensionAbilityType": 255,
+                    "formEnabled": false,
+                    "formEntity": 0,
+                    "hapPath": "/data/app/el1/bundle/public/net.uniterm.poc/entry.hap",
+                    "iconId": 16777217,
+                    "iconPath": "$media:app_icon",
+                    "isLauncherAbility": false,
+                    "isModuleJson": true,
+                    "isNativeAbility": false,
+                    "isStageBasedModel": true,
+                    "isolationProcess": false,
+                    "kind": "",
+                    "label": "$string:EntryAbility_label",
+                    "labelId": 16777219,
+                    "launchMode": 0,
+                    "maxWindowHeight": 0,
+                    "maxWindowRatio": 0,
+                    "maxWindowWidth": 0,
+                    "metaData": {
+                        "customizeData": []
+                    },
+                    "metadata": [],
+                    "minFormHeight": 0,
+                    "minFormWidth": 0,
+                    "minWindowHeight": 0,
+                    "minWindowRatio": 0,
+                    "minWindowWidth": 0,
+                    "moduleName": "entry",
+                    "name": "EntryAbility",
+                    "orientation": 0,
+                    "orientationId": 0,
+                    "package": "entry",
+                    "permissions": [],
+                    "preferMultiWindowOrientation": "default",
+                    "priority": 0,
+                    "process": "",
+                    "readPermission": "",
+                    "recoverable": false,
+                    "removeMissionAfterTerminate": false,
+                    "resourcePath": "/data/app/el1/bundle/public/net.uniterm.poc/entry/resources.index",
+                    "skills": [
+                        {
+                            "actions": [
+                                "action.system.home"
+                            ],
+                            "domainVerify": false,
+                            "entities": [
+                                "entity.system.home"
+                            ],
+                            "permissions": [],
+                            "uris": []
+                        }
+                    ],
+                    "srcEntrance": "./ets/entryability/EntryAbility.ets",
+                    "srcLanguage": "js",
+                    "srcPath": "",
+                    "startWindowBackground": "$color:start_window_background",
+                    "startWindowBackgroundId": 16777222,
+                    "startWindowIcon": "$media:startIcon",
+                    "startWindowIconId": 16777223,
+                    "supportExtNames": [],
+                    "supportMimeTypes": [],
+                    "supportPipMode": false,
+                    "supportWindowMode": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "targetAbility": "",
+                    "theme": "",
+                    "type": 1,
+                    "uid": -1,
+                    "unclearableMission": false,
+                    "uri": "",
+                    "visible": true,
+                    "writePermission": ""
+                }
+            ],
+            "aotCompileStatus": 0,
+            "appEnvironments": [],
+            "appStartup": "",
+            "backgroundImg": "",
+            "buildHash": "",
+            "bundleName": "net.uniterm.poc",
+            "colorMode": -1,
+            "compileMode": 1,
+            "compressNativeLibs": true,
+            "cpuAbi": "",
+            "deliveryWithInstall": true,
+            "dependencies": [],
+            "description": "$string:module_desc",
+            "descriptionId": 16777221,
+            "deviceTypes": [
+                "default",
+                "tablet"
+            ],
+            "extensionInfos": [],
+            "fileContextMenu": "",
+            "hapPath": "/data/app/el1/bundle/public/net.uniterm.poc/entry.hap",
+            "hashValue": "",
+            "hqfInfo": {
+                "cpuAbi": "",
+                "hapSha256": "",
+                "hqfFilePath": "",
+                "moduleName": "",
+                "nativeLibraryPath": "",
+                "type": 0
+            },
+            "iconId": 16777217,
+            "iconPath": "$media:app_icon",
+            "installationFree": false,
+            "isLibIsolated": false,
+            "isModuleJson": true,
+            "isRemovable": {},
+            "isStageBasedModel": true,
+            "isolationMode": 0,
+            "label": "$string:EntryAbility_label",
+            "labelId": 16777219,
+            "mainAbility": "EntryAbility",
+            "mainElementName": "EntryAbility",
+            "metadata": [],
+            "moduleName": "entry",
+            "moduleSourceDir": "",
+            "moduleType": 1,
+            "name": "entry",
+            "nativeLibraryFileNames": [],
+            "nativeLibraryPath": "",
+            "overlayModuleInfos": [],
+            "package": "entry",
+            "packageName": "entry",
+            "pages": "$profile:main_pages",
+            "preloads": [],
+            "process": "net.uniterm.poc",
+            "proxyDatas": [],
+            "reqCapabilities": [],
+            "resourcePath": "/data/app/el1/bundle/public/net.uniterm.poc/entry/resources.index",
+            "routerArray": [],
+            "routerMap": "",
+            "srcEntrance": "",
+            "srcPath": "",
+            "supportedModes": 0,
+            "uiSyntax": "hml",
+            "upgradeFlag": 0,
+            "virtualMachine": ""
+        }
+    ],
+    "hapModuleNames": [
+        "entry"
+    ],
+    "installTime": 1790513256746,
+    "isDifferentName": false,
+    "isKeepAlive": false,
+    "isNativeApp": false,
+    "isNewVersion": true,
+    "isPreInstallApp": false,
+    "jointUserId": "",
+    "label": "",
+    "mainEntry": "entry",
+    "maxSdkVersion": -1,
+    "minCompatibleVersionCode": 1000000,
+    "minSdkVersion": -1,
+    "moduleDirs": [
+        "/data/app/el1/bundle/public/net.uniterm.poc/entry"
+    ],
+    "moduleNames": [
+        "entry"
+    ],
+    "modulePublicDirs": [
+        ""
+    ],
+    "moduleResPaths": [
+        "/data/app/el1/bundle/public/net.uniterm.poc/entry/resources.index"
+    ],
+    "name": "net.uniterm.poc",
+    "oldAppIds": [
+        "net.uniterm.poc_BMj4lYzMvq7kfvzKuFCByN3SLYzJPEYGA21kynTavP7h7VawQ+yCGS4IyvkGNwUNH35NwiSD5UiAa2AA5N8gltBy19W4l6SUTBc97i/kU5QIUeNJjE715s/iHtCMjty10Q=="
+    ],
+    "overlayBundleInfos": [],
+    "overlayType": 3,
+    "releaseType": "Release",
+    "reqPermissionDetails": [
+        {
+            "moduleName": "entry",
+            "name": "ohos.permission.INTERNET",
+            "reason": "$string:internet_permission_reason",
+            "reasonId": 16777220,
+            "usedScene": {
+                "abilities": [
+                    "EntryAbility"
+                ],
+                "when": "always"
+            }
+        }
+    ],
+    "reqPermissionStates": [
+        0
+    ],
+    "reqPermissions": [
+        "ohos.permission.INTERNET"
+    ],
+    "routerArray": [],
+    "seInfo": "",
+    "singleton": false,
+    "targetVersion": 14,
+    "uid": 20010055,
+    "updateTime": 1790516567137,
+    "userInfo": [
+        {
+            "accessTokenId": 537188995,
+            "accessTokenIdEx": 4832156291,
+            "bundleName": "net.uniterm.poc",
+            "bundleUserInfo": {
+                "disabledAbilities": [],
+                "enabled": true,
+                "overlayState": [],
+                "setEnabledCaller": "",
+                "userId": 100
+            },
+            "cloneInfos": {},
+            "gids": [
+                20010055
+            ],
+            "installTime": 1790513256746,
+            "isRemovable": true,
+            "keyId": "",
+            "uid": 20010055,
+            "updateTime": 1790516567137
+        }
+    ],
+    "vendor": "hmharness",
+    "versionCode": 1000000,
+    "versionName": "1.0.0"
+}

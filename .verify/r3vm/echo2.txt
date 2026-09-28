@@ -1,0 +1,6 @@
+09-28 14:26:48.875 13576 13576 I A00110/uniterm.session: connect SSH-REGRESS uterm@10.0.2.2:2222 cols=226 rows=59 auth=password pwlen=12 keylen=0
+09-28 14:26:49.403 13576 13576 I A00110/uniterm.session: connect ok id=1 auth= SSH-REGRESS uterm@10.0.2.2:2222
+09-28 14:26:49.404 13576 13576 I A00110/uniterm.session: data chunks=1 bytes=777 lines=20
+09-28 14:26:50.604 13576 13576 I A00110/uniterm.session: write bytes=20 asked=20
+09-28 14:26:50.604 13576 13576 I A00110/uniterm.term: postLoginScript sent 20 bytes
+====MARKER

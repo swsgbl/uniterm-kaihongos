@@ -1,0 +1,34 @@
+{
+    "version-name":  "2.0.0",
+    "version-code":  2,
+    "uuid":  "6712dcc6-b08a-45bd-975e-ee0ceca70d5d",
+    "validity":  {
+                     "not-before":  1790041493,
+                     "not-after":  2105401493
+                 },
+    "type":  "debug",
+    "bundle-info":  {
+                        "developer-id":  "uniterm",
+                        "development-certificate":  "-----BEGIN CERTIFICATE-----\nMIIB+DCCAZ2gAwIBAgIEBh1kDjAKBggqhkjOPQQDAjBPMQswCQYDVQQGEwJDTjEQ\nMA4GA1UECgwHdW5pdGVybTEQMA4GA1UECwwHdW5pdGVybTEcMBoGA1UEAwwTdW5p\ndGVybSBBcHAgU2lnbiBDQTAeFw0yNjA5MjIwMTQ0NTNaFw0zNjA5MTkwMTQ0NTNa\nMEsxCzAJBgNVBAYTAkNOMRAwDgYDVQQKDAd1bml0ZXJtMRAwDgYDVQQLDAd1bml0\nZXJtMRgwFgYDVQQDDA9uZXQudW5pdGVybS5wb2MwWTATBgcqhkjOPQIBBggqhkjO\nPQMBBwNCAAQ+rGJYCHdatcheNVt8yVXiohaJ4vmhZFKqe6tbf3JEixeky6nBNEYi\nDwkCM5+RYe7qAyB9/9vGbzWA3rN2fP6So2swaTAdBgNVHQ4EFgQU9TyEJyyb7gS6\nxpNryKmHfSwe0lwwCQYDVR0TBAIwADAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0lBAww\nCgYIKwYBBQUHAwMwGAYMKwYBBAGPWwKCeAEDBAgwBgIBAQoBADAKBggqhkjOPQQD\nAgNJADBGAiEAkOQxKAjCpHOhXM60TfSQe4M4nM5ch0pFLrgOMdUlk54CIQDyo/UP\nwaaVDUx2IgC75s2p84o5SQj7ewGG33Uock4rYA==\n-----END CERTIFICATE-----\n",
+                        "bundle-name":  "net.uniterm.poc",
+                        "apl":  "normal",
+                        "app-feature":  "hos_normal_app"
+                    },
+    "acls":  {
+                 "allowed-acls":  [
+                                      ""
+                                  ]
+             },
+    "permissions":  {
+                        "restricted-permissions":  [
+                                                       ""
+                                                   ]
+                    },
+    "debug-info":  {
+                       "device-ids":  [
+
+                                      ],
+                       "device-id-type":  "udid"
+                   },
+    "issuer":  "uniterm Profile Sign CA"
+}
