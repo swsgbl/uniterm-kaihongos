@@ -1,6 +1,6 @@
 // 官方 uniterm 外壳 1:1 复刻(v2):AppHeader 44px(TabsList)+ Sidebar 240px(7视图+搜索+连接树)+ StartTab
 // 样式基准:upstream/frontend/src/style.css :root token(2026-09-27 规格书)
-import { ConnectionStore, ConnRec } from '../store/ConnStore';
+import { ConnectionStore, ConnRec, getSharedStore } from '../store/ConnStore';
 import { ConnList } from './ConnList';
 import { TerminalPage } from './TerminalPage';
 import { SftpPanel } from './SftpPanel';
@@ -142,6 +142,27 @@ struct Index {
 
   openSettingsTab(): void {
     this.openKindTab('settings', '设置')
+  }
+
+  // M5 relay4 fix(bug1): StartPane Local Terminal 的落点 — 确保 store 有
+  // type=local 连接(共享实例,防解密态被磁盘密文覆盖)后开终端标签。
+  openLocalTerminal(): void {
+    const ctx = getContext(this) as common.UIAbilityContext
+    const store = getSharedStore()
+    if (store === null) {
+      return
+    }
+    let local = store.connections.find((c: ConnRec) => c.type === 'local')
+    if (local === undefined) {
+      const c = new ConnRec()
+      c.id = 'local-term-' + Date.now().toString(36)
+      c.name = '本地终端'
+      c.type = 'local'
+      store.upsertConn(c)
+      store.save()
+      local = c
+    }
+    this.openConnTab(local.id)
   }
 
   openSftpTab(connId: string): void {
@@ -352,6 +373,8 @@ struct Index {
               this.sideView = 0
               this.sidebarVisible = true
             })
+            // M5 relay4 fix(bug1): Local Terminal 按钮原先无 onClick,点击无反应。
+            // 现在确保 store 里有 type=local 连接(无则建)并直接开终端标签。
             Row({ space: 6 }) {
               Text('▤')
                 .fontSize(13)
@@ -366,6 +389,32 @@ struct Index {
             .backgroundColor(this.th.bgSurface)
             .border({ width: 1, color: this.th.border })
             .alignItems(VerticalAlign.Center)
+            .onClick(() => {
+              this.openLocalTerminal()
+            })
+            // M5 relay4 fix(bug2): PgTab/RedisTab 原先零 UI 入口(openKindTab 无人调)。
+            Text('PostgreSQL')
+              .fontSize(12)
+              .fontColor(this.th.textPrimary)
+              .height(32)
+              .padding({ left: 12, right: 12 })
+              .borderRadius(6)
+              .backgroundColor(this.th.bgSurface)
+              .border({ width: 1, color: this.th.border })
+              .onClick(() => {
+                this.openKindTab('pg', 'PostgreSQL')
+              })
+            Text('Redis')
+              .fontSize(12)
+              .fontColor(this.th.textPrimary)
+              .height(32)
+              .padding({ left: 12, right: 12 })
+              .borderRadius(6)
+              .backgroundColor(this.th.bgSurface)
+              .border({ width: 1, color: this.th.border })
+              .onClick(() => {
+                this.openKindTab('redis', 'Redis')
+              })
           }
           .margin({ top: 16, bottom: 20 })
 

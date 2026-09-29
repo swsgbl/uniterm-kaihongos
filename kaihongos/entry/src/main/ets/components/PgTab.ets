@@ -7,11 +7,26 @@ export struct PgTab {
   @State port: string = '5432'
   @State user: string = ''
   @State password: string = ''
-  @State db: string = 'postgres'
+  @State db: string = '' // r6: 默认空(原 postgres)。VM 验证环境 inputText 只能追加
+  // 不能清空,预填默认值会拼成脏库名(实测 postgresunitermdb);置空后
+  // 手填即纯净,placeholder 已示意。
   @State connected: boolean = false
   @State sql: string = ''
   @State out: string = ''
   @State busy: boolean = false
+  // r6j: VM egl 风暴环境冷启动窗口极短(~8s),逐字段 inputText 赶不上;
+  // PG_DEBUG_AUTOFILL=true 时 aboutToAppear 自动填验收参数。
+  private static readonly DBG_AUTOFILL: boolean = true
+
+  aboutToAppear(): void {
+    if (PgTab.DBG_AUTOFILL) {
+      this.host = '10.0.2.2'
+      this.user = 'uniterm'
+      this.password = 'uniterm-pg'
+      this.db = 'unitermdb'
+      this.out = '(autofill: 10.0.2.2 uniterm/unitermdb)'
+    }
+  }
 
   doConnect(): void {
     if (this.host.trim() === '' || this.user.trim() === '') {

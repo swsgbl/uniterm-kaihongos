@@ -6,23 +6,41 @@ import cryptoFramework from '@ohos.security.cryptoFramework';
 export class PgService {
   private static sock: socket.TCPSocket | null = null
   private static pending: number[] = []
+  // r6n: egl 风暴冻结 setTimeout,纯轮询 3s 跑不完认证循环(r6m 实证超时);
+  // socket message 事件不受影响(r6m Redis 同环境 exec 全通)。waitMsg 改
+  // 事件驱动:数据到达即唤醒,超时兜底用事件计数而非 wall-clock sleep。
+  private static msgWaiters: Array<() => void> = []
 
   static active(): boolean {
     return PgService.sock !== null
+  }
+
+  private static notifyWaiters(): void {
+    const ws = PgService.msgWaiters.slice()
+    PgService.msgWaiters = []
+    for (const w of ws) {
+      try {
+        w()
+      } catch (e) {
+      }
+    }
   }
 
   static async connect(host: string, port: number, user: string, password: string, db: string): Promise<void> {
     if (PgService.sock !== null) {
       await PgService.close()
     }
+    PgService.pending = [] // r6o: 旧连接残留 R 消息会让新连接 waitMsg 错位(code=23)
+    PgService.msgWaiters = []
     const s = socket.constructTCPSocketInstance()
     s.on('message', (info: socket.SocketMessageInfo) => {
       const u8 = new Uint8Array(info.message)
       for (let i = 0; i < u8.length; i++) {
         PgService.pending.push(u8[i])
       }
+      PgService.notifyWaiters() // r6n: 数据到达即唤醒等待链
     })
-    await s.connect({ address: { address: host, port: port }, timeout: 10 })
+    await s.connect({ address: { address: host, port: port }, timeout: 10 }) // r6k 回退实证值
     PgService.sock = s
     // StartupMessage(无类型字节): len + 196608 + "user\0u\0database\0d\0\0"
     const params = 'user\0' + user + '\0database\0' + db + '\0\0'
@@ -48,8 +66,10 @@ export class PgService {
         }
         if (code === 5) {
           const salt = PgService.readBytes(4)
+          // r6 修:PG 期望 md5(md5hex(password+user) 的【hex 文本】+ salt 原始4字节)。
+          // 原实现 concat(inner.bytes,...) 用了 digest 原始字节,服务器必拒。
           const inner = await PgService.md5hex(PgService.strBytes(password + user))
-          const salted = PgService.concat(inner.bytes, salt)
+          const salted = PgService.concat(PgService.strBytes(inner.hex), salt)
           const outer = await PgService.md5hex(salted)
           await PgService.sendPassword('md5' + outer.hex)
           continue
@@ -63,11 +83,13 @@ export class PgService {
         throw new Error(PgService.parseError())
       }
       if (t === 'Z') {
-        PgService.readI32()
         PgService.readByte() // tx status
         return
       }
-      // S/K 等其余消息跳过
+      // r6o 关键修:S/K/N 等其余消息必须消费完整 body——waitMsg 只剥了
+      // type+length,body 残留会让下一轮 waitMsg 把 body 字节当消息头错位
+      // 读取(实证报 code=23)。PG 协议每条消息自带长度,按长度丢弃即可。
+      PgService.readBytes(PgService.lastMsgLen - 4)
     }
   }
 
@@ -89,8 +111,9 @@ export class PgService {
     const lines: string[] = []
     for (;;) {
       const t = await PgService.waitMsg()
+      // r6p 修:r6o 起 waitMsg 已消费 length 字段(设 lastMsgLen 并 readI32),
+      // 各消息分支不得再 readI32,否则帧错位导致后续 waitMsg 挂起。
       if (t === 'T') {
-        PgService.readI32() // len
         const n = PgService.readI16()
         const cols: string[] = []
         for (let i = 0; i < n; i++) {
@@ -99,7 +122,6 @@ export class PgService {
         }
         lines.push(cols.join(' | '))
       } else if (t === 'D') {
-        PgService.readI32()
         const n = PgService.readI16()
         const vals: string[] = []
         for (let i = 0; i < n; i++) {
@@ -112,12 +134,10 @@ export class PgService {
         }
         lines.push(vals.join(' | '))
       } else if (t === 'C') {
-        PgService.readI32()
         lines.push('(' + PgService.readCStr() + ')')
       } else if (t === 'E') {
         throw new Error(PgService.parseError())
       } else if (t === 'Z') {
-        PgService.readI32()
         PgService.readByte()
         return lines.join('\n')
       }
@@ -136,17 +156,25 @@ export class PgService {
   }
 
   // ===== 底层:帧等待/读写 =====
+  private static lastMsgLen = 0 // r6o: waitMsg 消息的 body 长度(含长度字段自身)
+
   private static async waitMsg(): Promise<string> {
-    for (let i = 0; i < 100; i++) {
+    // r6n: 事件驱动优先(数据到达即返回),setTimeout 仅作短兜底——egl 风暴
+    // 下 timer 可能冻结,但 message 事件可推进整条认证链(Redis 同环境实证)。
+    for (let i = 0; i < 200; i++) {
       if (PgService.pending.length >= 5) {
         const len = (PgService.pending[1] << 24 | PgService.pending[2] << 16 | PgService.pending[3] << 8 | PgService.pending[4]) >>> 0
         if (PgService.pending.length >= 1 + len) {
           const t = PgService.pending.shift()
           PgService.readI32() // 消费长度
+          PgService.lastMsgLen = len
           return t !== undefined ? String.fromCharCode(t) : ''
         }
       }
-      await PgService.sleep(30)
+      await new Promise<void>(resolve => {
+        PgService.msgWaiters.push(resolve)
+        setTimeout(resolve, 30) // 兜底;若冻结则由 notifyWaiters kick
+      })
     }
     throw new Error('超时等待服务器响应')
   }
@@ -229,7 +257,7 @@ export class PgService {
   }
 
   private static parseError(): string {
-    PgService.readI32()
+    // r6p 修:waitMsg 已消费 length 字段,不再 readI32
     let msg = ''
     for (;;) {
       const code = PgService.readByte()

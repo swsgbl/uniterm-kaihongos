@@ -18,6 +18,8 @@ export struct MonitorPanel {
   @State rxRate: number = 0
   @State txRate: number = 0
   @State loadText: string = '-'
+  // M5 relay4: /proc 读取失败标记(UI 显式提示,不再静默全 0)
+  @State procDeny: string = ''
   private timer: number = -1
   private prevCpu: number[] = [0, 0, 0, 0, 0, 0, 0, 0]
   private prevNet: NetIo = { rxKB: 0, txKB: 0 }
@@ -34,15 +36,46 @@ export struct MonitorPanel {
     }
   }
 
+  // M5 relay4 fix: /proc 伪文件 stat 尺寸为 0,readTextSync 返回空/抛错;
+  // 改为 open + 定长 read(读伪文件的正路)。任何一步失败返回 ''。
   private readProc(path: string): string {
+    let file: fs.File | null = null
     try {
-      return fs.readTextSync(path)
+      file = fs.openSync(path, fs.OpenMode.READ_ONLY)
+      const buf = new ArrayBuffer(8192)
+      let out = ''
+      const u8 = new Uint8Array(buf)
+      for (;;) {
+        const n = fs.readSync(file.fd, buf)
+        if (n <= 0) {
+          break
+        }
+        let chunk = ''
+        for (let i = 0; i < n; i++) {
+          chunk += String.fromCharCode(u8[i])
+        }
+        out += chunk
+        if (out.length > 65536) {
+          break
+        }
+      }
+      return out
     } catch (e) {
       return ''
+    } finally {
+      if (file !== null) {
+        try {
+          fs.closeSync(file)
+        } catch (e2) {
+        }
+      }
     }
   }
 
   private sample(): void {
+    // M5 relay4: 先探源可达性,失败显式提示(app 沙箱 DAC 拒读 /proc 的场景)
+    const probe = this.readProc('/proc/loadavg')
+    this.procDeny = probe === '' ? '⚠ /proc 不可读(应用沙箱限制),CPU/内存/网络/负载显示为 0' : ''
     // CPU: /proc/stat 首行 cpu  user nice system idle iowait irq softirq steal
     const stat = this.readProc('/proc/stat')
     if (stat !== '') {
@@ -175,6 +208,12 @@ export struct MonitorPanel {
         .fontWeight(FontWeight.Medium)
         .fontColor(0xe6e8ed)
         .padding({ top: 10, bottom: 2 })
+      if (this.procDeny !== '') {
+        Text(this.procDeny)
+          .fontSize(11)
+          .fontColor(0xf59e0b)
+          .padding({ left: 4, right: 4 })
+      }
       this.Card('CPU', this.cpuPercent, '负载 ' + this.loadText, 0x22d3ee)
       this.Card('内存', this.memPercent, this.memText, 0x34d399)
       this.Card('磁盘 /data', this.diskPercent, this.diskText, 0xf59e0b)

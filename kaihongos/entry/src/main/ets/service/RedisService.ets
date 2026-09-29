@@ -23,7 +23,7 @@ export class RedisService {
       }
       RedisService.buf += chunk
     })
-    await s.connect({ address: { address: host, port: port }, timeout: 10 })
+    await s.connect({ address: { address: host, port: port }, timeout: 10 }) // r6k 回退实证值
     RedisService.sock = s
   }
 
@@ -56,7 +56,7 @@ export class RedisService {
     }
     RedisService.buf = ''
     await s.send({ data: enc.buffer })
-    // 等响应(轮询 buf,最多 3s)
+    // 等响应(轮询 buf,最多 3s;r6l 回退 r6h 形态)
     for (let i = 0; i < 30; i++) {
       await RedisService.sleep(100)
       if (RedisService.tryParse() !== null) {

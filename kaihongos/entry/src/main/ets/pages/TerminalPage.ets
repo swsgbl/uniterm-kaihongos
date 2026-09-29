@@ -77,9 +77,13 @@ export struct TerminalPage {
   private scroller: Scroller = new Scroller();
   private pollTimer: number = -1;
   private resizeTimer: number = -1;
+  private lastTickMs: number = 0; // r6e: timer 链健康监测
+  private watchdogTimer: number = -1; // r6e: 独立看门狗
   private opened: boolean = false;
   private connId: string = '';
   private followTail: boolean = true;
+  private isLocal: boolean = false; // M5 relay6: 本地终端标志(stats 显示用)
+  private hb: number = 0; // r6 心跳计数
 
   aboutToAppear(): void {
     this.view.attach(this.model);
@@ -125,6 +129,7 @@ export struct TerminalPage {
       TelnetService.connect(kind, conn.host, conn.port).then(() => {
         this.opened = true;
         AppStorage.setOrCreate('ut.term.status', 'connected');
+        this.startPoll(); // M5 relay4 fix(bug3): 无 poll 则渲染永不刷新
         if (c2.postLoginScript !== null && c2.postLoginScript.length > 0) {
           setTimeout(() => {
             TelnetService.write(c2.postLoginScript + '\n');
@@ -139,11 +144,18 @@ export struct TerminalPage {
     // 本地终端:liblocalpty.so(forkpty + /bin/sh)
     if (conn.type === 'local') {
       this.title = conn.name !== '' ? conn.name : '本地终端';
+      this.isLocal = true;
       const m0 = this.measureDims();
+      this.cols = m0.cols;
+      this.rows = m0.rows;
+      this.model.resize(this.cols, this.rows);
+      this.winSize = this.rows + 2 * WIN_OVERSCAN;
+      this.measureNote = 'measured ' + m0.cols + 'x' + m0.rows;
       const ok = LocalTerminalService.open(m0.cols, m0.rows);
       if (ok) {
         this.opened = true;
         AppStorage.setOrCreate('ut.term.status', 'connected');
+        this.startPoll(); // M5 relay4 fix(bug3): 无 poll 则渲染永不刷新
       } else {
         AppStorage.setOrCreate('ut.term.status', 'error');
         AppStorage.setOrCreate('ut.term.reason', 'localpty 加载失败(检查 libs/x86_64/liblocalpty.so)');
@@ -197,6 +209,12 @@ export struct TerminalPage {
       clearTimeout(this.resizeTimer);
       this.resizeTimer = -1;
     }
+    if (LocalTerminalService.active()) {
+      LocalTerminalService.close(); // M5 relay4 fix(bug4): 原先泄漏 localpty
+    }
+    if (TelnetService.active()) {
+      TelnetService.disconnect();
+    }
     if (this.opened) {
       SessionService.close();
       this.opened = false;
@@ -205,27 +223,118 @@ export struct TerminalPage {
   }
 
   private startPoll(): void {
-    this.pollTimer = setInterval(() => {
-      this.drainTick();
-    }, POLL_MS);
+    // M5 relay6: 自链式 setTimeout 替代 setInterval。实测该环境 setInterval
+    // 会在 ~20s 后静默停摆;链式重挂必须放 finally——drainTick 抛异常时
+    // 若重挂语句被跳过,整条链就地死亡(22:12 实证:accept 231B 后全静默)。
+    this.lastTickMs = Date.now();
+    const tickFn = (): void => {
+      this.lastTickMs = Date.now();
+      try {
+        this.drainTick();
+      } catch (e) {
+        // r6d: catch 内不得再抛(JSON.stringify 对循环引用/原生对象会抛,
+        // 吞掉日志并向上传播)。安全降级为 String()。
+        let msg: string = '';
+        try {
+          msg = JSON.stringify(e);
+        } catch (e2) {
+          msg = 'unserializable';
+        }
+        hilog.error(0x0110, 'uniterm.r6', 'drainTick threw: %{public}s %{public}s', typeof e, msg);
+      } finally {
+        this.pollTimer = setTimeout(tickFn, POLL_MS);
+      }
+    };
+    this.pollTimer = setTimeout(tickFn, POLL_MS);
+    // r6e: 独立看门狗——timer 链死后自愈重启(渲染期异常会杀链,实证
+    // drain+渲染一次后链必死;看门狗 3s 检查一次,链死 >5s 则重挂)。
+    if (this.watchdogTimer < 0) {
+      const wdFn = (): void => {
+        try {
+          const now = Date.now();
+          if (this.opened && now - this.lastTickMs > 5000 && this.pollTimer >= 0) {
+            hilog.warn(0x0110, 'uniterm.r6', 'watchdog: poll chain dead %{public}dms, restart',
+              now - this.lastTickMs);
+            clearTimeout(this.pollTimer);
+            this.startPoll();
+          }
+        } catch (e) {
+          // 看门狗自身不得抛
+        }
+        this.watchdogTimer = setTimeout(wdFn, 3000);
+      };
+      this.watchdogTimer = setTimeout(wdFn, 3000);
+    }
+  }
+
+  /** r6e: 交互驱动的同步排空(timer 链死时 UI 事件仍是活的)。 */
+  private kickPoll(): void {
+    if (this.pollTimer >= 0 && Date.now() - this.lastTickMs > 800) {
+      try {
+        this.drainTick();
+      } catch (e) {
+        // 排空失败不阻塞交互
+      }
+    }
   }
 
   private stopPoll(): void {
     if (this.pollTimer >= 0) {
-      clearInterval(this.pollTimer);
+      clearTimeout(this.pollTimer);
       this.pollTimer = -1;
+    }
+    if (this.watchdogTimer >= 0) {
+      clearTimeout(this.watchdogTimer);
+      this.watchdogTimer = -1;
     }
   }
 
   /** Poll: merge ssh bytes into the model, update window + stats. */
   private drainTick(): void {
+    // M5 relay4: 本地终端走同步 ptyPoll(tsfn 异步回调在该环境不交付)
+    if (LocalTerminalService.active()) {
+      let chunk: string = '';
+      try {
+        chunk = LocalTerminalService.poll()
+      } catch (e) {
+        hilog.error(0x0110, 'uniterm.r6', 'poll threw: %{public}s', JSON.stringify(e))
+      }
+      const clen = chunk === undefined || chunk === null ? -1 : chunk.length
+      if (clen > 0) {
+        if (chunk === '__PTY_EOF__') {
+          // M5 relay6: sh exit(master EOF)→ native 已自愈关闭;置断开态,
+          // tab 保留历史输出(此前 exit 后 master 死,后续 write 全静默失败)
+          LocalTerminalService.close()
+          AppStorage.setOrCreate('ut.term.status', 'disconnected')
+          hilog.info(0x0110, 'uniterm.r6', 'pty EOF -> disconnected')
+        } else {
+          this.view.accept(chunk)
+          hilog.info(0x0110, 'uniterm.r6', 'accepted len=%{public}d lines=%{public}d screenTop=%{public}d',
+            clen, this.model.lines.length, this.model.screenTop())
+        }
+      } else {
+        // r6 心跳:每 ~10s 一条,证明轮询链活着(诊断 interval 停摆用)
+        if ((this.hb++ % 100) === 0) {
+          hilog.info(0x0110, 'uniterm.r6', 'alive lines=%{public}d status=%{public}s',
+            this.model.lines.length, this.storageStatus)
+        }
+      }
+    }
     const grew = this.view.drain();
     const st = SessionService.stats();
-    this.statText = st.lines + ' lines  ' + st.bytes + 'B  ' + st.chunks + ' chunks'
-      + (st.lastCmdMs >= 0 ? '  last ' + st.lastCmdMs + 'ms' : '');
+    // M5 relay6: 本地终端时 SessionService.stats() 恒为 0,用 model 真值
+    this.statText = this.isLocal
+      ? this.model.lines.length + ' lines (local)  top=' + this.winTop
+      : st.lines + ' lines  ' + st.bytes + 'B  ' + st.chunks + ' chunks'
+        + (st.lastCmdMs >= 0 ? '  last ' + st.lastCmdMs + 'ms' : '');
     if (grew && this.followTail) {
       this.tick++;
       this.refreshWindow(true);
+      try {
+        this.scroller.scrollEdge(Edge.Bottom); // M5 relay6: 视口贴住最新输出
+      } catch (e) {
+        // r6d: scrollEdge 在部分布局阶段不可调用,不得让它杀掉轮询链
+      }
     } else if (grew) {
       this.tick++;
       const total = this.model.lines.length;
@@ -246,12 +355,22 @@ export struct TerminalPage {
   }
 
   private measureDims(): Dims {
+    // r6e: display API 在 VM 环境会量出虚假大尺寸(实测 226x59,高度含
+    // 导航栏+状态栏且密度异常);终端区真实可用高度以 onAreaChange 实测
+    // 为准。measureDims 只给保守初值:onAreaChange 稳定后必然覆盖。
+    let bodyW = 1080;
+    let bodyH = 600;
     let density = 3;
     try {
       const dd = display.getDefaultDisplaySync();
-      density = dd.densityPixels;
+      // 只信任宽度;高度按典型比例 16:9 保守估算
+      if (dd.width > 0 && dd.densityPixels > 0) {
+        density = dd.densityPixels;
+        bodyW = dd.width / density;
+        bodyH = bodyW * 9 / 16;
+      }
     } catch (e) {
-      // keep 3
+      // keep defaults
     }
     let charW = TERM_FONT_SIZE * 0.6;
     let lineH = TERM_FONT_SIZE * 1.45;
@@ -274,15 +393,7 @@ export struct TerminalPage {
     } catch (e) {
       // keep estimates
     }
-    let bodyW = 300;
-    let bodyH = 500;
-    try {
-      const d = display.getDefaultDisplaySync();
-      bodyW = (d.width / density) - 2 * BODY_PAD;
-      bodyH = (d.height / density) - 2 * BODY_PAD - 56 /* header */ - 60 /* footer */;
-    } catch (e) {
-      // keep estimates
-    }
+    bodyH = bodyH - 2 * BODY_PAD - 56 /* header */ - 60 /* footer */;
     const cols = Math.max(20, Math.floor(bodyW / charW));
     const rows = Math.max(6, Math.floor(bodyH / lineH));
     const out: Dims = { cols: cols, rows: rows, charWidth: charW };
@@ -300,8 +411,29 @@ export struct TerminalPage {
     }
   }
 
+  private pendingCols: number = -1; // M5 relay6: onAreaChange 防抖
+  private pendingRows: number = -1;
+  private areaOpenMs: number = -1; // <0 = 未开窗;否则 = onBodyArea 首调时间戳
+
   private onBodyArea(w: number, h: number): void {
-    this.termViewportH = h;
+    // M5 relay6: 初次布局的 onAreaChange 序列不可信(先报未稳定的大高度,
+    // 后报真实值;若中间值被应用,模型会被虚假 resize 撑大)。开窗 700ms 内
+    // 只记录最终一对值,开窗结束时统一应用(pending 被后续"回到当前值"的
+    // 事件清除 = 布局已稳定,无需 resize)。
+    const now = Date.now();
+    if (this.areaOpenMs < 0) {
+      this.areaOpenMs = now;
+      setTimeout(() => {
+        // 开窗结束:应用最后见到的一对值(若仍与当前不同)
+        if (this.pendingCols > 0 && this.pendingRows > 0
+          && (this.pendingCols !== this.cols || this.pendingRows !== this.rows)) {
+          this.applyResize(this.pendingCols, this.pendingRows);
+        }
+        this.pendingCols = -1;
+        this.pendingRows = -1;
+      }, 750);
+    }
+    const inOpenWindow = (now - this.areaOpenMs) < 700;
     this.termViewportH = h;
     let density = 1;
     try {
@@ -328,6 +460,41 @@ export struct TerminalPage {
     const cols = Math.max(20, Math.floor((w - 2 * BODY_PAD) / charW));
     const rows = Math.max(6, Math.floor((h - 2 * BODY_PAD) / (TERM_FONT_SIZE * 1.45)));
     if (cols === this.cols && rows === this.rows) {
+      this.pendingCols = -1;
+      this.pendingRows = -1;
+      if (this.resizeTimer >= 0) {
+        clearTimeout(this.resizeTimer);
+        this.resizeTimer = -1;
+      }
+      return;
+    }
+    if (inOpenWindow) {
+      // 只记录,不应用;等开窗结束后第一对稳定值
+      this.pendingCols = cols;
+      this.pendingRows = rows;
+      return;
+    }
+    if (cols === this.pendingCols && rows === this.pendingRows) {
+      this.applyResize(cols, rows);
+      return;
+    }
+    this.pendingCols = cols;
+    this.pendingRows = rows;
+    if (this.resizeTimer >= 0) {
+      clearTimeout(this.resizeTimer);
+    }
+    this.resizeTimer = setTimeout(() => {
+      this.resizeTimer = -1;
+      if (this.pendingCols > 0 && this.pendingRows > 0) {
+        this.applyResize(this.pendingCols, this.pendingRows);
+        this.pendingCols = -1;
+        this.pendingRows = -1;
+      }
+    }, 400);
+  }
+
+  private applyResize(cols: number, rows: number): void {
+    if (cols === this.cols && rows === this.rows) {
       return;
     }
     this.cols = cols;
@@ -335,15 +502,14 @@ export struct TerminalPage {
     this.winSize = rows + 2 * WIN_OVERSCAN;
     this.model.resize(cols, rows);
     this.measureNote = 'area ' + cols + 'x' + rows;
-    if (this.resizeTimer >= 0) {
-      clearTimeout(this.resizeTimer);
-    }
-    this.resizeTimer = setTimeout(() => {
-      this.resizeTimer = -1;
-      if (this.opened) {
-        SessionService.resize(this.cols, this.rows);
+    if (this.opened) {
+      // M5 relay6: 本地终端也要 resize(pty winsize),原实现只通知 ssh
+      if (LocalTerminalService.active()) {
+        LocalTerminalService.resize(cols, rows);
+      } else {
+        SessionService.resize(cols, rows);
       }
-    }, 300);
+    }
   }
 
   private send(): void {
@@ -356,6 +522,7 @@ export struct TerminalPage {
       SessionService.write(text);
     }
     this.input = '';
+    this.kickPoll(); // r6e: timer 链会被渲染期异常杀死,交互驱动同步排空兜底
   }
 
   /** Hardware-key -> terminal byte mapping. Returns the string to write. */
@@ -436,6 +603,7 @@ export struct TerminalPage {
       } else {
         SessionService.write(s);
       }
+      this.kickPoll(); // r6e: 按键后同步排空回显
       return true; // consumed: no focus navigation side effect
     }
     return false;

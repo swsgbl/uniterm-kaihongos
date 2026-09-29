@@ -143,6 +143,17 @@ export class TermModel {
     if (nc === this.cols && nr === this.rows) {
       return;
     }
+    if (nr < this.rows) {
+      // M5 relay6: 收缩时回收尾部空行。虚假大 resize(onAreaChange 初开报
+      // 未稳定高度)会长出几十行空白,把光标行推到 screenTop 折叠线之下;
+      // 回缩后必须裁掉这些尾部空行,否则屏幕永远显示空白窗口。
+      const absY = this.lines.length - this.rows + this.cursor.y;
+      while (this.lines.length > nr && this.lines[this.lines.length - 1].cells.length === 0
+        && this.lines.length - 1 !== absY) {
+        this.lines.pop();
+      }
+      this.cursor.y = Math.min(nr - 1, Math.max(0, absY - (this.lines.length - nr)));
+    }
     this.cols = nc;
     this.rows = nr;
     while (this.lines.length < this.rows) {

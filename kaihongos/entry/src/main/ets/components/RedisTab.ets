@@ -104,7 +104,7 @@ export struct RedisTab {
           })
           .onSubmit(() => this.doExec())
         Row({ space: 6 }) {
-          ForEach(['PING', 'INFO server', 'DBSIZE', 'CONFIG GET maxmemory'], (q: string) => {
+          ForEach(['PING', 'INFO server', 'DBSIZE', 'GET uniterm:key'], (q: string) => {
             Text(q)
               .fontSize(10)
               .fontColor(0x9ea3ae)
