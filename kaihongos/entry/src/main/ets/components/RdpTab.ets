@@ -1,27 +1,34 @@
-import { RdpNapi } from 'librdpproxy.so';
+import { rdpConnect, rdpDisconnect } from 'librdpproxy.so';
 import image from '@ohos.multimedia.image';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const RDP_TAG: string = 'uniterm.rdp';
+const RDP_DOMAIN: number = 0x0110;
 
 @Component
 export struct RdpTab {
-  @State host: string = ''
+  @State host: string = '10.0.2.2'
   @State port: string = '3389'
   @State user: string = 'Administrator'
   @State password: string = ''
   @State connected: boolean = false
   @State errText: string = ''
   @State pm: image.PixelMap | null = null
+  @State fbW: number = 0
+  @State fbH: number = 0
   private fb: Uint8Array | null = null
-  private fbW: number = 0
-  private fbH: number = 0
-  private mod: RdpNapi | null = null
+  private firstFrameLogged: boolean = false
 
   aboutToDisappear(): void {
     this.disconnect()
   }
 
   disconnect(): void {
-    if (this.mod !== null) {
-      this.mod.rdpDisconnect()
+    try {
+      rdpDisconnect()
+      hilog.info(RDP_DOMAIN, RDP_TAG, 'rdp disconnected');
+    } catch (e) {
+      hilog.error(RDP_DOMAIN, RDP_TAG, 'rdp disconnect err: %{public}s', JSON.stringify(e).substring(0, 120));
     }
     this.connected = false
   }
@@ -33,18 +40,17 @@ export struct RdpTab {
       return
     }
     this.errText = ''
+    hilog.info(RDP_DOMAIN, RDP_TAG, 'rdp connect begin host=%{public}s port=%{public}s user=%{public}s', h, this.port, this.user);
     try {
-      if (this.mod === null) {
-        this.mod = new RdpNapi()
-      }
       this.connected = true
-      this.mod.rdpConnect(h, parseInt(this.port) || 3389, this.user, this.password, 1024, 768,
+      rdpConnect(h, parseInt(this.port) || 3389, this.user, this.password, 1024, 768,
         (x: number, y: number, w: number, h: number, ab: ArrayBuffer): void => {
           this.deliver(x, y, w, h, new Uint8Array(ab))
         })
     } catch (e) {
       this.connected = false
       this.errText = 'rdpproxy 加载失败: ' + JSON.stringify(e).substring(0, 200)
+      hilog.error(RDP_DOMAIN, RDP_TAG, 'rdp connect failed: %{public}s', JSON.stringify(e).substring(0, 200));
     }
   }
 
@@ -55,7 +61,11 @@ export struct RdpTab {
       this.fbH = y + h
       this.fb = new Uint8Array(this.fbW * this.fbH * 4)
     }
-    // 贴矩形
+    // 贴矩形(首帧/尺寸变化打日志)
+    if (!this.firstFrameLogged) {
+      this.firstFrameLogged = true
+      hilog.info(RDP_DOMAIN, RDP_TAG, 'first frame delivered w=%{public}d h=%{public}d', this.fbW, this.fbH);
+    }
     for (let r = 0; r < h; r++) {
       const dOff = ((y + r) * this.fbW + x) * 4
       const sOff = r * w * 4

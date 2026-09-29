@@ -415,6 +415,29 @@ struct Index {
               .onClick(() => {
                 this.openKindTab('redis', 'Redis')
               })
+            // M5 relay5 fix(bug3): VncTab/RdpTab 原先零 UI 入口,与 relay4 PG/Redis 同病。
+            Text('VNC')
+              .fontSize(12)
+              .fontColor(this.th.textPrimary)
+              .height(32)
+              .padding({ left: 12, right: 12 })
+              .borderRadius(6)
+              .backgroundColor(this.th.bgSurface)
+              .border({ width: 1, color: this.th.border })
+              .onClick(() => {
+                this.openKindTab('vnc', 'VNC')
+              })
+            Text('RDP')
+              .fontSize(12)
+              .fontColor(this.th.textPrimary)
+              .height(32)
+              .padding({ left: 12, right: 12 })
+              .borderRadius(6)
+              .backgroundColor(this.th.bgSurface)
+              .border({ width: 1, color: this.th.border })
+              .onClick(() => {
+                this.openKindTab('rdp', 'RDP')
+              })
           }
           .margin({ top: 16, bottom: 20 })
 

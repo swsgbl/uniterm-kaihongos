@@ -1,16 +1,24 @@
 // VNC 标签页:连接表单 + PixelMap 远程桌面 + 键鼠注入
 import { VncClient } from '../service/VncClient';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import image from '@ohos.multimedia.image';
+
+const VNC_TAG: string = 'uniterm.vnc';
+const VNC_DOMAIN: number = 0x0110;
 
 @Component
 export struct VncTab {
-  @State host: string = ''
+  @State host: string = '10.0.2.2'
   @State port: string = '5900'
   @State st: string = 'idle' // idle connecting running error closed
   @State errText: string = ''
   @State frameTick: number = 0
+  @State viewPm: image.PixelMap | null = null
   private vnc: VncClient = new VncClient()
   private lastPtX: number = -1
   private lastPtY: number = -1
+  private lastPaintFrame: number = -1
+  private lastPaintMs: number = 0
 
   aboutToDisappear(): void {
     this.vnc.close()
@@ -25,6 +33,7 @@ export struct VncTab {
     }
     this.st = 'connecting'
     this.errText = ''
+    hilog.info(VNC_DOMAIN, VNC_TAG, 'tab connect requested host=%{public}s port=%{public}s', h, this.port);
     this.vnc.onUpdate = (): void => {
       this.frameTick++
     }
@@ -33,14 +42,30 @@ export struct VncTab {
     }).catch((e: Object) => {
       this.st = 'error'
       this.errText = e.toString().substring(0, 200)
+      hilog.error(VNC_DOMAIN, VNC_TAG, 'connect failed: %{public}s', e.toString().substring(0, 100));
     })
     // 轮询状态
+    let lastPaintLog = 0
     setInterval(() => {
       const s = this.vnc.status()
       if (s === 'running' && this.st !== 'running') {
         this.st = 'running'
+        hilog.info(VNC_DOMAIN, VNC_TAG, 'session running, frames=%{public}d', this.frameTick);
       } else if ((s === 'error' || s === 'closed') && this.st === 'running') {
         this.st = s
+      }
+      // M5 relay5 fix: 节流重建 PixelMap 引用触发 Image 重绘(500ms/次或帧号变化)
+      const now = Date.now()
+      if (s === 'running' && now - this.lastPaintMs > 500) {
+        this.lastPaintMs = now
+        this.viewPm = this.vnc.snapshotPm()
+        if (this.frameTick !== this.lastPaintFrame) {
+          this.lastPaintFrame = this.frameTick
+          if (now - lastPaintLog > 5000) {
+            lastPaintLog = now
+            hilog.info(VNC_DOMAIN, VNC_TAG, 'view repaint tick frames=%{public}d', this.frameTick);
+          }
+        }
       }
     }, 500)
   }
@@ -136,8 +161,8 @@ export struct VncTab {
           .width('100%')
           .padding(8)
           .backgroundColor(0x191c24)
-          if (this.vnc.pixelMap() !== null) {
-            Image(this.vnc.pixelMap())
+          if (this.viewPm !== null) {
+            Image(this.viewPm)
               .objectFit(ImageFit.Contain)
               .layoutWeight(1)
               .width('100%')
