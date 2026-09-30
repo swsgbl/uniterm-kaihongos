@@ -23,7 +23,7 @@ import { TelnetService, TelKind } from '../service/TelnetService';
 import { LocalTerminalService } from '../service/LocalTerminalService';
 import { TermModel, TermLine, lineToSpans, SpanRun, TERM_DEFAULT_FG, TERM_DEFAULT_BG } from '../components/TermModel';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { UniTheme, themeByName } from '../common/UniTheme';
+import { AppTheme, themeByName } from '../common/AppTheme';
 
 const TERM_FONT_SIZE: number = 14;
 const TERM_FONT_FAMILY: string = 'monospace';
@@ -60,7 +60,7 @@ interface Dims {
 export struct TerminalPage {
   // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
   @StorageProp('ut.theme') themeName: string = 'dark'
-  private th(): UniTheme { return themeByName(this.themeName) }
+  private th(): AppTheme { return themeByName(this.themeName) }
   @StorageProp('ut.term.status') storageStatus: string = 'idle';
   @StorageProp('ut.term.reason') storageReason: string = '';
   @Prop connIdIn: string = '';
@@ -183,16 +183,16 @@ export struct TerminalPage {
           st.markUsed(connId);
         }
       } catch (e) {
-        hilog.warn(0x0110, 'uniterm.term', 'markUsed failed: %{public}s', JSON.stringify(e));
+        hilog.warn(0x0110, 'oat.term', 'markUsed failed: %{public}s', JSON.stringify(e));
       }
       // M3-3a: post-login script - send after the banner settles (~1.2s)
       if (postScript !== null && postScript.length > 0) {
         setTimeout(() => {
           try {
             const n = SessionService.write(postScript + '\r');
-            hilog.info(0x0110, 'uniterm.term', 'postLoginScript sent %{public}d bytes', n);
+            hilog.info(0x0110, 'oat.term', 'postLoginScript sent %{public}d bytes', n);
           } catch (e2) {
-            hilog.warn(0x0110, 'uniterm.term', 'postLoginScript failed: %{public}s', JSON.stringify(e2));
+            hilog.warn(0x0110, 'oat.term', 'postLoginScript failed: %{public}s', JSON.stringify(e2));
           }
         }, 1200);
       }
@@ -202,7 +202,7 @@ export struct TerminalPage {
       const msg = e instanceof Error ? e.message : JSON.stringify(e);
       AppStorage.setOrCreate('ut.term.status', 'error');
       AppStorage.setOrCreate('ut.term.reason', msg);
-      hilog.error(0x0110, 'uniterm.term', 'connect rejected: %{public}s', msg);
+      hilog.error(0x0110, 'oat.term', 'connect rejected: %{public}s', msg);
     });
     this.startPoll();
   }
@@ -244,7 +244,7 @@ export struct TerminalPage {
         } catch (e2) {
           msg = 'unserializable';
         }
-        hilog.error(0x0110, 'uniterm.r6', 'drainTick threw: %{public}s %{public}s', typeof e, msg);
+        hilog.error(0x0110, 'oat.r6', 'drainTick threw: %{public}s %{public}s', typeof e, msg);
       } finally {
         this.pollTimer = setTimeout(tickFn, POLL_MS);
       }
@@ -257,7 +257,7 @@ export struct TerminalPage {
         try {
           const now = Date.now();
           if (this.opened && now - this.lastTickMs > 5000 && this.pollTimer >= 0) {
-            hilog.warn(0x0110, 'uniterm.r6', 'watchdog: poll chain dead %{public}dms, restart',
+            hilog.warn(0x0110, 'oat.r6', 'watchdog: poll chain dead %{public}dms, restart',
               now - this.lastTickMs);
             clearTimeout(this.pollTimer);
             this.startPoll();
@@ -301,7 +301,7 @@ export struct TerminalPage {
       try {
         chunk = LocalTerminalService.poll()
       } catch (e) {
-        hilog.error(0x0110, 'uniterm.r6', 'poll threw: %{public}s', JSON.stringify(e))
+        hilog.error(0x0110, 'oat.r6', 'poll threw: %{public}s', JSON.stringify(e))
       }
       const clen = chunk === undefined || chunk === null ? -1 : chunk.length
       if (clen > 0) {
@@ -310,16 +310,16 @@ export struct TerminalPage {
           // tab 保留历史输出(此前 exit 后 master 死,后续 write 全静默失败)
           LocalTerminalService.close()
           AppStorage.setOrCreate('ut.term.status', 'disconnected')
-          hilog.info(0x0110, 'uniterm.r6', 'pty EOF -> disconnected')
+          hilog.info(0x0110, 'oat.r6', 'pty EOF -> disconnected')
         } else {
           this.view.accept(chunk)
-          hilog.info(0x0110, 'uniterm.r6', 'accepted len=%{public}d lines=%{public}d screenTop=%{public}d',
+          hilog.info(0x0110, 'oat.r6', 'accepted len=%{public}d lines=%{public}d screenTop=%{public}d',
             clen, this.model.lines.length, this.model.screenTop())
         }
       } else {
         // r6 心跳:每 ~10s 一条,证明轮询链活着(诊断 interval 停摆用)
         if ((this.hb++ % 100) === 0) {
-          hilog.info(0x0110, 'uniterm.r6', 'alive lines=%{public}d status=%{public}s',
+          hilog.info(0x0110, 'oat.r6', 'alive lines=%{public}d status=%{public}s',
             this.model.lines.length, this.storageStatus)
         }
       }
@@ -617,7 +617,7 @@ export struct TerminalPage {
   StatusBadge() {
     Text(this.badgeText())
       .fontSize(12)
-      .fontColor(this.th().bgElevated)
+      .fontColor(this.th().surfaceRaised)
       .backgroundColor(this.badgeColor())
       .borderRadius(8)
       .padding({ left: 8, right: 8, top: 3, bottom: 3 })
@@ -651,7 +651,7 @@ export struct TerminalPage {
     if (s === 'error') {
       return this.th().danger;
     }
-    return this.th().textSecondary;
+    return this.th().inkSubtle;
   }
 
   @Builder
@@ -696,12 +696,12 @@ export struct TerminalPage {
             Text(this.title)
               .fontSize(17)
               .fontWeight(FontWeight.Bold)
-              .fontColor(this.th().bgElevated)
+              .fontColor(this.th().surfaceRaised)
               .maxLines(1)
             Text(this.cols.toString() + 'x' + this.rows.toString() + '  ' + this.measureNote
               + (this.focused ? '  [key-passthrough]' : ''))
               .fontSize(11)
-              .fontColor(this.th().textSecondary)
+              .fontColor(this.th().inkSubtle)
               .maxLines(1)
           }
           .alignItems(HorizontalAlign.Start)
@@ -711,7 +711,7 @@ export struct TerminalPage {
 
           Button('SFTP')
             .fontSize(13)
-            .backgroundColor(this.th().accent)
+            .backgroundColor(this.th().brand)
             .enabled(this.storageStatus === 'connected')
             .onClick(() => {
               AppStorage.setOrCreate('ut.openSftp', this.connId);
@@ -732,7 +732,7 @@ export struct TerminalPage {
 
         Text(this.statText)
           .fontSize(11)
-          .fontColor(this.th().textSecondary)
+          .fontColor(this.th().inkSubtle)
           .width('100%')
           .padding({ left: 12, right: 12, bottom: 4 })
 
@@ -747,7 +747,7 @@ export struct TerminalPage {
         }
       }
       .width('100%')
-      .backgroundColor(this.th().bgSurface)
+      .backgroundColor(this.th().panel)
 
       // terminal body: focusable surface for hardware key passthrough
       Scroll(this.scroller) {
@@ -791,14 +791,14 @@ export struct TerminalPage {
           })
         Text('PT')
           .fontSize(12)
-          .fontColor(this.passthrough ? this.th().success : this.th().textSecondary)
+          .fontColor(this.passthrough ? this.th().success : this.th().inkSubtle)
         TextInput({ placeholder: 'input + Enter...', text: this.input })
           .layoutWeight(1)
           .fontSize(14)
           .fontFamily(TERM_FONT_FAMILY)
-          .backgroundColor(this.th().bgBase)
+          .backgroundColor(this.th().surface)
           .fontColor(TERM_DEFAULT_FG)
-          .placeholderColor(this.th().textSecondary)
+          .placeholderColor(this.th().inkSubtle)
           .onChange((v: string) => {
             this.input = v;
           })
@@ -814,7 +814,7 @@ export struct TerminalPage {
       }
       .width('100%')
       .padding({ left: 10, right: 10, top: 8, bottom: 10 })
-      .backgroundColor(this.th().bgSurface)
+      .backgroundColor(this.th().panel)
     }
     .width('100%')
     .height('100%')

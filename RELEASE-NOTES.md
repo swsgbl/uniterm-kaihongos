@@ -1,4 +1,4 @@
-# uniTerm KaihongOS — v1.1.0(实证版)
+﻿# 一站AI终端 KaihongOS — v1.1.0\(实证版\)
 
 对标官方 uniterm(GitHub: ys-ll/uniterm)的 KaihongOS/OpenHarmony x86_64 移植。
 本版本起,能力清单**只列经过真机/虚拟机端到端验收的功能**,验收证据存于 `evidence/M4`、`evidence/M5`(含各 relay 深度验收记录)。
@@ -29,3 +29,4 @@ MySQL、Kubernetes、SPICE、X11 转发、Zmodem、SSH 隧道、云端同步、�
 ## 构建
 
 见 `prompts/028-official-parity-audit.md`(pack_hap → 补 so → hap-sign-tool 重签 → bm install);VM 原生链脚本见 `evidence/M5/relay5`。
+

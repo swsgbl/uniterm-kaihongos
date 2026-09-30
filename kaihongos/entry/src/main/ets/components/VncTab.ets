@@ -2,16 +2,16 @@
 import { VncClient } from '../service/VncClient';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import image from '@ohos.multimedia.image';
-import { UniTheme, themeByName } from '../common/UniTheme';
+import { AppTheme, themeByName } from '../common/AppTheme';
 
-const VNC_TAG: string = 'uniterm.vnc';
+const VNC_TAG: string = 'oat.vnc';
 const VNC_DOMAIN: number = 0x0110;
 
 @Component
 export struct VncTab {
   // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
   @StorageProp('ut.theme') themeName: string = 'dark'
-  private th(): UniTheme { return themeByName(this.themeName) }
+  private th(): AppTheme { return themeByName(this.themeName) }
   @State host: string = '10.0.2.2'
   @State port: string = '5900'
   @State st: string = 'idle' // idle connecting running error closed
@@ -83,13 +83,13 @@ export struct VncTab {
       Text('VNC 远程桌面')
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor(this.th().textPrimary)
+        .fontColor(this.th().ink)
       Text('RFB 3.8 · 纯 TS 协议栈 · raw 编码')
         .fontSize(11)
-        .fontColor(this.th().textSecondary)
+        .fontColor(this.th().inkSubtle)
       TextInput({ placeholder: '主机 (如 192.168.1.10)', text: this.host })
         .fontSize(13)
-        .fontColor(this.th().textPrimary)
+        .fontColor(this.th().ink)
         .backgroundColor(this.th().inputBg)
         .borderRadius(6)
         .width(260)
@@ -98,7 +98,7 @@ export struct VncTab {
         })
       TextInput({ placeholder: '端口 (默认 5900)', text: this.port })
         .fontSize(13)
-        .fontColor(this.th().textPrimary)
+        .fontColor(this.th().ink)
         .backgroundColor(this.th().inputBg)
         .borderRadius(6)
         .width(260)
@@ -108,10 +108,10 @@ export struct VncTab {
         })
       Text('连接')
         .fontSize(14)
-        .fontColor(this.th().bgBase)
+        .fontColor(this.th().surface)
         .fontWeight(FontWeight.Bold)
         .padding({ left: 28, right: 28, top: 9, bottom: 9 })
-        .backgroundColor(this.th().accent)
+        .backgroundColor(this.th().brand)
         .borderRadius(6)
         .onClick(() => this.doConnect())
       if (this.errText !== '') {
@@ -124,7 +124,7 @@ export struct VncTab {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(this.th().bgBase)
+    .backgroundColor(this.th().surface)
   }
 
   build() {
@@ -134,10 +134,10 @@ export struct VncTab {
       } else if (this.st === 'connecting') {
         Column({ space: 10 }) {
           Blank()
-          LoadingProgress().width(40).height(40).color(this.th().accent)
+          LoadingProgress().width(40).height(40).color(this.th().brand)
           Text('正在建立 RFB 会话…')
             .fontSize(13)
-            .fontColor(this.th().textSecondary)
+            .fontColor(this.th().inkSubtle)
           Blank()
         }
         .width('100%')
@@ -148,11 +148,11 @@ export struct VncTab {
           Row() {
             Text('VNC ' + this.host + ':' + this.port)
               .fontSize(12)
-              .fontColor(this.th().textPrimary)
+              .fontColor(this.th().ink)
             Blank()
             Text(this.vnc.width().toString() + 'x' + this.vnc.height().toString() + '  #' + this.frameTick.toString())
               .fontSize(11)
-              .fontColor(this.th().textSecondary)
+              .fontColor(this.th().inkSubtle)
             Text('断开')
               .fontSize(11)
               .fontColor(this.th().danger)
@@ -164,7 +164,7 @@ export struct VncTab {
           }
           .width('100%')
           .padding(8)
-          .backgroundColor(this.th().bgSurface)
+          .backgroundColor(this.th().panel)
           if (this.viewPm !== null) {
             Image(this.viewPm)
               .objectFit(ImageFit.Contain)
@@ -174,10 +174,10 @@ export struct VncTab {
               .onTouch((e: TouchEvent) => this.handleTouch(e))
           } else {
             Column() {
-              LoadingProgress().width(30).height(30).color(this.th().accent)
+              LoadingProgress().width(30).height(30).color(this.th().brand)
               Text('等待首帧…')
                 .fontSize(11)
-                .fontColor(this.th().textSecondary)
+                .fontColor(this.th().inkSubtle)
             }
             .layoutWeight(1)
             .justifyContent(FlexAlign.Center)

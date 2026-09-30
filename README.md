@@ -1,8 +1,8 @@
-# uniterm for KaihongOS(uniTerm KaihongOS 适配版)
+﻿# 一站AI终端 for KaihongOS(One AI Term,基于 uniTerm 二次开发)
 
-[uniTerm](https://gitee.com/ys-l/uniterm)(Apache-2.0,轻量级一站式终端软件)在 **KaihongOS 桌面版(x86)** 上的适配版本。与官方同源同格式:配置文件(connections.json / .utm)与官方版双向互导互通。
+[uniterm](https://gitee.com/ys-l/uniterm)(Apache-2.0,轻量级一站式终端软件)在 **KaihongOS 桌面版(x86)** 上的适配版本。与官方同源同格式:配置文件(connections.json / .utm)与官方版双向互导互通。
 
-> 定位:与官方 uniterm 一致,仅做 KaihongOS 系统环境适配。
+> 定位:基于开源项目 uniterm(Apache-2.0)二次开发,品牌与界面自主化,并做 KaihongOS 系统环境适配。
 
 ## 当前版本能力(1.1.0)
 
@@ -28,7 +28,7 @@ MySQL/Kubernetes/SPICE/X11 转发/Zmodem/SSH 隧道等仍按官方路线图在�
 ArkTS/ArkUI(HAP)+ [@ohos/libssh](https://gitcode.com/openharmony-tpc)(libssh 0.11.1 HAR,NAPI)作 SSH/SFTP 引擎;加密原语走自带 OpenSSL 3.5.4(libcrypto.so.3)的 NAPI 封装(模拟器 cryptoFramework KDF 不可用)。
 
 ```
-kaihongos/                     # 工程根(bundleName: net.uniterm.poc, 开发态)
+kaihongos/                     # 工程根(bundleName: com.oneaiterm.terminal, 开发态)
   entry/                       # ArkTS 应用(pages/components/store/service)
   thirdparty/
     libssh-x86_64-har/         # libssh/libssl/libcrypto HAR(x86_64+arm64 双 ABI)
@@ -64,3 +64,4 @@ scripts\build-store.cmd    # API14 兼容 store 版(compatibleSdkVersion=5.0.2(1
 - [适配设计书](docs/ADAPTATION_DESIGN.md)
 - [上架手册](docs/STORE_SUBMISSION.md)
 - [API14 合规审计](docs/M4-API14-AUDIT.md)
+

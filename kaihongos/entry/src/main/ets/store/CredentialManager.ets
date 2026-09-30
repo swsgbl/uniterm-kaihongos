@@ -27,7 +27,7 @@ import {
   deriveKeyPbkdf2, generateSalt
 } from './EncCrypto';
 
-const TAG: string = 'uniterm.cred';
+const TAG: string = 'oat.cred';
 const DOMAIN: number = 0x0110;
 const META_FILE: string = 'credentials.meta';
 

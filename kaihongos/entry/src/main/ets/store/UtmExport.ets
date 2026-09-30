@@ -19,7 +19,7 @@ import { libssh } from '@ohos/libssh';
 import { ConnRec, GroupRec } from './ConnStore';
 import { ENC_PREFIX, isEncrypted, encryptField, deriveKeyPbkdf2 } from './EncCrypto';
 
-const TAG: string = 'uniterm.utm';
+const TAG: string = 'oat.utm';
 const DOMAIN: number = 0x0110;
 /** upstream importer/crypto.go:14 kdfIterations (utm export kdf ≠ master-password 600k). */
 export const UTM_KDF_ITERATIONS: number = 100000;

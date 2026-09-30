@@ -5,7 +5,7 @@
  */
 import { ConnRec, GroupRec } from '../store/ConnStore';
 import { IdentityRec } from '../store/IdentityStore';
-import { UniTheme, themeByName } from '../common/UniTheme';
+import { AppTheme, themeByName } from '../common/AppTheme';
 
 const AUTH_TYPES: string[] = ['password', 'key', 'keyText', 'identity'];
 const ENCODINGS: string[] = ['utf-8', 'gbk'];
@@ -15,7 +15,7 @@ const BACKSPACE_KEYS: string[] = ['del', 'bs', 'vt220'];
 export struct ConnForm {
   // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
   @StorageProp('ut.theme') themeName: string = 'dark'
-  private th(): UniTheme { return themeByName(this.themeName) }
+  private th(): AppTheme { return themeByName(this.themeName) }
   editing: ConnRec | null = null;
   onClose: () => void = () => {};
   groups: GroupRec[] = [];
@@ -292,12 +292,12 @@ export struct ConnForm {
       Row({ space: 8 }) {
         Text('协议')
           .fontSize(12)
-          .fontColor(this.th().textSecondary)
+          .fontColor(this.th().inkSubtle)
           .width(48)
         Select(this.typeOptions())
           .selected(this.fTypeIdx)
           .value(this.connType())
-          .fontColor(this.th().textPrimary)
+          .fontColor(this.th().ink)
           .font({ size: 12 })
           .backgroundColor(this.th().inputBg)
           .borderRadius(6)
@@ -458,7 +458,7 @@ export struct ConnForm {
 
       Row({ space: 12 }) {
         Button('取消')
-          .backgroundColor(this.th().textSecondary)
+          .backgroundColor(this.th().inkSubtle)
           .layoutWeight(1)
           .onClick(() => {
             this.onClose();
@@ -480,7 +480,7 @@ export struct ConnForm {
     }
     .width('88%')
     .padding(16)
-    .backgroundColor(this.th().bgElevated)
+    .backgroundColor(this.th().surfaceRaised)
     .borderRadius(12)
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Holds the launch want so pages can read parameters (dev import channel:
- * `aa start -b net.uniterm.poc -a EntryAbility --ps importText '<json>'`).
+ * `aa start -b com.oneaiterm.terminal -a EntryAbility --ps importText '<json>'`).
  * Single-instance ability keeps the last want; onNewWant overwrites.
  */
 import { Want } from '@kit.AbilityKit';

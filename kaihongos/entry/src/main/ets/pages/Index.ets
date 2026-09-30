@@ -16,7 +16,7 @@ import { MySqlTab } from '../components/MySqlTab';
 import { VncTab } from '../components/VncTab';
 import { RdpTab } from '../components/RdpTab';
 import { SpiceTab } from '../components/SpiceTab';
-import { themeByName, UniTheme } from '../common/UniTheme';
+import { themeByName, AppTheme } from '../common/AppTheme';
 import { common } from '@kit.AbilityKit';
 
 interface TabInfo {
@@ -44,7 +44,7 @@ struct Index {
   @State hoverOn: boolean = false
   // M5 relay6 fix: th 原为 private 普通属性,applyTheme 重赋值不触发重渲染,
   // 主题切换从未真正生效(菜单高亮变、颜色不变)。改 @State 使颜色随主题刷新。
-  @State th: UniTheme = themeByName('dark')
+  @State th: AppTheme = themeByName('dark')
   private sideIcons: string[] = ['⌗', '▤', '∿', '⇄', '⚡', '◷', '◑']
   private sideTips: string[] = ['连接', '文件', '监控', '隧道', '快捷命令', '历史', '个性化']
 
@@ -198,13 +198,13 @@ struct Index {
     Text(icon)
       .fontSize(15)
       .fontWeight(FontWeight.Medium)
-      .fontColor(this.hoverOn && this.hoverTip === tip ? this.th.accent : this.th.iconMuted)
+      .fontColor(this.hoverOn && this.hoverTip === tip ? this.th.brand : this.th.iconMuted)
       .width(30)
       .height(30)
       .textAlign(TextAlign.Center)
       .borderRadius(6)
       .margin({ left: 2, right: 2 })
-      .backgroundColor(this.hoverOn && this.hoverTip === tip ? this.th.bgOverlay : Color.Transparent)
+      .backgroundColor(this.hoverOn && this.hoverTip === tip ? this.th.hover : Color.Transparent)
       .onClick(() => action())
       .onHover((h: boolean) => {
         this.hoverTip = h ? tip : ''
@@ -221,18 +221,18 @@ struct Index {
     Row({ space: 5 }) {
       Text(t.kind === 'start' ? '⌂' : (t.kind === 'sftp' ? '▦' : (t.kind === 'settings' ? '⚙' : '▸')))
         .fontSize(11)
-        .fontColor(t.id === this.activeTab ? this.th.accent : this.th.textSecondary)
+        .fontColor(t.id === this.activeTab ? this.th.brand : this.th.inkSubtle)
       Text(t.name)
         .fontSize(12)
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
-        .fontColor(t.id === this.activeTab ? this.th.textPrimary : this.th.textSecondary)
+        .fontColor(t.id === this.activeTab ? this.th.ink : this.th.inkSubtle)
         .constraintSize({ maxWidth: 220 })
       Blank()
       Text('×')
         .fontSize(12)
         .fontWeight(FontWeight.Medium)
-        .fontColor(this.hoverOn && this.hoverTip === ('close' + t.id.toString()) ? this.th.danger : this.th.textSecondary)
+        .fontColor(this.hoverOn && this.hoverTip === ('close' + t.id.toString()) ? this.th.danger : this.th.inkSubtle)
         .padding({ left: 4, right: 4, top: 2, bottom: 2 })
         .borderRadius(3)
         .onClick(() => this.closeTab(t.id))
@@ -249,7 +249,7 @@ struct Index {
     .constraintSize({ minWidth: 120 })
     .padding({ left: 10, right: 6 })
     .borderRadius(4)
-    .backgroundColor(t.id === this.activeTab ? this.th.bgOverlay : Color.Transparent)
+    .backgroundColor(t.id === this.activeTab ? this.th.hover : Color.Transparent)
     .margin({ left: 1, right: 1 })
     .alignItems(VerticalAlign.Center)
     .onClick(() => {
@@ -262,12 +262,12 @@ struct Index {
     Text(this.sideIcons[idx])
       .fontSize(15)
       .fontWeight(FontWeight.Bold)
-      .fontColor(this.sideView === idx ? this.th.accent : this.th.iconMuted)
+      .fontColor(this.sideView === idx ? this.th.brand : this.th.iconMuted)
       .width(28)
       .height(28)
       .textAlign(TextAlign.Center)
       .borderRadius(4)
-      .backgroundColor(this.sideView === idx ? this.th.bgOverlay : Color.Transparent)
+      .backgroundColor(this.sideView === idx ? this.th.hover : Color.Transparent)
       .onClick(() => {
         this.sideView = idx
       })
@@ -281,7 +281,7 @@ struct Index {
       })
   }
 
-  // ===== 官方 StartTabContent:brand 2rem accent / 搜索行 / 按钮行 / 分节标签 / 240px 卡片网格 =====
+  // ===== 官方 StartTabContent:brand 2rem brand / 搜索行 / 按钮行 / 分节标签 / 240px 卡片网格 =====
   cardMeta(c: ConnRec): string {
     if (c.type === 'local') return 'local';
     let s = c.user + '@' + c.host;
@@ -304,7 +304,7 @@ struct Index {
     if (c.type === 'vnc') return '#a78bfa';
     if (c.type === 'redis') return '#f87171';
     if (c.type === 'mysql' || c.type === 'pg') return '#f59e0b';
-    return '#22d3ee';
+    return '#' + this.th.brand.toString(16).padStart(6, '0');
   }
 
   @Builder
@@ -318,17 +318,17 @@ struct Index {
         .height(36)
         .textAlign(TextAlign.Center)
         .borderRadius(7)
-        .backgroundColor(this.th.bgOverlay)
+        .backgroundColor(this.th.hover)
       Column({ space: 2 }) {
         Text(c.name)
           .fontSize(13)
           .fontWeight(FontWeight.Medium)
-          .fontColor(this.th.textPrimary)
+          .fontColor(this.th.ink)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
         Text(this.cardMeta(c))
           .fontSize(11)
-          .fontColor(this.th.textSecondary)
+          .fontColor(this.th.inkSubtle)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
       }
@@ -338,8 +338,8 @@ struct Index {
     .width(240)
     .padding({ left: 12, right: 12, top: 8, bottom: 8 })
     .borderRadius(10)
-    .backgroundColor(this.th.bgSurface)
-    .border({ width: 1, color: this.th.border })
+    .backgroundColor(this.th.panel)
+    .border({ width: 1, color: this.th.hairline })
     .alignItems(VerticalAlign.Center)
     .onClick(() => {
       if (c.type === 'ssh') {
@@ -356,37 +356,37 @@ struct Index {
           Text('uniTerm')
             .fontSize(30)
             .fontWeight(FontWeight.Bold)
-            .fontColor(this.th.accent)
+            .fontColor(this.th.brand)
             .margin({ top: 56, bottom: 32 })
           Row({ space: 8 }) {
             Row({ space: 5 }) {
               Text('⏷')
                 .fontSize(11)
-                .fontColor(this.th.textSecondary)
+                .fontColor(this.th.inkSubtle)
               Text('All')
                 .fontSize(12)
-                .fontColor(this.th.textSecondary)
+                .fontColor(this.th.inkSubtle)
             }
             .height(32)
             .padding({ left: 12, right: 12 })
             .borderRadius(6)
-            .backgroundColor(this.th.bgSurface)
-            .border({ width: 1, color: this.th.border })
+            .backgroundColor(this.th.panel)
+            .border({ width: 1, color: this.th.hairline })
             .alignItems(VerticalAlign.Center)
             TextInput({ placeholder: 'Search or quick connect...', text: this.searchText })
               .onChange((v: string) => {
                 this.searchText = v
               })
               .fontSize(13)
-              .fontColor(this.th.textPrimary)
-              .placeholderColor(this.th.textSecondary)
+              .fontColor(this.th.ink)
+              .placeholderColor(this.th.inkSubtle)
               .height(32)
-              .backgroundColor(this.th.bgSurface)
+              .backgroundColor(this.th.panel)
               .borderRadius(6)
               .padding({ left: 12, right: 12 })
               .layoutWeight(1)
               .underlineColor(Color.Transparent)
-              .caretColor(this.th.accent)
+              .caretColor(this.th.brand)
           }
           .width(440)
           Row({ space: 10 }) {
@@ -394,15 +394,15 @@ struct Index {
               Text('+')
                 .fontSize(14)
                 .fontWeight(FontWeight.Bold)
-                .fontColor(this.th.bgBase)
+                .fontColor(this.th.surface)
               Text('New Connection')
                 .fontSize(13)
-                .fontColor(this.th.bgBase)
+                .fontColor(this.th.surface)
             }
             .height(32)
             .padding({ left: 16, right: 16 })
             .borderRadius(6)
-            .backgroundColor(this.th.accent)
+            .backgroundColor(this.th.brand)
             .alignItems(VerticalAlign.Center)
             .onClick(() => {
               this.sideView = 0
@@ -413,16 +413,16 @@ struct Index {
             Row({ space: 6 }) {
               Text('▤')
                 .fontSize(13)
-                .fontColor(this.th.textPrimary)
+                .fontColor(this.th.ink)
               Text('Local Terminal')
                 .fontSize(13)
-                .fontColor(this.th.textPrimary)
+                .fontColor(this.th.ink)
             }
             .height(32)
             .padding({ left: 16, right: 16 })
             .borderRadius(6)
-            .backgroundColor(this.th.bgSurface)
-            .border({ width: 1, color: this.th.border })
+            .backgroundColor(this.th.panel)
+            .border({ width: 1, color: this.th.hairline })
             .alignItems(VerticalAlign.Center)
             .onClick(() => {
               this.openLocalTerminal()
@@ -430,46 +430,46 @@ struct Index {
             // M5 relay4 fix(bug2): PgTab/RedisTab 原先零 UI 入口(openKindTab 无人调)。
             Text('PostgreSQL')
               .fontSize(12)
-              .fontColor(this.th.textPrimary)
+              .fontColor(this.th.ink)
               .height(32)
               .padding({ left: 12, right: 12 })
               .borderRadius(6)
-              .backgroundColor(this.th.bgSurface)
-              .border({ width: 1, color: this.th.border })
+              .backgroundColor(this.th.panel)
+              .border({ width: 1, color: this.th.hairline })
               .onClick(() => {
                 this.openKindTab('pg', 'PostgreSQL')
               })
             Text('Redis')
               .fontSize(12)
-              .fontColor(this.th.textPrimary)
+              .fontColor(this.th.ink)
               .height(32)
               .padding({ left: 12, right: 12 })
               .borderRadius(6)
-              .backgroundColor(this.th.bgSurface)
-              .border({ width: 1, color: this.th.border })
+              .backgroundColor(this.th.panel)
+              .border({ width: 1, color: this.th.hairline })
               .onClick(() => {
                 this.openKindTab('redis', 'Redis')
               })
             // M5 relay5 fix(bug3): VncTab/RdpTab 原先零 UI 入口,与 relay4 PG/Redis 同病。
             Text('VNC')
               .fontSize(12)
-              .fontColor(this.th.textPrimary)
+              .fontColor(this.th.ink)
               .height(32)
               .padding({ left: 12, right: 12 })
               .borderRadius(6)
-              .backgroundColor(this.th.bgSurface)
-              .border({ width: 1, color: this.th.border })
+              .backgroundColor(this.th.panel)
+              .border({ width: 1, color: this.th.hairline })
               .onClick(() => {
                 this.openKindTab('vnc', 'VNC')
               })
             Text('RDP')
               .fontSize(12)
-              .fontColor(this.th.textPrimary)
+              .fontColor(this.th.ink)
               .height(32)
               .padding({ left: 12, right: 12 })
               .borderRadius(6)
-              .backgroundColor(this.th.bgSurface)
-              .border({ width: 1, color: this.th.border })
+              .backgroundColor(this.th.panel)
+              .border({ width: 1, color: this.th.hairline })
               .onClick(() => {
                 this.openKindTab('rdp', 'RDP')
               })
@@ -478,14 +478,14 @@ struct Index {
 
           Text('RECENT')
             .fontSize(11)
-            .fontColor(this.th.textSecondary)
+            .fontColor(this.th.inkSubtle)
             .letterSpacing(1)
             .alignSelf(ItemAlign.Start)
             .margin({ left: 40, bottom: 8 })
           Column({ space: 10 }) {
             Text('暂无连接,点击 New Connection 开始')
               .fontSize(13)
-              .fontColor(this.th.textSecondary)
+              .fontColor(this.th.inkSubtle)
               .margin({ top: 40 })
           }
           .width('100%')
@@ -497,7 +497,7 @@ struct Index {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(this.th.bgBase)
+    .backgroundColor(this.th.surface)
     .alignItems(HorizontalAlign.Center)
   }
 
@@ -507,26 +507,26 @@ struct Index {
     Column({ space: 1 }) {
       Text('主题')
         .fontSize(11)
-        .fontColor(this.th.textSecondary)
+        .fontColor(this.th.inkSubtle)
         .padding({ left: 10, right: 10, top: 6, bottom: 4 })
         .alignSelf(ItemAlign.Start)
-      ForEach(['dark', 'navy', 'light'], (n: string) => {
-        Text(n === 'dark' ? '● 暗色' : (n === 'navy' ? '● 深蓝' : '● 浅色'))
+      ForEach(['dark', 'light'], (n: string) => {
+        Text(n === 'dark' ? '● 暗色' : '● 浅色')
           .fontSize(12)
-          .fontColor(this.themeName === n ? this.th.accent : this.th.textPrimary)
+          .fontColor(this.themeName === n ? this.th.brand : this.th.ink)
           .padding({ left: 24, right: 10, top: 6, bottom: 6 })
           .borderRadius(4)
-          .backgroundColor(this.themeName === n ? this.th.bgSurface : Color.Transparent)
+          .backgroundColor(this.themeName === n ? this.th.panel : Color.Transparent)
           .alignSelf(ItemAlign.Start)
           .onClick(() => this.applyTheme(n))
       }, (n: string) => n)
       Divider()
         .strokeWidth(1)
-        .color(this.th.border)
+        .color(this.th.hairline)
         .margin({ top: 4, bottom: 4 })
       Text('设置')
         .fontSize(12)
-        .fontColor(this.th.textPrimary)
+        .fontColor(this.th.ink)
         .padding({ left: 10, right: 10, top: 6, bottom: 6 })
         .borderRadius(4)
         .alignSelf(ItemAlign.Start)
@@ -536,7 +536,7 @@ struct Index {
         })
       Text('导入 / 导出')
         .fontSize(12)
-        .fontColor(this.th.textPrimary)
+        .fontColor(this.th.ink)
         .padding({ left: 10, right: 10, top: 6, bottom: 6 })
         .borderRadius(4)
         .alignSelf(ItemAlign.Start)
@@ -547,7 +547,7 @@ struct Index {
         })
       Text('关于')
         .fontSize(12)
-        .fontColor(this.th.textPrimary)
+        .fontColor(this.th.ink)
         .padding({ left: 10, right: 10, top: 6, bottom: 6 })
         .borderRadius(4)
         .alignSelf(ItemAlign.Start)
@@ -557,19 +557,19 @@ struct Index {
         })
       Divider()
         .strokeWidth(1)
-        .color(this.th.border)
+        .color(this.th.hairline)
         .margin({ top: 4, bottom: 4 })
       Text('Redis / K8s / PostgreSQL / MySQL / VNC / RDP / SPICE')
         .fontSize(10)
-        .fontColor(this.th.textSecondary)
+        .fontColor(this.th.inkSubtle)
         .padding({ left: 10, right: 10, top: 4, bottom: 6 })
         .alignSelf(ItemAlign.Start)
     }
     .width(200)
     .padding(6)
     .borderRadius(8)
-    .backgroundColor(this.th.bgOverlay)
-    .border({ width: 1, color: this.th.border })
+    .backgroundColor(this.th.hover)
+    .border({ width: 1, color: this.th.hairline })
     .position({ x: '78%', y: 4 })
     .shadow({ radius: 12, color: '#66000000', offsetX: 0, offsetY: 4 })
   }
@@ -628,11 +628,11 @@ struct Index {
         Divider()
           .strokeWidth(1)
           // M5 relay6: 顶栏分隔线原先硬编码青色透明,浅色主题下几乎不可见 — 随主题取色
-          .color(this.themeName === 'light' ? '#1a000000' : '#2622d3ee')
+          .color('rgba(0,0,0,0.10)')
       }
       .width('100%')
       .height(44)
-      .backgroundColor(this.th.bgBase)
+      .backgroundColor(this.th.surface)
 
       // ===== 主体 =====
       Stack({ alignContent: Alignment.TopEnd }) {
@@ -674,18 +674,18 @@ struct Index {
                       this.searchText = v
                     })
                     .fontSize(12)
-                    .fontColor(this.th.textPrimary)
-                    .placeholderColor(this.th.textSecondary)
+                    .fontColor(this.th.ink)
+                    .placeholderColor(this.th.inkSubtle)
                     .height(28)
-                    .backgroundColor(this.th.bgSurface)
+                    .backgroundColor(this.th.panel)
                     .borderRadius(4)
                     .padding({ left: 10, right: 4 })
                     .layoutWeight(1)
                     .underlineColor(Color.Transparent)
-                    .caretColor(this.th.accent)
+                    .caretColor(this.th.brand)
                   Text('⏷')
                     .fontSize(11)
-                    .fontColor(this.th.textSecondary)
+                    .fontColor(this.th.inkSubtle)
                     .width(24)
                     .height(24)
                     .textAlign(TextAlign.Center)
@@ -727,11 +727,11 @@ struct Index {
                 Column() {
                   Text(this.sideTips[this.sideView])
                     .fontSize(13)
-                    .fontColor(this.th.textSecondary)
+                    .fontColor(this.th.inkSubtle)
                     .margin(16)
                   Text('按官方路线图逐步开放')
                     .fontSize(11)
-                    .fontColor(this.th.textSecondary)
+                    .fontColor(this.th.inkSubtle)
                 }
                 .layoutWeight(1)
                 .width('100%')
@@ -739,7 +739,7 @@ struct Index {
             }
             .width(280)
             .height('100%')
-            .backgroundColor(this.th.bgBase)
+            .backgroundColor(this.th.surface)
           }
 
           // 内容区:主栏 + 可选分屏右栏
@@ -822,6 +822,6 @@ struct Index {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(this.th.bgBase)
+    .backgroundColor(this.th.surface)
   }
 }

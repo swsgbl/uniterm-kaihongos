@@ -1,12 +1,12 @@
 // K8s 标签页(官方 K8sTab 子集):API server + Token → 资源列表
 import { K8sService } from '../service/K8sService';
-import { UniTheme, themeByName } from '../common/UniTheme';
+import { AppTheme, themeByName } from '../common/AppTheme';
 
 @Component
 export struct K8sTab {
   // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
   @StorageProp('ut.theme') themeName: string = 'dark'
-  private th(): UniTheme { return themeByName(this.themeName) }
+  private th(): AppTheme { return themeByName(this.themeName) }
   @State server: string = ''
   @State token: string = ''
   @State configured: boolean = false
@@ -59,12 +59,12 @@ export struct K8sTab {
       Text('Kubernetes')
         .fontSize(15)
         .fontWeight(FontWeight.Medium)
-        .fontColor(this.th().textPrimary)
+        .fontColor(this.th().ink)
         .alignSelf(ItemAlign.Start)
       if (!this.configured) {
         TextInput({ placeholder: 'API server(https://host:6443)', text: this.server })
           .fontSize(12)
-          .fontColor(this.th().textPrimary)
+          .fontColor(this.th().ink)
           .backgroundColor(this.th().inputBg)
           .borderRadius(6)
           .onChange((v: string) => {
@@ -72,7 +72,7 @@ export struct K8sTab {
           })
         TextInput({ placeholder: 'ServiceAccount Token', text: this.token })
           .fontSize(12)
-          .fontColor(this.th().textPrimary)
+          .fontColor(this.th().ink)
           .backgroundColor(this.th().inputBg)
           .borderRadius(6)
           .type(InputType.Password)
@@ -83,7 +83,7 @@ export struct K8sTab {
           .fontSize(12)
           .fontColor(0xffffff)
           .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-          .backgroundColor(this.th().accent)
+          .backgroundColor(this.th().brand)
           .borderRadius(6)
           .alignSelf(ItemAlign.Start)
           .onClick(() => this.doConfigure())
@@ -92,9 +92,9 @@ export struct K8sTab {
           ForEach(['pods', 'deployments', 'services', 'namespaces', 'nodes'], (r: string) => {
             Text(r)
               .fontSize(10)
-              .fontColor(this.resource === r ? this.th().accent : this.th().textSecondary)
+              .fontColor(this.resource === r ? this.th().brand : this.th().inkSubtle)
               .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-              .backgroundColor(this.resource === r ? this.th().bgOverlay : this.th().inputBg)
+              .backgroundColor(this.resource === r ? this.th().hover : this.th().inputBg)
               .borderRadius(4)
               .onClick(() => {
                 this.resource = r
@@ -104,7 +104,7 @@ export struct K8sTab {
           Blank()
           Text('↻')
             .fontSize(13)
-            .fontColor(this.th().textSecondary)
+            .fontColor(this.th().inkSubtle)
             .padding(4)
             .onClick(() => this.load())
         }
@@ -113,10 +113,10 @@ export struct K8sTab {
           Row({ space: 6 }) {
             Text('namespace')
               .fontSize(11)
-              .fontColor(this.th().textSecondary)
+              .fontColor(this.th().inkSubtle)
             TextInput({ text: this.ns })
               .fontSize(11)
-              .fontColor(this.th().textPrimary)
+              .fontColor(this.th().ink)
               .backgroundColor(this.th().inputBg)
               .borderRadius(4)
               .layoutWeight(1)
@@ -130,14 +130,14 @@ export struct K8sTab {
       Scroll() {
         Text(this.out === '' ? ' ' : this.out)
           .fontSize(11)
-          .fontColor(this.th().textPrimary)
+          .fontColor(this.th().ink)
           .fontFamily('monospace')
           .width('100%')
           .textAlign(TextAlign.Start)
       }
       .layoutWeight(1)
       .width('100%')
-      .backgroundColor(this.th().bgBase)
+      .backgroundColor(this.th().surface)
       .borderRadius(6)
       .padding(8)
       .align(Alignment.TopStart)
@@ -145,7 +145,7 @@ export struct K8sTab {
     .width('100%')
     .height('100%')
     .padding(14)
-    .backgroundColor(this.th().bgSurface)
+    .backgroundColor(this.th().panel)
     .alignItems(HorizontalAlign.Start)
   }
 }

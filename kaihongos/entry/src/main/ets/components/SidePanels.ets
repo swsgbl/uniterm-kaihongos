@@ -1,7 +1,7 @@
 // 官方侧栏三视图复刻:快捷命令(QuickCommandsPanel)/历史(HistoryPanel)/个性化(Personalization)
 import fs from '@ohos.file.fs';
 import { SessionService } from '../service/SessionService';
-import { UniTheme, themeByName } from '../common/UniTheme';
+import { AppTheme, themeByName } from '../common/AppTheme';
 
 interface QuickCmd {
   id: number
@@ -43,7 +43,7 @@ class SideStore {
 export struct QuickCommandsPanel {
   // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
   @StorageProp('ut.theme') themeName: string = 'dark'
-  private th(): UniTheme { return themeByName(this.themeName) }
+  private th(): AppTheme { return themeByName(this.themeName) }
   @State cmds: QuickCmd[] = []
   @State editing: boolean = false
   @State nName: string = ''
@@ -113,11 +113,11 @@ export struct QuickCommandsPanel {
         Text('快捷命令')
           .fontSize(13)
           .fontWeight(FontWeight.Medium)
-          .fontColor(this.th().textPrimary)
+          .fontColor(this.th().ink)
         Blank()
         Text(this.editing ? '×' : '✚')
           .fontSize(14)
-          .fontColor(this.th().accent)
+          .fontColor(this.th().brand)
           .padding(4)
           .onClick(() => {
             this.editing = !this.editing
@@ -135,7 +135,7 @@ export struct QuickCommandsPanel {
         Column({ space: 4 }) {
           TextInput({ placeholder: '名称', text: this.nName })
             .fontSize(11)
-            .fontColor(this.th().textPrimary)
+            .fontColor(this.th().ink)
             .backgroundColor(this.th().inputBg)
             .borderRadius(4)
             .onChange((v: string) => {
@@ -143,7 +143,7 @@ export struct QuickCommandsPanel {
             })
           TextInput({ placeholder: '命令', text: this.nCmd })
             .fontSize(11)
-            .fontColor(this.th().textPrimary)
+            .fontColor(this.th().ink)
             .backgroundColor(this.th().inputBg)
             .borderRadius(4)
             .onChange((v: string) => {
@@ -153,7 +153,7 @@ export struct QuickCommandsPanel {
             .fontSize(11)
             .fontColor(0xffffff)
             .padding({ left: 12, right: 12, top: 5, bottom: 5 })
-            .backgroundColor(this.th().accent)
+            .backgroundColor(this.th().brand)
             .borderRadius(4)
             .alignSelf(ItemAlign.End)
             .onClick(() => this.add())
@@ -161,7 +161,7 @@ export struct QuickCommandsPanel {
         .width('100%')
         .padding(8)
         .borderRadius(6)
-        .backgroundColor(this.th().bgSurface)
+        .backgroundColor(this.th().panel)
       }
       List({ space: 2 }) {
         ForEach(this.cmds, (c: QuickCmd) => {
@@ -169,23 +169,23 @@ export struct QuickCommandsPanel {
             Row({ space: 6 }) {
               Text('⚡ ' + c.name)
                 .fontSize(12)
-                .fontColor(this.th().textPrimary)
+                .fontColor(this.th().ink)
                 .layoutWeight(1)
               Text('▶')
                 .fontSize(12)
-                .fontColor(this.th().accent)
+                .fontColor(this.th().brand)
                 .padding(4)
                 .onClick(() => this.run(c))
               Text('🗑')
                 .fontSize(11)
-                .fontColor(this.th().textSecondary)
+                .fontColor(this.th().inkSubtle)
                 .padding(4)
                 .onClick(() => this.del(c.id))
             }
             .width('100%')
             .padding(6)
             .borderRadius(4)
-            .backgroundColor(this.th().bgSurface)
+            .backgroundColor(this.th().panel)
           }
         }, (c: QuickCmd) => c.id.toString())
       }
@@ -195,7 +195,7 @@ export struct QuickCommandsPanel {
     .width('100%')
     .height('100%')
     .padding({ left: 6, right: 6 })
-    .backgroundColor(this.th().bgBase)
+    .backgroundColor(this.th().surface)
   }
 }
 
@@ -204,7 +204,7 @@ export struct QuickCommandsPanel {
 export struct HistoryPanel {
   // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
   @StorageProp('ut.theme') themeName: string = 'dark'
-  private th(): UniTheme { return themeByName(this.themeName) }
+  private th(): AppTheme { return themeByName(this.themeName) }
   @State items: HistoryItem[] = []
   private filesDir: string = ''
 
@@ -226,12 +226,12 @@ export struct HistoryPanel {
       Text('历史命令')
         .fontSize(13)
         .fontWeight(FontWeight.Medium)
-        .fontColor(this.th().textPrimary)
+        .fontColor(this.th().ink)
         .padding({ top: 10, left: 4 })
       if (this.items.length === 0) {
         Text('暂无历史——终端执行命令后记录于此')
           .fontSize(11)
-          .fontColor(this.th().textSecondary)
+          .fontColor(this.th().inkSubtle)
           .padding(10)
       }
       List({ space: 2 }) {
@@ -240,20 +240,20 @@ export struct HistoryPanel {
             Row({ space: 6 }) {
               Text(h.cmd)
                 .fontSize(11)
-                .fontColor(this.th().textPrimary)
+                .fontColor(this.th().ink)
                 .maxLines(1)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
                 .layoutWeight(1)
               Text('▶')
                 .fontSize(11)
-                .fontColor(this.th().accent)
+                .fontColor(this.th().brand)
                 .padding(4)
                 .onClick(() => SessionService.write(h.cmd + '\n'))
             }
             .width('100%')
             .padding(6)
             .borderRadius(4)
-            .backgroundColor(this.th().bgSurface)
+            .backgroundColor(this.th().panel)
           }
         }, (h: HistoryItem, idx: number) => idx.toString() + h.ts.toString())
       }
@@ -263,7 +263,7 @@ export struct HistoryPanel {
     .width('100%')
     .height('100%')
     .padding({ left: 6, right: 6 })
-    .backgroundColor(this.th().bgBase)
+    .backgroundColor(this.th().surface)
   }
 }
 
@@ -272,7 +272,7 @@ export struct HistoryPanel {
 export struct PersonalizationPanel {
   // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
   @StorageProp('ut.theme') themeName: string = 'dark'
-  private th(): UniTheme { return themeByName(this.themeName) }
+  private th(): AppTheme { return themeByName(this.themeName) }
   @State theme: string = 'dark'
   @State termTheme: string = 'default'
   onThemeChange: (t: string) => void = (t: string) => {
@@ -283,20 +283,20 @@ export struct PersonalizationPanel {
       Text('个性化')
         .fontSize(13)
         .fontWeight(FontWeight.Medium)
-        .fontColor(this.th().textPrimary)
+        .fontColor(this.th().ink)
         .padding({ top: 10, left: 4 })
       Text('界面主题')
         .fontSize(11)
-        .fontColor(this.th().textSecondary)
+        .fontColor(this.th().inkSubtle)
         .alignSelf(ItemAlign.Start)
       Row({ space: 6 }) {
-        ForEach(['dark', 'navy', 'light'], (n: string) => {
-          Text(n === 'dark' ? '暗色' : n === 'navy' ? '深蓝' : '浅色')
+        ForEach(['dark', 'light'], (n: string) => {
+          Text(n === 'dark' ? '暗色' : '浅色')
             .fontSize(11)
-            .fontColor(this.theme === n ? this.th().accent : this.th().textSecondary)
+            .fontColor(this.theme === n ? this.th().brand : this.th().inkSubtle)
             .padding({ left: 10, right: 10, top: 6, bottom: 6 })
             .borderRadius(4)
-            .backgroundColor(this.theme === n ? this.th().bgOverlay : this.th().bgSurface)
+            .backgroundColor(this.theme === n ? this.th().hover : this.th().panel)
             .onClick(() => {
               this.theme = n
               this.onThemeChange(n)
@@ -306,16 +306,16 @@ export struct PersonalizationPanel {
       .width('100%')
       Text('终端配色')
         .fontSize(11)
-        .fontColor(this.th().textSecondary)
+        .fontColor(this.th().inkSubtle)
         .alignSelf(ItemAlign.Start)
       Column({ space: 2 }) {
         ForEach(['default', 'dracula', 'solarized-dark', 'gruvbox-dark', 'nord'], (n: string) => {
           Text(n)
             .fontSize(11)
-            .fontColor(this.termTheme === n ? this.th().accent : this.th().textSecondary)
+            .fontColor(this.termTheme === n ? this.th().brand : this.th().inkSubtle)
             .padding({ left: 10, right: 10, top: 5, bottom: 5 })
             .borderRadius(4)
-            .backgroundColor(this.termTheme === n ? this.th().bgOverlay : Color.Transparent)
+            .backgroundColor(this.termTheme === n ? this.th().hover : Color.Transparent)
             .alignSelf(ItemAlign.Start)
             .onClick(() => {
               this.termTheme = n
@@ -326,13 +326,13 @@ export struct PersonalizationPanel {
       Blank()
       Text('自定义背景/28 终端主题按官方路线接入')
         .fontSize(10)
-        .fontColor(this.th().textSecondary)
+        .fontColor(this.th().inkSubtle)
         .padding(6)
     }
     .width('100%')
     .height('100%')
     .padding({ left: 6, right: 6 })
-    .backgroundColor(this.th().bgBase)
+    .backgroundColor(this.th().surface)
     .alignItems(HorizontalAlign.Start)
   }
 }

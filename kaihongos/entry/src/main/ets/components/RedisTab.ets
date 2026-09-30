@@ -1,12 +1,12 @@
 // Redis 标签页(官方 DatabaseTab→Redis 子集):连接 + 命令执行
 import { RedisService } from '../service/RedisService';
-import { UniTheme, themeByName } from '../common/UniTheme';
+import { AppTheme, themeByName } from '../common/AppTheme';
 
 @Component
 export struct RedisTab {
   // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
   @StorageProp('ut.theme') themeName: string = 'dark'
-  private th(): UniTheme { return themeByName(this.themeName) }
+  private th(): AppTheme { return themeByName(this.themeName) }
   @State host: string = ''
   @State port: string = '6379'
   @State connected: boolean = false
@@ -48,13 +48,13 @@ export struct RedisTab {
       Text('Redis')
         .fontSize(15)
         .fontWeight(FontWeight.Medium)
-        .fontColor(this.th().textPrimary)
+        .fontColor(this.th().ink)
         .alignSelf(ItemAlign.Start)
       if (!this.connected) {
         Row({ space: 8 }) {
           TextInput({ placeholder: 'host', text: this.host })
             .fontSize(12)
-            .fontColor(this.th().textPrimary)
+            .fontColor(this.th().ink)
             .backgroundColor(this.th().inputBg)
             .borderRadius(6)
             .layoutWeight(2)
@@ -63,7 +63,7 @@ export struct RedisTab {
             })
           TextInput({ placeholder: '端口', text: this.port })
             .fontSize(12)
-            .fontColor(this.th().textPrimary)
+            .fontColor(this.th().ink)
             .backgroundColor(this.th().inputBg)
             .borderRadius(6)
             .layoutWeight(1)
@@ -74,7 +74,7 @@ export struct RedisTab {
             .fontSize(12)
             .fontColor(0xffffff)
             .padding({ left: 14, right: 14, top: 8, bottom: 8 })
-            .backgroundColor(this.th().accent)
+            .backgroundColor(this.th().brand)
             .borderRadius(6)
             .onClick(() => this.doConnect())
         }
@@ -89,7 +89,7 @@ export struct RedisTab {
             .fontSize(11)
             .fontColor(this.th().danger)
             .padding({ left: 10, right: 10, top: 5, bottom: 5 })
-            .backgroundColor(this.th().bgOverlay)
+            .backgroundColor(this.th().hover)
             .borderRadius(4)
             .onClick(() => {
               RedisService.close()
@@ -100,7 +100,7 @@ export struct RedisTab {
         .width('100%')
         TextInput({ placeholder: '命令,如 PING / INFO / KEYS *', text: this.cmd })
           .fontSize(12)
-          .fontColor(this.th().textPrimary)
+          .fontColor(this.th().ink)
           .backgroundColor(this.th().inputBg)
           .borderRadius(6)
           .onChange((v: string) => {
@@ -111,7 +111,7 @@ export struct RedisTab {
           ForEach(['PING', 'INFO server', 'DBSIZE', 'GET uniterm:key'], (q: string) => {
             Text(q)
               .fontSize(10)
-              .fontColor(this.th().textSecondary)
+              .fontColor(this.th().inkSubtle)
               .padding({ left: 8, right: 8, top: 4, bottom: 4 })
               .backgroundColor(this.th().inputBg)
               .borderRadius(4)
@@ -126,14 +126,14 @@ export struct RedisTab {
       Scroll() {
         Text(this.out === '' ? ' ' : this.out)
           .fontSize(11)
-          .fontColor(this.th().textPrimary)
+          .fontColor(this.th().ink)
           .fontFamily('monospace')
           .width('100%')
           .textAlign(TextAlign.Start)
       }
       .layoutWeight(1)
       .width('100%')
-      .backgroundColor(this.th().bgBase)
+      .backgroundColor(this.th().surface)
       .borderRadius(6)
       .padding(8)
       .align(Alignment.TopStart)
@@ -141,7 +141,7 @@ export struct RedisTab {
     .width('100%')
     .height('100%')
     .padding(14)
-    .backgroundColor(this.th().bgSurface)
+    .backgroundColor(this.th().panel)
     .alignItems(HorizontalAlign.Start)
   }
 }

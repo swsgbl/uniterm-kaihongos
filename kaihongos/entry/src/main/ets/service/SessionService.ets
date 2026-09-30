@@ -35,7 +35,7 @@ interface TermEvent {
   authMethod?: string;
 }
 
-const TAG: string = 'uniterm.session';
+const TAG: string = 'oat.session';
 const DOMAIN: number = 0x0110;
 
 /** Anything that can receive decoded ssh output bytes. */

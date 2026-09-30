@@ -21,7 +21,7 @@ import { exportUtm } from '../store/UtmExport';
 import { IdentityStore, IdentityRec } from '../store/IdentityStore';
 import { SessionService } from '../service/SessionService';
 import { IdentityManager } from '../components/IdentityManager';
-import { UniTheme, themeByName } from '../common/UniTheme';
+import { AppTheme, themeByName } from '../common/AppTheme';
 
 const EDITABLE_TYPES_SET: string[] = ['ssh'];
 
@@ -71,7 +71,7 @@ function getContextSandboxTmp(): string {
   return gSandboxTmp;
 }
 
-const ITAG: string = 'uniterm.import';
+const ITAG: string = 'oat.import';
 const IDOMAIN: number = 0x0110;
 const DEV_IMPORT_PATH: string = '/data/local/tmp/import-test.utm';
 
@@ -79,7 +79,7 @@ const DEV_IMPORT_PATH: string = '/data/local/tmp/import-test.utm';
 export struct ConnList {
   // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
   @StorageProp('ut.theme') themeName: string = 'dark'
-  private th(): UniTheme { return themeByName(this.themeName) }
+  private th(): AppTheme { return themeByName(this.themeName) }
   onOpenConn: (id: string) => void = (id: string) => {
   };
   @State groups: GroupRec[] = [];
@@ -555,7 +555,7 @@ export struct ConnList {
    * `hdc app install -r` + shell cp as root workaround. */
   private devImport(): void {
     // Channel 1 (preferred on device): launch want parameter.
-    //   hdc shell aa start -b net.uniterm.poc -a EntryAbility
+    //   hdc shell aa start -b com.oneaiterm.terminal -a EntryAbility
     //     --ps importText "$(cat /data/local/tmp/import-test.utm)"
     const wantText = WantParams.getImportText();
     if (wantText.length > 0) {
@@ -636,11 +636,11 @@ export struct ConnList {
           Text('连接')
             .fontSize(13)
             .fontWeight(FontWeight.Medium)
-            .fontColor(this.th().textPrimary)
+            .fontColor(this.th().ink)
           Blank()
           Text('+ 分组')
             .fontSize(11)
-            .fontColor(this.th().textSecondary)
+            .fontColor(this.th().inkSubtle)
             .padding({ left: 8, right: 8, top: 4, bottom: 4 })
             .borderRadius(4)
             .onClick(() => {
@@ -649,9 +649,9 @@ export struct ConnList {
             })
           Text('+ 主机')
             .fontSize(11)
-            .fontColor(this.th().accent)
+            .fontColor(this.th().brand)
             .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-            .backgroundColor(this.th().bgOverlay)
+            .backgroundColor(this.th().hover)
             .borderRadius(4)
             .onClick(() => {
               this.beginAdd();
@@ -666,9 +666,9 @@ export struct ConnList {
             .fontColor(this.hasMaster && this.unlocked ? this.th().success : this.th().warn)
           if (!this.hasMaster) {
             Text('设置')
-              .fontSize(10).fontColor(this.th().textPrimary)
+              .fontSize(10).fontColor(this.th().ink)
               .padding({ left: 8, right: 8, top: 3, bottom: 3 })
-              .borderRadius(4).backgroundColor(this.th().bgOverlay)
+              .borderRadius(4).backgroundColor(this.th().hover)
               .onClick(() => {
                 this.credPass1 = '';
                 this.credPass2 = '';
@@ -678,9 +678,9 @@ export struct ConnList {
           } else {
             if (!this.unlocked) {
               Text('解锁')
-                .fontSize(10).fontColor(this.th().textPrimary)
+                .fontSize(10).fontColor(this.th().ink)
                 .padding({ left: 8, right: 8, top: 3, bottom: 3 })
-                .borderRadius(4).backgroundColor(this.th().bgOverlay)
+                .borderRadius(4).backgroundColor(this.th().hover)
                 .onClick(() => {
                   this.credPass1 = '';
                   this.credErr = '';
@@ -688,9 +688,9 @@ export struct ConnList {
                 })
             } else {
               Text('锁定')
-                .fontSize(10).fontColor(this.th().textSecondary)
+                .fontSize(10).fontColor(this.th().inkSubtle)
                 .padding({ left: 8, right: 8, top: 3, bottom: 3 })
-                .borderRadius(4).backgroundColor(this.th().bgOverlay)
+                .borderRadius(4).backgroundColor(this.th().hover)
                 .onClick(() => {
                   this.cred!.lock();
                   this.unlocked = false;
@@ -724,28 +724,28 @@ export struct ConnList {
         Flex({ wrap: FlexWrap.Wrap, direction: FlexDirection.Row }) {
           Text('导入:')
             .fontSize(10)
-            .fontColor(this.th().textSecondary)
+            .fontColor(this.th().inkSubtle)
             .margin({ right: 6 })
           Text('选择文件(.utm/.json)')
-            .fontSize(10).fontColor(this.th().textSecondary)
+            .fontSize(10).fontColor(this.th().inkSubtle)
             .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-            .borderRadius(3).backgroundColor(this.th().bgOverlay)
+            .borderRadius(3).backgroundColor(this.th().hover)
             .margin({ right: 4 })
             .onClick(() => {
               this.pickAndImport();
             })
           Text('开发者导入')
-            .fontSize(10).fontColor(this.th().textSecondary)
+            .fontSize(10).fontColor(this.th().inkSubtle)
             .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-            .borderRadius(3).backgroundColor(this.th().bgOverlay)
+            .borderRadius(3).backgroundColor(this.th().hover)
             .margin({ right: 4 })
             .onClick(() => {
               this.devImport();
             })
           Text('导出.utm')
-            .fontSize(10).fontColor(this.th().textSecondary)
+            .fontSize(10).fontColor(this.th().inkSubtle)
             .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-            .borderRadius(3).backgroundColor(this.th().bgOverlay)
+            .borderRadius(3).backgroundColor(this.th().hover)
             .margin({ right: 4 })
             .onClick(() => {
               this.exportPassword = '';
@@ -753,9 +753,9 @@ export struct ConnList {
               this.exportDialog = true;
             })
           Text('身份')
-            .fontSize(10).fontColor(this.th().textSecondary)
+            .fontSize(10).fontColor(this.th().inkSubtle)
             .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-            .borderRadius(3).backgroundColor(this.th().bgOverlay)
+            .borderRadius(3).backgroundColor(this.th().hover)
             .onClick(() => {
               this.identVisible = true;
             })
@@ -790,7 +790,7 @@ export struct ConnList {
       }
       .width('100%')
       .height('100%')
-      .backgroundColor(this.th().bgBase)
+      .backgroundColor(this.th().surface)
 
       this.RowActionMenu()
 
@@ -828,7 +828,7 @@ export struct ConnList {
             })
           Row({ space: 12 }) {
             Button('取消')
-              .backgroundColor(this.th().textSecondary)
+              .backgroundColor(this.th().inkSubtle)
               .layoutWeight(1)
               .onClick(() => {
                 this.groupDialogMode = 0;
@@ -857,7 +857,7 @@ export struct ConnList {
         }
         .width('60%')
         .padding(18)
-        .backgroundColor(this.th().bgElevated)
+        .backgroundColor(this.th().surfaceRaised)
         .borderRadius(12)
         .justifyContent(FlexAlign.Center)
       }
@@ -873,7 +873,7 @@ export struct ConnList {
               .fontWeight(FontWeight.Bold)
             Text('该文件已加密,请输入导出时设置的密码')
               .fontSize(12)
-              .fontColor(this.th().textSecondary)
+              .fontColor(this.th().inkSubtle)
             TextInput({ placeholder: '导入密码' })
               .type(InputType.Password)
               .onChange((v: string) => {
@@ -884,7 +884,7 @@ export struct ConnList {
             }
             Row({ space: 12 }) {
               Button('取消')
-                .backgroundColor(this.th().textSecondary)
+                .backgroundColor(this.th().inkSubtle)
                 .layoutWeight(1)
                 .onClick(() => {
                   this.impDialog = false;
@@ -900,7 +900,7 @@ export struct ConnList {
           }
           .width('72%')
           .padding(18)
-          .backgroundColor(this.th().bgElevated)
+          .backgroundColor(this.th().surfaceRaised)
           .borderRadius(12)
         }
         .width('100%')
@@ -921,7 +921,7 @@ export struct ConnList {
               .fontWeight(FontWeight.Bold)
             Text('密码留空导出明文(密码字段清空);输入密码则用 PBKDF2(100k)+AES-GCM 加密')
               .fontSize(12)
-              .fontColor(this.th().textSecondary)
+              .fontColor(this.th().inkSubtle)
             TextInput({ placeholder: '导出密码(可留空)' })
               .type(InputType.Password)
               .onChange((v: string) => {
@@ -932,7 +932,7 @@ export struct ConnList {
             }
             Row({ space: 12 }) {
               Button('取消')
-                .backgroundColor(this.th().textSecondary)
+                .backgroundColor(this.th().inkSubtle)
                 .layoutWeight(1)
                 .onClick(() => {
                   this.exportDialog = false;
@@ -947,7 +947,7 @@ export struct ConnList {
           }
           .width('72%')
           .padding(18)
-          .backgroundColor(this.th().bgElevated)
+          .backgroundColor(this.th().surfaceRaised)
           .borderRadius(12)
         }
         .width('100%')
@@ -1011,18 +1011,18 @@ export struct ConnList {
       Column() {
         Column({ space: 2 }) {
           Text('连接 ' + this.rowActionConn.name)
-            .fontSize(12).fontColor(this.th().textPrimary)
+            .fontSize(12).fontColor(this.th().ink)
             .width('100%').padding(8).borderRadius(4).textAlign(TextAlign.Start)
             .onClick(() => { this.rowActionVisible = false; this.onOpenConn(this.rowActionConn!.id); })
           Text('测试连通')
-            .fontSize(12).fontColor(this.th().textPrimary)
+            .fontSize(12).fontColor(this.th().ink)
             .width('100%').padding(8).borderRadius(4).textAlign(TextAlign.Start)
             .onClick(() => { this.testing = this.rowActionConn; this.testVisible = true; this.rowActionVisible = false; })
           Text('编辑')
-            .fontSize(12).fontColor(this.th().textPrimary)
+            .fontSize(12).fontColor(this.th().ink)
             .width('100%').padding(8).borderRadius(4).textAlign(TextAlign.Start)
             .onClick(() => { this.beginEdit(this.rowActionConn!); this.rowActionVisible = false; })
-          Divider().strokeWidth(1).color(this.th().bgOverlay).margin({ top: 2, bottom: 2 })
+          Divider().strokeWidth(1).color(this.th().hover).margin({ top: 2, bottom: 2 })
           Text('删除')
             .fontSize(12).fontColor(this.th().danger)
             .width('100%').padding(8).borderRadius(4).textAlign(TextAlign.Start)
@@ -1031,8 +1031,8 @@ export struct ConnList {
         .width(150)
         .padding(6)
         .borderRadius(8)
-        .backgroundColor(this.th().bgOverlay)
-        .border({ width: 1, color: this.th().bgOverlay })
+        .backgroundColor(this.th().hover)
+        .border({ width: 1, color: this.th().hover })
       }
       .position({ x: 100, y: 200 })
       .onClick(() => { this.rowActionVisible = false; })
@@ -1050,7 +1050,7 @@ export struct ConnList {
           if (this.credDialog === 1) {
             Text('主密码用于加密 connections.json 中的密码/私钥字段,忘记后不可恢复')
               .fontSize(12)
-              .fontColor(this.th().textSecondary)
+              .fontColor(this.th().inkSubtle)
           }
           TextInput({ placeholder: this.credDialog === 1 ? '主密码(至少4字符)' : '主密码' })
             .type(InputType.Password)
@@ -1069,7 +1069,7 @@ export struct ConnList {
           }
           Row({ space: 12 }) {
             Button('取消')
-              .backgroundColor(this.th().textSecondary)
+              .backgroundColor(this.th().inkSubtle)
               .layoutWeight(1)
               .onClick(() => {
                 this.credDialog = 0;
@@ -1124,7 +1124,7 @@ export struct ConnList {
         }
         .width('72%')
         .padding(18)
-        .backgroundColor(this.th().bgElevated)
+        .backgroundColor(this.th().surfaceRaised)
         .borderRadius(12)
       }
       .width('100%')
@@ -1144,19 +1144,19 @@ export struct ConnList {
         Text('▸ ' + g.name)
           .fontSize(12)
           .fontWeight(FontWeight.Medium)
-          .fontColor(this.th().textSecondary)
+          .fontColor(this.th().inkSubtle)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .layoutWeight(1)
         Text(this.connsOf(g.id).length.toString())
           .fontSize(9)
-          .fontColor(this.th().textSecondary)
-          .backgroundColor(this.th().bgOverlay)
+          .fontColor(this.th().inkSubtle)
+          .backgroundColor(this.th().hover)
           .padding({ left: 5, right: 5, top: 1, bottom: 1 })
           .borderRadius(8)
         Text('⋯')
           .fontSize(13)
-          .fontColor(this.th().textSecondary)
+          .fontColor(this.th().inkSubtle)
           .width(22)
           .textAlign(TextAlign.Center)
           .onClick(() => {
@@ -1194,18 +1194,18 @@ export struct ConnList {
             Row({ space: 8 }) {
               Text('◷')
                 .fontSize(13)
-                .fontColor(this.th().accent)
+                .fontColor(this.th().brand)
                 .width(16)
                 .textAlign(TextAlign.Center)
               Column({ space: 1 }) {
                 Text(c.name)
                   .fontSize(12)
-                  .fontColor(this.th().textPrimary)
+                  .fontColor(this.th().ink)
                   .maxLines(1)
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
                 Text(this.hostLineOf(c))
                   .fontSize(10)
-                  .fontColor(this.th().textSecondary)
+                  .fontColor(this.th().inkSubtle)
                   .maxLines(1)
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
               }
@@ -1257,7 +1257,7 @@ export struct ConnList {
         Text('▸ 未分组')
           .fontSize(12)
           .fontWeight(FontWeight.Medium)
-          .fontColor(this.th().textSecondary)
+          .fontColor(this.th().inkSubtle)
           .width('100%')
           .padding({ left: 12, top: 8, bottom: 4 })
       }
@@ -1275,13 +1275,13 @@ export struct ConnList {
       // 左侧协议小图标(官方 conn-icon 16px, muted)
       Text(c.type === 'ssh' ? '⌗' : (c.type === 'rdp' ? '▤' : (c.type === 'vnc' ? '▣' : '○')))
         .fontSize(13)
-        .fontColor(this.th().textSecondary)
+        .fontColor(this.th().inkSubtle)
         .width(16)
         .textAlign(TextAlign.Center)
       if (c.undecryptable) {
         Text('密文不可读')
           .fontSize(9)
-          .fontColor(this.th().bgElevated)
+          .fontColor(this.th().surfaceRaised)
           .backgroundColor(this.th().warn)
           .borderRadius(3)
           .padding({ left: 4, right: 4, top: 1, bottom: 1 })
@@ -1289,7 +1289,7 @@ export struct ConnList {
       if (c.authType === 'identity' && !this.identityExists(c.identityId)) {
         Text('身份缺失')
           .fontSize(9)
-          .fontColor(this.th().bgElevated)
+          .fontColor(this.th().surfaceRaised)
           .backgroundColor(this.th().danger)
           .borderRadius(3)
           .padding({ left: 4, right: 4, top: 1, bottom: 1 })
@@ -1298,13 +1298,13 @@ export struct ConnList {
         Text(c.name)
           .fontSize(12)
           .fontWeight(FontWeight.Medium)
-          .fontColor(this.th().textPrimary)
+          .fontColor(this.th().ink)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
         Text(EDITABLE_TYPES_SET.indexOf(c.type) >= 0 ? this.hostLine(c) :
           this.hostLine(c) + '(暂不支持连接)')
           .fontSize(10)
-          .fontColor(this.th().textSecondary)
+          .fontColor(this.th().inkSubtle)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
       }
@@ -1314,7 +1314,7 @@ export struct ConnList {
       // 官方:右缘仅星标;连接=整行点击
       Text(c.favorite ? '★' : '☆')
         .fontSize(13)
-        .fontColor(c.favorite ? this.th().warn : this.th().textSecondary)
+        .fontColor(c.favorite ? this.th().warn : this.th().inkSubtle)
         .width(24)
         .height(24)
         .textAlign(TextAlign.Center)

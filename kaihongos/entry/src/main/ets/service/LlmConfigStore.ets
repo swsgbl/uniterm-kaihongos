@@ -5,7 +5,7 @@ import fs from '@ohos.file.fs';
 import hilog from '@ohos.hilog';
 import { LlmConfig } from './Llm';
 
-const CFG_TAG: string = 'uniterm.llmcfg';
+const CFG_TAG: string = 'oat.llmcfg';
 const CFG_DOMAIN: number = 0x0110;
 
 export class LlmConfigStore {

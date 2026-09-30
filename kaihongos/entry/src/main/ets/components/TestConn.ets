@@ -6,13 +6,13 @@
  */
 import { libssh } from '@ohos/libssh';
 import { ConnRec } from '../store/ConnStore';
-import { UniTheme, themeByName } from '../common/UniTheme';
+import { AppTheme, themeByName } from '../common/AppTheme';
 
 @Component
 export struct TestConn {
   // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
   @StorageProp('ut.theme') themeName: string = 'dark'
-  private th(): UniTheme { return themeByName(this.themeName) }
+  private th(): AppTheme { return themeByName(this.themeName) }
   conn: ConnRec | null = null;
   onClose: () => void = () => {};
 
@@ -65,16 +65,16 @@ export struct TestConn {
       Text(this.conn !== null ? this.conn.name + '  ' + this.conn.host + ':' +
         (this.conn !== null ? this.conn.port.toString() : '') : '')
         .fontSize(14)
-        .fontColor(this.th().textSecondary)
+        .fontColor(this.th().inkSubtle)
       Scroll() {
         Text(this.result)
           .fontSize(15)
-          .fontColor(this.busy ? this.th().textSecondary : (this.ok ? this.th().success : this.th().danger))
+          .fontColor(this.busy ? this.th().inkSubtle : (this.ok ? this.th().success : this.th().danger))
           .padding(6)
       }
       .constraintSize({ maxHeight: 160 })
       .width('100%')
-      .backgroundColor(this.th().bgElevated)
+      .backgroundColor(this.th().surfaceRaised)
       .borderRadius(8)
 
       if (this.busy) {
@@ -83,14 +83,14 @@ export struct TestConn {
 
       Row({ space: 12 }) {
         Button('重测')
-          .backgroundColor(this.th().textSecondary)
+          .backgroundColor(this.th().inkSubtle)
           .layoutWeight(1)
           .enabled(!this.busy)
           .onClick(() => {
             this.run();
           })
         Button('关闭')
-          .backgroundColor(this.th().textSecondary)
+          .backgroundColor(this.th().inkSubtle)
           .layoutWeight(1)
           .onClick(() => {
             this.onClose();
@@ -100,7 +100,7 @@ export struct TestConn {
     }
     .width('78%')
     .padding(18)
-    .backgroundColor(this.th().bgElevated)
+    .backgroundColor(this.th().surfaceRaised)
     .borderRadius(12)
     .justifyContent(FlexAlign.Center)
   }

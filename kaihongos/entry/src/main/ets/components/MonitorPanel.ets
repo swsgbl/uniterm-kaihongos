@@ -2,7 +2,7 @@
 // 数据源:/proc/stat /proc/meminfo /proc/net/dev /proc/loadavg + statfs(/data)
 import fs from '@ohos.file.fs';
 import statfs from '@ohos.statfs';
-import { UniTheme, themeByName } from '../common/UniTheme';
+import { AppTheme, themeByName } from '../common/AppTheme';
 
 interface NetIo {
   rxKB: number
@@ -13,7 +13,7 @@ interface NetIo {
 export struct MonitorPanel {
   // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
   @StorageProp('ut.theme') themeName: string = 'dark'
-  private th(): UniTheme { return themeByName(this.themeName) }
+  private th(): AppTheme { return themeByName(this.themeName) }
   @State cpuPercent: number = 0
   @State memPercent: number = 0
   @State memText: string = '-'
@@ -183,7 +183,7 @@ export struct MonitorPanel {
       Row() {
         Text(title)
           .fontSize(12)
-          .fontColor(this.th().textSecondary)
+          .fontColor(this.th().inkSubtle)
         Blank()
         Text(pct.toString() + '%')
           .fontSize(13)
@@ -197,12 +197,12 @@ export struct MonitorPanel {
         .width('100%')
       Text(text)
         .fontSize(11)
-        .fontColor(this.th().textSecondary)
+        .fontColor(this.th().inkSubtle)
     }
     .width('100%')
     .padding(12)
     .borderRadius(8)
-    .backgroundColor(this.th().bgSurface)
+    .backgroundColor(this.th().panel)
   }
 
   build() {
@@ -210,7 +210,7 @@ export struct MonitorPanel {
       Text('服务器监控')
         .fontSize(13)
         .fontWeight(FontWeight.Medium)
-        .fontColor(this.th().textPrimary)
+        .fontColor(this.th().ink)
         .padding({ top: 10, bottom: 2 })
       if (this.procDeny !== '') {
         Text(this.procDeny)
@@ -218,7 +218,7 @@ export struct MonitorPanel {
           .fontColor(this.th().warn)
           .padding({ left: 4, right: 4 })
       }
-      this.Card('CPU', this.cpuPercent, '负载 ' + this.loadText, this.th().accent)
+      this.Card('CPU', this.cpuPercent, '负载 ' + this.loadText, this.th().brand)
       this.Card('内存', this.memPercent, this.memText, this.th().success)
       this.Card('磁盘 /data', this.diskPercent, this.diskText, this.th().warn)
       Row({ space: 10 }) {
@@ -228,36 +228,36 @@ export struct MonitorPanel {
             .fontColor(0x4c9df0)
           Text('下行')
             .fontSize(10)
-            .fontColor(this.th().textSecondary)
+            .fontColor(this.th().inkSubtle)
         }
         .layoutWeight(1)
         .padding(10)
         .borderRadius(8)
-        .backgroundColor(this.th().bgSurface)
+        .backgroundColor(this.th().panel)
         Column({ space: 4 }) {
           Text('↑ ' + this.txRate.toString() + ' KB/s')
             .fontSize(12)
             .fontColor(0xa78bfa)
           Text('上行')
             .fontSize(10)
-            .fontColor(this.th().textSecondary)
+            .fontColor(this.th().inkSubtle)
         }
         .layoutWeight(1)
         .padding(10)
         .borderRadius(8)
-        .backgroundColor(this.th().bgSurface)
+        .backgroundColor(this.th().panel)
       }
       .width('100%')
       Blank()
       Text('3s 刷新 · 远程主机监控(经 SSH)按官方路线接入')
         .fontSize(10)
-        .fontColor(this.th().textSecondary)
+        .fontColor(this.th().inkSubtle)
         .padding(8)
     }
     .width('100%')
     .height('100%')
     .padding({ left: 10, right: 10 })
-    .backgroundColor(this.th().bgBase)
+    .backgroundColor(this.th().surface)
     .alignItems(HorizontalAlign.Start)
   }
 }

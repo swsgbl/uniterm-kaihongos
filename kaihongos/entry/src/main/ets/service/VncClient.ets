@@ -6,7 +6,7 @@ import socket from '@ohos.net.socket';
 import image from '@ohos.multimedia.image';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
-const VNC_TAG: string = 'uniterm.vnc';
+const VNC_TAG: string = 'oat.vnc';
 const VNC_DOMAIN: number = 0x0110;
 
 export interface VncRect {

@@ -18,7 +18,7 @@ import { fileIo } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { SessionService } from '../service/SessionService';
 import { libssh } from '@ohos/libssh';
-import { UniTheme, themeByName } from '../common/UniTheme';
+import { AppTheme, themeByName } from '../common/AppTheme';
 
 interface SftpEntry {
   name: string;
@@ -37,7 +37,7 @@ interface SftpListResp {
 export struct SftpPanel {
   // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
   @StorageProp('ut.theme') themeName: string = 'dark'
-  private th(): UniTheme { return themeByName(this.themeName) }
+  private th(): AppTheme { return themeByName(this.themeName) }
   @Prop connIdIn: string = ''
   @State cwd: string = '.';
   @State entries: SftpEntry[] = [];
@@ -71,13 +71,13 @@ export struct SftpPanel {
     this.ssh!.sftpOpen(this.sid).then(() => {
       return this.listDir(this.cwd);
     }).then(() => {
-      hilog.info(0x0110, 'uniterm.sftp', 'panel open+list ms=%{public}d', Date.now() - t0);
+      hilog.info(0x0110, 'oat.sftp', 'panel open+list ms=%{public}d', Date.now() - t0);
       this.busy = false;
     }).catch((e: Object) => {
       this.status = 'error';
       this.errText = e instanceof Error ? e.message : JSON.stringify(e);
       this.busy = false;
-      hilog.error(0x0110, 'uniterm.sftp', 'open+list FAIL %{public}s', this.errText);
+      hilog.error(0x0110, 'oat.sftp', 'open+list FAIL %{public}s', this.errText);
     });
   }
 
@@ -91,7 +91,7 @@ export struct SftpPanel {
           dir = resp.dir;
           files = resp.files;
         } catch (e) {
-          hilog.warn(0x0110, 'uniterm.sftp', 'list parse fail');
+          hilog.warn(0x0110, 'oat.sftp', 'list parse fail');
         }
         // dirs first, then name order (upstream sorts server-side; we sort for UX)
         files.sort((a: SftpEntry, b: SftpEntry): number => {
@@ -103,12 +103,12 @@ export struct SftpPanel {
         this.cwd = dir;
         this.entries = files;
         this.status = 'ok';
-        hilog.info(0x0110, 'uniterm.sftp', 'list dir=%{public}s n=%{public}d', dir, files.length);
+        hilog.info(0x0110, 'oat.sftp', 'list dir=%{public}s n=%{public}d', dir, files.length);
         resolve();
       }).catch((e: Object) => {
         this.status = 'error';
         this.errText = e instanceof Error ? e.message : JSON.stringify(e);
-        hilog.error(0x0110, 'uniterm.sftp', 'list FAIL %{public}s', this.errText);
+        hilog.error(0x0110, 'oat.sftp', 'list FAIL %{public}s', this.errText);
         resolve();
       });
     });
@@ -166,7 +166,7 @@ export struct SftpPanel {
         fileIo.mkdirSync(this.localBase(), true);
       }
     } catch (e) {
-      hilog.warn(0x0110, 'uniterm.sftp', 'mkdir sftp: %{public}s', JSON.stringify(e));
+      hilog.warn(0x0110, 'oat.sftp', 'mkdir sftp: %{public}s', JSON.stringify(e));
     }
   }
 
@@ -181,12 +181,12 @@ export struct SftpPanel {
       this.lastOp = 'downloaded ' + name + ' (' + n.toString() + 'B)';
       this.status = 'ok';
       this.busy = false;
-      hilog.info(0x0110, 'uniterm.sftp', 'dl ok %{public}s %{public}d bytes', name, n);
+      hilog.info(0x0110, 'oat.sftp', 'dl ok %{public}s %{public}d bytes', name, n);
     }).catch((e: Object) => {
       this.status = 'error';
       this.errText = e instanceof Error ? e.message : JSON.stringify(e);
       this.busy = false;
-      hilog.error(0x0110, 'uniterm.sftp', 'dl FAIL %{public}s %{public}s', name, this.errText);
+      hilog.error(0x0110, 'oat.sftp', 'dl FAIL %{public}s %{public}s', name, this.errText);
     });
   }
 
@@ -226,12 +226,12 @@ export struct SftpPanel {
       this.status = 'ok';
       this.busy = false;
       this.listDir(this.cwd); // refresh to show the new file
-      hilog.info(0x0110, 'uniterm.sftp', 'ul ok %{public}s %{public}d bytes', name, n);
+      hilog.info(0x0110, 'oat.sftp', 'ul ok %{public}s %{public}d bytes', name, n);
     }).catch((e: Object) => {
       this.status = 'error';
       this.errText = e instanceof Error ? e.message : JSON.stringify(e);
       this.busy = false;
-      hilog.error(0x0110, 'uniterm.sftp', 'ul FAIL %{public}s %{public}s', name, this.errText);
+      hilog.error(0x0110, 'oat.sftp', 'ul FAIL %{public}s %{public}s', name, this.errText);
     });
   }
 
@@ -251,11 +251,11 @@ export struct SftpPanel {
             Text(this.title)
               .fontSize(17)
               .fontWeight(FontWeight.Bold)
-              .fontColor(this.th().bgElevated)
+              .fontColor(this.th().surfaceRaised)
               .maxLines(1)
             Text(this.status + (this.busy ? ' ...' : '') + '  ' + this.entries.length.toString() + ' items')
               .fontSize(11)
-              .fontColor(this.th().textSecondary)
+              .fontColor(this.th().inkSubtle)
               .maxLines(1)
           }
           .alignItems(HorizontalAlign.Start)
@@ -289,13 +289,13 @@ export struct SftpPanel {
         }
       }
       .width('100%')
-      .backgroundColor(this.th().bgSurface)
+      .backgroundColor(this.th().panel)
 
       // cwd bar: [..] path [refresh] [upload]
       Row({ space: 8 }) {
         Button('..')
           .fontSize(13)
-          .backgroundColor(this.th().bgSurface)
+          .backgroundColor(this.th().panel)
           .onClick(() => {
             if (this.busy) {
               return;
@@ -309,13 +309,13 @@ export struct SftpPanel {
           })
         Text(this.cwd)
           .fontSize(13)
-          .fontColor(this.th().textPrimary)
+          .fontColor(this.th().ink)
           .layoutWeight(1)
           .maxLines(1)
           .fontFamily('monospace')
         Button('refresh')
           .fontSize(13)
-          .backgroundColor(this.th().bgSurface)
+          .backgroundColor(this.th().panel)
           .onClick(() => {
             if (this.busy) {
               return;
@@ -338,7 +338,7 @@ export struct SftpPanel {
       }
       .width('100%')
       .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-      .backgroundColor(this.th().bgBase)
+      .backgroundColor(this.th().surface)
 
       // transfer line
       if (this.xferText.length > 0) {
@@ -356,21 +356,21 @@ export struct SftpPanel {
             Row({ space: 8 }) {
               Text(e.isDir ? 'd' : '-')
                 .fontSize(14)
-                .fontColor(e.isDir ? this.th().warn : this.th().textSecondary)
+                .fontColor(e.isDir ? this.th().warn : this.th().inkSubtle)
                 .width(16)
               Text(e.name)
                 .fontSize(14)
-                .fontColor(e.isDir ? this.th().accent : this.th().textPrimary)
+                .fontColor(e.isDir ? this.th().brand : this.th().ink)
                 .layoutWeight(1)
                 .maxLines(1)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
               Text(this.fmtSize(e.size))
                 .fontSize(11)
-                .fontColor(this.th().textSecondary)
+                .fontColor(this.th().inkSubtle)
             }
             .width('100%')
             .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-            .backgroundColor(idx % 2 === 0 ? this.th().bgBase : this.th().bgBase)
+            .backgroundColor(idx % 2 === 0 ? this.th().surface : this.th().surface)
             .borderRadius(4)
             .onClick(() => {
               this.onTapEntry(e);
@@ -380,12 +380,12 @@ export struct SftpPanel {
       }
       .layoutWeight(1)
       .width('100%')
-      .backgroundColor(this.th().bgBase)
+      .backgroundColor(this.th().surface)
 
       // footer
       Text('tap dir=navigate  tap file=download to filesDir/sftp/  upload=newest local file')
         .fontSize(10)
-        .fontColor(this.th().textSecondary)
+        .fontColor(this.th().inkSubtle)
         .width('100%')
         .textAlign(TextAlign.Center)
         .padding({ top: 4, bottom: 6 })

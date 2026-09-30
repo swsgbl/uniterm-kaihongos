@@ -5,7 +5,7 @@ import { AiStore } from '../service/AiStore';
 import { Llm, LlmMsg } from '../service/Llm';
 import { LlmConfigStore } from '../service/LlmConfigStore';
 import { TerminalAgent, AgentEvent } from '../service/TerminalAgent';
-import { UniTheme, themeByName } from '../common/UniTheme';
+import { AppTheme, themeByName } from '../common/AppTheme';
 
 interface AiMsg {
   role: string // 'user' | 'assistant'
@@ -46,7 +46,7 @@ export struct AISidebar {
   private filesDir: string = ''
   private scroller: Scroller = new Scroller()
 
-  private th(): UniTheme {
+  private th(): AppTheme {
     return themeByName(this.themeName)
   }
 
@@ -178,7 +178,7 @@ export struct AISidebar {
     const hist: LlmMsg[] = this.msgs.slice(-20).map(m => {
       return { role: m.role, text: m.text } as LlmMsg
     })
-    Llm.chat(cfg, hist, '你是 uniTerm 的终端 AI 助理,帮助用户管理服务器与执行命令。回答简洁准确,使用中文。').then((out: string) => {
+    Llm.chat(cfg, hist, '你是一站AI终端的终端 AI 助理,帮助用户管理服务器与执行命令。回答简洁准确,使用中文。').then((out: string) => {
       this.msgs.push({ role: 'assistant', text: out, ts: Date.now() })
       this.busy = false
       this.persist()
@@ -196,7 +196,7 @@ export struct AISidebar {
     Text(icon)
       .fontSize(13)
       .fontWeight(FontWeight.Medium)
-      .fontColor(this.th().textSecondary)
+      .fontColor(this.th().inkSubtle)
       .width(24)
       .height(24)
       .textAlign(TextAlign.Center)
@@ -220,7 +220,7 @@ export struct AISidebar {
         Text(this.title)
           .fontSize(13)
           .fontWeight(FontWeight.Medium)
-          .fontColor(this.th().textPrimary)
+          .fontColor(this.th().ink)
         Blank()
         this.HeaderBtn('✚', '新建会话', 'aiNew', () => this.newSession())
         this.HeaderBtn('⚙', '模型配置:Provider / API Key / Model', 'aiCfg', () => {
@@ -239,25 +239,25 @@ export struct AISidebar {
       .width('100%')
       .height(36)
       .padding({ left: 12, right: 8 })
-      .backgroundColor(this.th().bgSurface)
+      .backgroundColor(this.th().panel)
 
       // 模型配置面板(官方 settings→AI:provider/baseUrl/key/model)
       if (this.cfgVisible) {
         Column({ space: 6 }) {
           Row({ space: 6 }) {
             Text('Anthropic').fontSize(11)
-              .fontColor(this.cfgProvider === 'anthropic' ? this.th().accent : this.th().textSecondary)
+              .fontColor(this.cfgProvider === 'anthropic' ? this.th().brand : this.th().inkSubtle)
               .padding(6).borderRadius(4)
-              .backgroundColor(this.cfgProvider === 'anthropic' ? this.th().bgOverlay : Color.Transparent)
+              .backgroundColor(this.cfgProvider === 'anthropic' ? this.th().hover : Color.Transparent)
               .onClick(() => {
                 this.cfgProvider = 'anthropic'
                 this.cfgBaseUrl = 'https://api.anthropic.com'
                 this.cfgModel = 'claude-sonnet-4-5'
               })
             Text('OpenAI').fontSize(11)
-              .fontColor(this.cfgProvider === 'openai' ? this.th().accent : this.th().textSecondary)
+              .fontColor(this.cfgProvider === 'openai' ? this.th().brand : this.th().inkSubtle)
               .padding(6).borderRadius(4)
-              .backgroundColor(this.cfgProvider === 'openai' ? this.th().bgOverlay : Color.Transparent)
+              .backgroundColor(this.cfgProvider === 'openai' ? this.th().hover : Color.Transparent)
               .onClick(() => {
                 this.cfgProvider = 'openai'
                 this.cfgBaseUrl = 'https://api.openai.com/v1'
@@ -265,12 +265,12 @@ export struct AISidebar {
               })
           }
           TextInput({ placeholder: 'Base URL(如 https://api.anthropic.com)', text: this.cfgBaseUrl })
-            .fontSize(12).fontColor(this.th().textPrimary)
-            .placeholderColor(this.th().textSecondary)
-            .backgroundColor(this.th().bgSurface)
+            .fontSize(12).fontColor(this.th().ink)
+            .placeholderColor(this.th().inkSubtle)
+            .backgroundColor(this.th().panel)
             .borderRadius(4)
             .height(36)
-            .border({ width: 1, color: this.th().border })
+            .border({ width: 1, color: this.th().hairline })
             .onChange((v: string) => {
               this.cfgBaseUrl = v
             })
@@ -278,13 +278,13 @@ export struct AISidebar {
           // 原先 11px 密文圆点无高度约束,在深底上近乎不可见。
           Row({ space: 6 }) {
             TextInput({ placeholder: 'API Key(右侧 👁 切换明文)', text: this.cfgApiKey })
-              .fontSize(12).fontColor(this.th().textPrimary)
-              .placeholderColor(this.th().textSecondary)
-              .backgroundColor(this.th().bgSurface)
+              .fontSize(12).fontColor(this.th().ink)
+              .placeholderColor(this.th().inkSubtle)
+              .backgroundColor(this.th().panel)
               .borderRadius(4)
               .height(36)
               .layoutWeight(1)
-              .border({ width: 1, color: this.th().border })
+              .border({ width: 1, color: this.th().hairline })
               .type(this.showKey ? InputType.Normal : InputType.Password)
               .onChange((v: string) => {
                 this.cfgApiKey = v
@@ -292,12 +292,12 @@ export struct AISidebar {
             Text('👁')
               .fontSize(14)
               .fontWeight(this.showKey ? FontWeight.Bold : FontWeight.Normal)
-              .fontColor(this.showKey ? this.th().accent : this.th().textSecondary)
+              .fontColor(this.showKey ? this.th().brand : this.th().inkSubtle)
               .width(34).height(36)
               .textAlign(TextAlign.Center)
               .borderRadius(4)
-              .backgroundColor(this.th().bgSurface)
-              .border({ width: 1, color: this.th().border })
+              .backgroundColor(this.th().panel)
+              .border({ width: 1, color: this.th().hairline })
               .onClick(() => {
                 this.showKey = !this.showKey
               })
@@ -312,18 +312,18 @@ export struct AISidebar {
           }
           .width('100%')
           TextInput({ placeholder: 'Model(如 claude-sonnet-4-5)', text: this.cfgModel })
-            .fontSize(12).fontColor(this.th().textPrimary)
-            .placeholderColor(this.th().textSecondary)
-            .backgroundColor(this.th().bgSurface)
+            .fontSize(12).fontColor(this.th().ink)
+            .placeholderColor(this.th().inkSubtle)
+            .backgroundColor(this.th().panel)
             .borderRadius(4)
             .height(36)
-            .border({ width: 1, color: this.th().border })
+            .border({ width: 1, color: this.th().hairline })
             .onChange((v: string) => {
               this.cfgModel = v
             })
           Text('保存')
-            .fontSize(12).fontColor(this.th().bgBase).padding({ left: 14, right: 14, top: 7, bottom: 7 })
-            .backgroundColor(this.th().accent).borderRadius(4).alignSelf(ItemAlign.End)
+            .fontSize(12).fontColor(this.th().surface).padding({ left: 14, right: 14, top: 7, bottom: 7 })
+            .backgroundColor(this.th().brand).borderRadius(4).alignSelf(ItemAlign.End)
             .onClick(() => this.saveCfg())
             .onHover((h: boolean) => {
               this.hoverTip = h ? 'keySave' : ''
@@ -336,7 +336,7 @@ export struct AISidebar {
         }
         .width('100%')
         .padding(8)
-        .backgroundColor(this.th().bgSurface)
+        .backgroundColor(this.th().panel)
       }
 
       // P0-3: 保存/发送结果反馈条(点击可关闭)
@@ -346,7 +346,7 @@ export struct AISidebar {
           .fontColor(this.toastErr ? this.th().danger : this.th().success)
           .padding({ left: 10, right: 10, top: 5, bottom: 5 })
           .borderRadius(4)
-          .backgroundColor(this.th().bgOverlay)
+          .backgroundColor(this.th().hover)
           .width('100%')
           .textAlign(TextAlign.Center)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -366,11 +366,11 @@ export struct AISidebar {
                 .margin({ top: 40 })
               Text('AI 助理')
                 .fontSize(14)
-                .fontColor(this.th().textPrimary)
+                .fontColor(this.th().ink)
               // M6 relay1: 更新过时文案(AI 已接入,不再提"官方路线图")
               Text('模型已接入(Anthropic / OpenAI 兼容)\n点右上 ⚙ 填入 API Key 即可对话\n或切到 ⚙ 终端执行,让 AI 代跑命令')
                 .fontSize(11)
-                .fontColor(this.th().textSecondary)
+                .fontColor(this.th().inkSubtle)
                 .textAlign(TextAlign.Center)
             }
             .width('100%')
@@ -382,13 +382,13 @@ export struct AISidebar {
             Column({ space: 4 }) {
               Text(m.role === 'user' ? '你' : 'AI')
                 .fontSize(10)
-                .fontColor(m.role === 'user' ? this.th().accent : this.th().success)
+                .fontColor(m.role === 'user' ? this.th().brand : this.th().success)
               Text(m.text)
                 .fontSize(12)
-                .fontColor(this.th().textPrimary)
+                .fontColor(this.th().ink)
                 .padding(8)
                 .borderRadius(6)
-                .backgroundColor(m.role === 'user' ? this.th().bgOverlay : this.th().bgSurface)
+                .backgroundColor(m.role === 'user' ? this.th().hover : this.th().panel)
             }
             .alignItems(m.role === 'user' ? HorizontalAlign.End : HorizontalAlign.Start)
             .width('100%')
@@ -399,7 +399,7 @@ export struct AISidebar {
           ListItem() {
             Text('AI 思考中…')
               .fontSize(11)
-              .fontColor(this.th().textSecondary)
+              .fontColor(this.th().inkSubtle)
               .padding(6)
           }
         }
@@ -412,10 +412,10 @@ export struct AISidebar {
       Column() {
         TextInput({ placeholder: '给 AI 发送消息…', text: this.input })
           .fontSize(12)
-          .fontColor(this.th().textPrimary)
-          .placeholderColor(this.th().textSecondary)
-          .backgroundColor(this.th().bgSurface)
-          .border({ width: 1, color: this.th().border })
+          .fontColor(this.th().ink)
+          .placeholderColor(this.th().inkSubtle)
+          .backgroundColor(this.th().panel)
+          .border({ width: 1, color: this.th().hairline })
           .borderRadius(6)
           .height(36)
           .onChange((v: string) => {
@@ -425,10 +425,10 @@ export struct AISidebar {
         Row() {
           Text(this.agentMode ? '⚙ 终端执行' : '💬 对话')
             .fontSize(10)
-            .fontColor(this.agentMode ? this.th().accent : this.th().textSecondary)
+            .fontColor(this.agentMode ? this.th().brand : this.th().inkSubtle)
             .padding({ left: 6, right: 6, top: 3, bottom: 3 })
             .borderRadius(4)
-            .backgroundColor(this.agentMode ? this.th().bgOverlay : Color.Transparent)
+            .backgroundColor(this.agentMode ? this.th().hover : Color.Transparent)
             .onClick(() => {
               this.agentMode = !this.agentMode
             })
@@ -442,20 +442,20 @@ export struct AISidebar {
             })
           Text('⏎ 发送')
             .fontSize(11)
-            .fontColor(this.th().accent)
+            .fontColor(this.th().brand)
             .padding({ left: 6, right: 6, top: 4, bottom: 4 })
             .onClick(() => this.send())
           Blank()
           Text(this.input.length.toString() + '/2000')
             .fontSize(10)
-            .fontColor(this.th().textSecondary)
+            .fontColor(this.th().inkSubtle)
         }
         .width('100%')
         .margin({ top: 4 })
       }
       .width('100%')
       .padding(10)
-      .backgroundColor(this.th().bgSurface)
+      .backgroundColor(this.th().panel)
 
       // Agent 命令确认条(官方 confirm 对话框简化版)
       if (this.confirmCmd !== '') {
@@ -465,18 +465,18 @@ export struct AISidebar {
             .fontColor(this.th().warn)
           Text(this.confirmCmd)
             .fontSize(11)
-            .fontColor(this.th().textPrimary)
+            .fontColor(this.th().ink)
             .fontFamily('monospace')
             .padding(6)
             .borderRadius(4)
-            .backgroundColor(this.th().bgSurface)
+            .backgroundColor(this.th().panel)
             .width('100%')
           Row({ space: 8 }) {
             Text('✓ 允许')
               .fontSize(11)
-              .fontColor(this.th().bgBase)
+              .fontColor(this.th().surface)
               .padding({ left: 12, right: 12, top: 5, bottom: 5 })
-              .backgroundColor(this.th().accent)
+              .backgroundColor(this.th().brand)
               .borderRadius(4)
               .onClick(() => {
                 this.confirmCmd = ''
@@ -486,7 +486,7 @@ export struct AISidebar {
               .fontSize(11)
               .fontColor(this.th().danger)
               .padding({ left: 12, right: 12, top: 5, bottom: 5 })
-              .backgroundColor(this.th().bgOverlay)
+              .backgroundColor(this.th().hover)
               .borderRadius(4)
               .onClick(() => {
                 this.confirmCmd = ''
@@ -496,11 +496,11 @@ export struct AISidebar {
         }
         .width('100%')
         .padding(8)
-        .backgroundColor(this.th().bgSurface)
+        .backgroundColor(this.th().panel)
       }
     }
     .width(300)
     .height('100%')
-    .backgroundColor(this.th().bgBase)
+    .backgroundColor(this.th().surface)
   }
 }

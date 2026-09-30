@@ -10,9 +10,9 @@
 import { IdentityRec } from '../store/IdentityStore';
 import { CredentialManager } from '../store/CredentialManager';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { UniTheme, themeByName } from '../common/UniTheme';
+import { AppTheme, themeByName } from '../common/AppTheme';
 
-const ITAG: string = 'uniterm.identui';
+const ITAG: string = 'oat.identui';
 const IDOMAIN: number = 0x0110;
 const AUTH_TYPES: string[] = ['password', 'key', 'keyText'];
 
@@ -20,7 +20,7 @@ const AUTH_TYPES: string[] = ['password', 'key', 'keyText'];
 export struct IdentityManager {
   // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
   @StorageProp('ut.theme') themeName: string = 'dark'
-  private th(): UniTheme { return themeByName(this.themeName) }
+  private th(): AppTheme { return themeByName(this.themeName) }
   @Prop identities: IdentityRec[] = [];
   cred: CredentialManager | null = null;
   onSaved: (changed: IdentityRec[]) => void = () => {};
@@ -50,7 +50,7 @@ export struct IdentityManager {
         Blank()
         Text('关闭')
           .fontSize(14)
-          .fontColor(this.th().textSecondary)
+          .fontColor(this.th().inkSubtle)
           .padding(6)
           .onClick(() => {
             this.onClose();
@@ -70,24 +70,24 @@ export struct IdentityManager {
             Row({ space: 8 }) {
               Text(id.authType)
                 .fontSize(10)
-                .fontColor(this.th().bgElevated)
+                .fontColor(this.th().surfaceRaised)
                 .backgroundColor(id.authType === 'password' ? this.th().success :
-                  (id.authType === 'keyText' ? this.th().accent : this.th().textSecondary))
+                  (id.authType === 'keyText' ? this.th().brand : this.th().inkSubtle))
                 .borderRadius(4)
                 .padding({ left: 6, right: 6, top: 2, bottom: 2 })
               Column({ space: 2 }) {
                 Text(id.name)
                   .fontSize(15)
-                  .fontColor(this.th().bgBase)
+                  .fontColor(this.th().surface)
                 Text(id.username + (id.keyPath.length > 0 ? ' key:' + id.keyPath : ''))
                   .fontSize(12)
-                  .fontColor(this.th().textSecondary)
+                  .fontColor(this.th().inkSubtle)
               }
               .alignItems(HorizontalAlign.Start)
               .layoutWeight(1)
               Text('编辑')
                 .fontSize(13)
-                .fontColor(this.th().textSecondary)
+                .fontColor(this.th().inkSubtle)
                 .padding(4)
                 .onClick(() => {
                   this.beginEdit(idx);
@@ -106,7 +106,7 @@ export struct IdentityManager {
           if (this.list.length === 0) {
             Text('(空) 添加一个身份后,主机可选择"身份"认证引用它')
               .fontSize(13)
-              .fontColor(this.th().textSecondary)
+              .fontColor(this.th().inkSubtle)
           }
         }
         .width('100%')
@@ -116,7 +116,7 @@ export struct IdentityManager {
 
       Button('+ 新增身份')
         .width('100%')
-        .backgroundColor(this.th().accent)
+        .backgroundColor(this.th().brand)
         .onClick(() => {
           this.beginEdit(-1);
         })
@@ -128,7 +128,7 @@ export struct IdentityManager {
     .width('86%')
     .height('86%')
     .padding(16)
-    .backgroundColor(this.th().bgElevated)
+    .backgroundColor(this.th().surfaceRaised)
     .borderRadius(12)
     .alignItems(HorizontalAlign.Start)
   }
@@ -183,8 +183,8 @@ export struct IdentityManager {
         ForEach(AUTH_TYPES, (t: string) => {
           Text(t)
             .fontSize(13)
-            .fontColor(this.eAuth === t ? this.th().bgElevated : this.th().textPrimary)
-            .backgroundColor(this.eAuth === t ? this.th().accent : this.th().bgSurface)
+            .fontColor(this.eAuth === t ? this.th().surfaceRaised : this.th().ink)
+            .backgroundColor(this.eAuth === t ? this.th().brand : this.th().panel)
             .borderRadius(6)
             .padding({ left: 10, right: 10, top: 6, bottom: 6 })
             .onClick(() => {
@@ -225,7 +225,7 @@ export struct IdentityManager {
       }
       Row({ space: 10 }) {
         Button('取消')
-          .backgroundColor(this.th().textSecondary)
+          .backgroundColor(this.th().inkSubtle)
           .layoutWeight(1)
           .onClick(() => {
             this.editing = false;
@@ -241,7 +241,7 @@ export struct IdentityManager {
     .width('100%')
     .padding(12)
     .borderRadius(8)
-    .backgroundColor(this.th().bgElevated)
+    .backgroundColor(this.th().surfaceRaised)
   }
 
   private saveForm(): void {

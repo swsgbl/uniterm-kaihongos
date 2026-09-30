@@ -19,7 +19,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { isEncrypted } from './EncCrypto';
 import { CredentialManager } from './CredentialManager';
 
-const TAG: string = 'uniterm.ident';
+const TAG: string = 'oat.ident';
 const DOMAIN: number = 0x0110;
 const STORE_FILE: string = 'identities.json';
 

@@ -13,7 +13,7 @@ import { CredentialManager } from './CredentialManager';
 import { isEncrypted } from './EncCrypto';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
-const TAG: string = 'uniterm.store';
+const TAG: string = 'oat.store';
 const DOMAIN: number = 0x0110;
 const STORE_FILE: string = 'connections.json';
 
