@@ -5,6 +5,7 @@
  */
 import { ConnRec, GroupRec } from '../store/ConnStore';
 import { IdentityRec } from '../store/IdentityStore';
+import { UniTheme, themeByName } from '../common/UniTheme';
 
 const AUTH_TYPES: string[] = ['password', 'key', 'keyText', 'identity'];
 const ENCODINGS: string[] = ['utf-8', 'gbk'];
@@ -12,6 +13,9 @@ const BACKSPACE_KEYS: string[] = ['del', 'bs', 'vt220'];
 
 @Component
 export struct ConnForm {
+  // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
+  @StorageProp('ut.theme') themeName: string = 'dark'
+  private th(): UniTheme { return themeByName(this.themeName) }
   editing: ConnRec | null = null;
   onClose: () => void = () => {};
   groups: GroupRec[] = [];
@@ -288,14 +292,14 @@ export struct ConnForm {
       Row({ space: 8 }) {
         Text('协议')
           .fontSize(12)
-          .fontColor(0x9ea3ae)
+          .fontColor(this.th().textSecondary)
           .width(48)
         Select(this.typeOptions())
           .selected(this.fTypeIdx)
           .value(this.connType())
-          .fontColor(0xe6e8ed)
+          .fontColor(this.th().textPrimary)
           .font({ size: 12 })
-          .backgroundColor(0x1f222b)
+          .backgroundColor(this.th().inputBg)
           .borderRadius(6)
           .layoutWeight(1)
           .onSelect((idx: number) => {
@@ -380,7 +384,7 @@ export struct ConnForm {
         if (this.identities.length === 0) {
           Text('(尚无身份:先在主页"身份"里创建)')
             .fontSize(12)
-            .fontColor(0xe6a23c)
+            .fontColor(this.th().warn)
         } else {
           Row() {
             Text('引用身份').fontSize(14).width(70)
@@ -449,12 +453,12 @@ export struct ConnForm {
         })
 
       if (this.err.length > 0) {
-        Text(this.err).fontSize(13).fontColor(Color.Red)
+        Text(this.err).fontSize(13).fontColor(this.th().danger)
       }
 
       Row({ space: 12 }) {
         Button('取消')
-          .backgroundColor(0x909399)
+          .backgroundColor(this.th().textSecondary)
           .layoutWeight(1)
           .onClick(() => {
             this.onClose();
@@ -476,7 +480,7 @@ export struct ConnForm {
     }
     .width('88%')
     .padding(16)
-    .backgroundColor(Color.White)
+    .backgroundColor(this.th().bgElevated)
     .borderRadius(12)
   }
 }

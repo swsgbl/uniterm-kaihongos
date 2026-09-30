@@ -1,10 +1,11 @@
 // 官方 AISidebar 复刻(结构:ai-header 标题+新建/历史/搜索/最大化/关闭 | ai-messages | ai-input 输入区)
-// AI 后端(Anthropic/OpenAI 协议)按官方路线后续接入;先落地一比一布局与本地会话管理
+// AI 后端(Anthropic/OpenAI 协议)已接入;M6 relay1: 全量主题化 + 保存/发送 toast + 密钥框可见性修复 + 悬停 tooltip
 import { common } from '@kit.AbilityKit';
 import { AiStore } from '../service/AiStore';
 import { Llm, LlmMsg } from '../service/Llm';
 import { LlmConfigStore } from '../service/LlmConfigStore';
 import { TerminalAgent, AgentEvent } from '../service/TerminalAgent';
+import { UniTheme, themeByName } from '../common/UniTheme';
 
 interface AiMsg {
   role: string // 'user' | 'assistant'
@@ -22,6 +23,7 @@ interface AiSession {
 @Component
 export struct AISidebar {
   @Link visible: boolean
+  @StorageProp('ut.theme') themeName: string = 'dark'
   @State msgs: AiMsg[] = []
   @State sessions: AiSession[] = []
   @State curSession: number = -1
@@ -35,8 +37,23 @@ export struct AISidebar {
   @State cfgBaseUrl: string = 'https://api.anthropic.com'
   @State cfgApiKey: string = ''
   @State cfgModel: string = 'claude-sonnet-4-5'
+  @State showKey: boolean = false // 密钥明文切换(P0-2)
+  @State toast: string = '' // 保存/发送反馈(P0-3)
+  @State toastErr: boolean = false
+  // tooltip 公共悬停态(P0-6): hoverTip 记录当前悬停目标 id
+  @State hoverTip: string = ''
+  @State hoverOn: boolean = false
   private filesDir: string = ''
   private scroller: Scroller = new Scroller()
+
+  private th(): UniTheme {
+    return themeByName(this.themeName)
+  }
+
+  private showToast(msg: string, isErr: boolean): void {
+    this.toast = msg
+    this.toastErr = isErr
+  }
 
   aboutToAppear(): void {
     const ctx = getContext(this) as common.UIAbilityContext
@@ -50,13 +67,19 @@ export struct AISidebar {
   }
 
   saveCfg(): void {
-    LlmConfigStore.write(this.filesDir, {
+    // P0-1: write() 返回错误消息,失败时 toast 且不关面板
+    const err = LlmConfigStore.write(this.filesDir, {
       provider: this.cfgProvider,
       baseUrl: this.cfgBaseUrl,
       apiKey: this.cfgApiKey,
       model: this.cfgModel
     })
-    this.cfgVisible = false
+    if (err === '') {
+      this.showToast('已保存', false)
+      this.cfgVisible = false
+    } else {
+      this.showToast(err, true)
+    }
   }
 
   // ===== 会话持久化(ai_sessions.json) =====
@@ -148,6 +171,7 @@ export struct AISidebar {
     if (cfg.apiKey === '') {
       this.msgs.push({ role: 'assistant', text: '未配置模型——点右上 ⚙ 填入 API Key 后即可对话(兼容 Anthropic/OpenAI 协议)。', ts: Date.now() })
       this.persist()
+      this.showToast('请先在 ⚙ 模型配置中填入 API Key', true)
       return
     }
     this.busy = true
@@ -159,23 +183,34 @@ export struct AISidebar {
       this.busy = false
       this.persist()
     }).catch((e: Object) => {
-      this.msgs.push({ role: 'assistant', text: '调用失败: ' + (e !== null && e !== undefined ? e.toString().substring(0, 300) : 'unknown'), ts: Date.now() })
+      const em = e !== null && e !== undefined ? e.toString().substring(0, 300) : 'unknown'
+      this.msgs.push({ role: 'assistant', text: '调用失败: ' + em, ts: Date.now() })
       this.busy = false
       this.persist()
+      this.showToast('AI 调用失败', true)
     })
   }
 
   @Builder
-  HeaderBtn(icon: string, tip: string, cb: () => void) {
+  HeaderBtn(icon: string, tip: string, tipId: string, cb: () => void) {
     Text(icon)
       .fontSize(13)
-      .fontColor(0x9ea3ae)
+      .fontWeight(FontWeight.Medium)
+      .fontColor(this.th().textSecondary)
       .width(24)
       .height(24)
       .textAlign(TextAlign.Center)
       .borderRadius(4)
       .margin({ left: 2 })
       .onClick(() => cb())
+      .onHover((h: boolean) => {
+        this.hoverTip = h ? tipId : ''
+        this.hoverOn = h
+      })
+      .bindPopup(this.hoverOn && this.hoverTip === tipId, {
+        message: tip,
+        placementOnTop: true
+      })
   }
 
   build() {
@@ -185,72 +220,140 @@ export struct AISidebar {
         Text(this.title)
           .fontSize(13)
           .fontWeight(FontWeight.Medium)
-          .fontColor(0xe6e8ed)
+          .fontColor(this.th().textPrimary)
         Blank()
-        this.HeaderBtn('✚', '新会话', () => this.newSession())
-        this.HeaderBtn('⚙', '模型配置', () => {
+        this.HeaderBtn('✚', '新建会话', 'aiNew', () => this.newSession())
+        this.HeaderBtn('⚙', '模型配置:Provider / API Key / Model', 'aiCfg', () => {
           this.cfgVisible = !this.cfgVisible
         })
-        this.HeaderBtn('◷', '历史', () => {
+        this.HeaderBtn('◷', '切换到最近历史会话', 'aiHist', () => {
           if (this.sessions.length > 0) {
             this.selectSession(this.sessions[this.sessions.length - 1].id)
           }
         })
-        this.HeaderBtn('⤢', '最大化', () => {})
-        this.HeaderBtn('×', '关闭', () => {
+        this.HeaderBtn('⤢', '最大化', 'aiMax', () => {})
+        this.HeaderBtn('×', '关闭 AI 侧栏', 'aiClose', () => {
           this.visible = false
         })
       }
       .width('100%')
       .height(36)
       .padding({ left: 12, right: 8 })
-      .backgroundColor(0x191c24)
+      .backgroundColor(this.th().bgSurface)
 
       // 模型配置面板(官方 settings→AI:provider/baseUrl/key/model)
       if (this.cfgVisible) {
         Column({ space: 6 }) {
           Row({ space: 6 }) {
-            Text('Anthropic').fontSize(11).fontColor(this.cfgProvider === 'anthropic' ? 0x22d3ee : 0x9ea3ae)
+            Text('Anthropic').fontSize(11)
+              .fontColor(this.cfgProvider === 'anthropic' ? this.th().accent : this.th().textSecondary)
               .padding(6).borderRadius(4)
-              .backgroundColor(this.cfgProvider === 'anthropic' ? 0x252933 : Color.Transparent)
+              .backgroundColor(this.cfgProvider === 'anthropic' ? this.th().bgOverlay : Color.Transparent)
               .onClick(() => {
                 this.cfgProvider = 'anthropic'
                 this.cfgBaseUrl = 'https://api.anthropic.com'
                 this.cfgModel = 'claude-sonnet-4-5'
               })
-            Text('OpenAI').fontSize(11).fontColor(this.cfgProvider === 'openai' ? 0x22d3ee : 0x9ea3ae)
+            Text('OpenAI').fontSize(11)
+              .fontColor(this.cfgProvider === 'openai' ? this.th().accent : this.th().textSecondary)
               .padding(6).borderRadius(4)
-              .backgroundColor(this.cfgProvider === 'openai' ? 0x252933 : Color.Transparent)
+              .backgroundColor(this.cfgProvider === 'openai' ? this.th().bgOverlay : Color.Transparent)
               .onClick(() => {
                 this.cfgProvider = 'openai'
                 this.cfgBaseUrl = 'https://api.openai.com/v1'
                 this.cfgModel = 'gpt-4o-mini'
               })
           }
-          TextInput({ placeholder: 'Base URL', text: this.cfgBaseUrl })
-            .fontSize(11).fontColor(0xe6e8ed).backgroundColor(0x1f222b).borderRadius(4)
+          TextInput({ placeholder: 'Base URL(如 https://api.anthropic.com)', text: this.cfgBaseUrl })
+            .fontSize(12).fontColor(this.th().textPrimary)
+            .placeholderColor(this.th().textSecondary)
+            .backgroundColor(this.th().bgSurface)
+            .borderRadius(4)
+            .height(36)
+            .border({ width: 1, color: this.th().border })
             .onChange((v: string) => {
               this.cfgBaseUrl = v
             })
-          TextInput({ placeholder: 'API Key', text: this.cfgApiKey })
-            .fontSize(11).fontColor(0xe6e8ed).backgroundColor(0x1f222b).borderRadius(4)
-            .type(InputType.Password)
-            .onChange((v: string) => {
-              this.cfgApiKey = v
-            })
-          TextInput({ placeholder: 'Model', text: this.cfgModel })
-            .fontSize(11).fontColor(0xe6e8ed).backgroundColor(0x1f222b).borderRadius(4)
+          // P0-2: 密钥输入框修复——显式 36px 高 + 12px 字号 + 明文切换钮 + 边框,
+          // 原先 11px 密文圆点无高度约束,在深底上近乎不可见。
+          Row({ space: 6 }) {
+            TextInput({ placeholder: 'API Key(右侧 👁 切换明文)', text: this.cfgApiKey })
+              .fontSize(12).fontColor(this.th().textPrimary)
+              .placeholderColor(this.th().textSecondary)
+              .backgroundColor(this.th().bgSurface)
+              .borderRadius(4)
+              .height(36)
+              .layoutWeight(1)
+              .border({ width: 1, color: this.th().border })
+              .type(this.showKey ? InputType.Normal : InputType.Password)
+              .onChange((v: string) => {
+                this.cfgApiKey = v
+              })
+            Text('👁')
+              .fontSize(14)
+              .fontWeight(this.showKey ? FontWeight.Bold : FontWeight.Normal)
+              .fontColor(this.showKey ? this.th().accent : this.th().textSecondary)
+              .width(34).height(36)
+              .textAlign(TextAlign.Center)
+              .borderRadius(4)
+              .backgroundColor(this.th().bgSurface)
+              .border({ width: 1, color: this.th().border })
+              .onClick(() => {
+                this.showKey = !this.showKey
+              })
+              .onHover((h: boolean) => {
+                this.hoverTip = h ? 'keyEye' : ''
+                this.hoverOn = h
+              })
+              .bindPopup(this.hoverOn && this.hoverTip === 'keyEye', {
+                message: this.showKey ? '隐藏密钥' : '显示密钥明文',
+                placementOnTop: true
+              })
+          }
+          .width('100%')
+          TextInput({ placeholder: 'Model(如 claude-sonnet-4-5)', text: this.cfgModel })
+            .fontSize(12).fontColor(this.th().textPrimary)
+            .placeholderColor(this.th().textSecondary)
+            .backgroundColor(this.th().bgSurface)
+            .borderRadius(4)
+            .height(36)
+            .border({ width: 1, color: this.th().border })
             .onChange((v: string) => {
               this.cfgModel = v
             })
           Text('保存')
-            .fontSize(11).fontColor(0xffffff).padding({ left: 14, right: 14, top: 6, bottom: 6 })
-            .backgroundColor(0x22d3ee).borderRadius(4).alignSelf(ItemAlign.End)
+            .fontSize(12).fontColor(this.th().bgBase).padding({ left: 14, right: 14, top: 7, bottom: 7 })
+            .backgroundColor(this.th().accent).borderRadius(4).alignSelf(ItemAlign.End)
             .onClick(() => this.saveCfg())
+            .onHover((h: boolean) => {
+              this.hoverTip = h ? 'keySave' : ''
+              this.hoverOn = h
+            })
+            .bindPopup(this.hoverOn && this.hoverTip === 'keySave', {
+              message: '保存模型配置到本地(立即生效)',
+              placementOnTop: true
+            })
         }
         .width('100%')
         .padding(8)
-        .backgroundColor(0x191c24)
+        .backgroundColor(this.th().bgSurface)
+      }
+
+      // P0-3: 保存/发送结果反馈条(点击可关闭)
+      if (this.toast !== '') {
+        Text(this.toast)
+          .fontSize(11)
+          .fontColor(this.toastErr ? this.th().danger : this.th().success)
+          .padding({ left: 10, right: 10, top: 5, bottom: 5 })
+          .borderRadius(4)
+          .backgroundColor(this.th().bgOverlay)
+          .width('100%')
+          .textAlign(TextAlign.Center)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .maxLines(2)
+          .onClick(() => {
+            this.toast = ''
+          })
       }
 
       // ai-messages
@@ -263,10 +366,11 @@ export struct AISidebar {
                 .margin({ top: 40 })
               Text('AI 助理')
                 .fontSize(14)
-                .fontColor(0xe6e8ed)
-              Text('自主执行多轮 Shell 命令的 AI Agent\n(模型接入按官方路线图推进)')
+                .fontColor(this.th().textPrimary)
+              // M6 relay1: 更新过时文案(AI 已接入,不再提"官方路线图")
+              Text('模型已接入(Anthropic / OpenAI 兼容)\n点右上 ⚙ 填入 API Key 即可对话\n或切到 ⚙ 终端执行,让 AI 代跑命令')
                 .fontSize(11)
-                .fontColor(0x9ea3ae)
+                .fontColor(this.th().textSecondary)
                 .textAlign(TextAlign.Center)
             }
             .width('100%')
@@ -278,13 +382,13 @@ export struct AISidebar {
             Column({ space: 4 }) {
               Text(m.role === 'user' ? '你' : 'AI')
                 .fontSize(10)
-                .fontColor(m.role === 'user' ? 0x22d3ee : 0x34d399)
+                .fontColor(m.role === 'user' ? this.th().accent : this.th().success)
               Text(m.text)
                 .fontSize(12)
-                .fontColor(0xe6e8ed)
+                .fontColor(this.th().textPrimary)
                 .padding(8)
                 .borderRadius(6)
-                .backgroundColor(m.role === 'user' ? 0x252933 : 0x1f222b)
+                .backgroundColor(m.role === 'user' ? this.th().bgOverlay : this.th().bgSurface)
             }
             .alignItems(m.role === 'user' ? HorizontalAlign.End : HorizontalAlign.Start)
             .width('100%')
@@ -295,7 +399,7 @@ export struct AISidebar {
           ListItem() {
             Text('AI 思考中…')
               .fontSize(11)
-              .fontColor(0x9ea3ae)
+              .fontColor(this.th().textSecondary)
               .padding(6)
           }
         }
@@ -308,10 +412,12 @@ export struct AISidebar {
       Column() {
         TextInput({ placeholder: '给 AI 发送消息…', text: this.input })
           .fontSize(12)
-          .fontColor(0xe6e8ed)
-          .placeholderColor(0x6b7280)
-          .backgroundColor(0x1f222b)
+          .fontColor(this.th().textPrimary)
+          .placeholderColor(this.th().textSecondary)
+          .backgroundColor(this.th().bgSurface)
+          .border({ width: 1, color: this.th().border })
           .borderRadius(6)
+          .height(36)
           .onChange((v: string) => {
             this.input = v
           })
@@ -319,49 +425,58 @@ export struct AISidebar {
         Row() {
           Text(this.agentMode ? '⚙ 终端执行' : '💬 对话')
             .fontSize(10)
-            .fontColor(this.agentMode ? 0x22d3ee : 0x9ea3ae)
+            .fontColor(this.agentMode ? this.th().accent : this.th().textSecondary)
             .padding({ left: 6, right: 6, top: 3, bottom: 3 })
             .borderRadius(4)
-            .backgroundColor(this.agentMode ? 0x252933 : Color.Transparent)
+            .backgroundColor(this.agentMode ? this.th().bgOverlay : Color.Transparent)
             .onClick(() => {
               this.agentMode = !this.agentMode
             })
+            .onHover((h: boolean) => {
+              this.hoverTip = h ? 'modeToggle' : ''
+              this.hoverOn = h
+            })
+            .bindPopup(this.hoverOn && this.hoverTip === 'modeToggle', {
+              message: this.agentMode ? '终端执行模式:AI 命令需你确认后执行,点击切回对话' : '对话模式:点击切换为 AI 终端执行',
+              placementOnTop: true
+            })
           Text('⏎ 发送')
             .fontSize(11)
-            .fontColor(0x22d3ee)
+            .fontColor(this.th().accent)
+            .padding({ left: 6, right: 6, top: 4, bottom: 4 })
             .onClick(() => this.send())
           Blank()
-          Text('0/2000')
+          Text(this.input.length.toString() + '/2000')
             .fontSize(10)
-            .fontColor(0x6b7280)
+            .fontColor(this.th().textSecondary)
         }
         .width('100%')
         .margin({ top: 4 })
       }
       .width('100%')
       .padding(10)
-      .backgroundColor(0x191c24)
+      .backgroundColor(this.th().bgSurface)
 
       // Agent 命令确认条(官方 confirm 对话框简化版)
       if (this.confirmCmd !== '') {
         Column({ space: 6 }) {
           Text('AI 请求执行命令:')
             .fontSize(10)
-            .fontColor(0xf59e0b)
+            .fontColor(this.th().warn)
           Text(this.confirmCmd)
             .fontSize(11)
-            .fontColor(0xe6e8ed)
+            .fontColor(this.th().textPrimary)
             .fontFamily('monospace')
             .padding(6)
             .borderRadius(4)
-            .backgroundColor(0x1f222b)
+            .backgroundColor(this.th().bgSurface)
             .width('100%')
           Row({ space: 8 }) {
             Text('✓ 允许')
               .fontSize(11)
-              .fontColor(0xffffff)
+              .fontColor(this.th().bgBase)
               .padding({ left: 12, right: 12, top: 5, bottom: 5 })
-              .backgroundColor(0x22d3ee)
+              .backgroundColor(this.th().accent)
               .borderRadius(4)
               .onClick(() => {
                 this.confirmCmd = ''
@@ -369,9 +484,9 @@ export struct AISidebar {
               })
             Text('✗ 拒绝')
               .fontSize(11)
-              .fontColor(0xf87171)
+              .fontColor(this.th().danger)
               .padding({ left: 12, right: 12, top: 5, bottom: 5 })
-              .backgroundColor(0x252933)
+              .backgroundColor(this.th().bgOverlay)
               .borderRadius(4)
               .onClick(() => {
                 this.confirmCmd = ''
@@ -381,11 +496,11 @@ export struct AISidebar {
         }
         .width('100%')
         .padding(8)
-        .backgroundColor(0x191c24)
+        .backgroundColor(this.th().bgSurface)
       }
     }
     .width(300)
     .height('100%')
-    .backgroundColor(0x14171d)
+    .backgroundColor(this.th().bgBase)
   }
 }

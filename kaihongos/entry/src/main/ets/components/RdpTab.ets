@@ -1,12 +1,16 @@
 import { rdpConnect, rdpDisconnect } from 'librdpproxy.so';
 import image from '@ohos.multimedia.image';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { UniTheme, themeByName } from '../common/UniTheme';
 
 const RDP_TAG: string = 'uniterm.rdp';
 const RDP_DOMAIN: number = 0x0110;
 
 @Component
 export struct RdpTab {
+  // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
+  @StorageProp('ut.theme') themeName: string = 'dark'
+  private th(): UniTheme { return themeByName(this.themeName) }
   @State host: string = '10.0.2.2'
   @State port: string = '3389'
   @State user: string = 'Administrator'
@@ -87,57 +91,57 @@ export struct RdpTab {
           Text('RDP 远程桌面')
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
-            .fontColor(0xe6e8ed)
+            .fontColor(this.th().textPrimary)
           Text('FreerDP 3.9 · NAPI 桥 · x86_64')
             .fontSize(11)
-            .fontColor(0x9ea3ae)
+            .fontColor(this.th().textSecondary)
           TextInput({ placeholder: '主机 (如 192.168.1.10)', text: this.host })
-            .fontSize(13).fontColor(0xe6e8ed).backgroundColor(0x1f222b).borderRadius(6).width(280)
+            .fontSize(13).fontColor(this.th().textPrimary).backgroundColor(this.th().inputBg).borderRadius(6).width(280)
             .onChange((v: string) => {
               this.host = v
             })
           TextInput({ placeholder: '端口 (默认 3389)', text: this.port })
-            .fontSize(13).fontColor(0xe6e8ed).backgroundColor(0x1f222b).borderRadius(6).width(280)
+            .fontSize(13).fontColor(this.th().textPrimary).backgroundColor(this.th().inputBg).borderRadius(6).width(280)
             .type(InputType.Number)
             .onChange((v: string) => {
               this.port = v
             })
           TextInput({ placeholder: '用户名', text: this.user })
-            .fontSize(13).fontColor(0xe6e8ed).backgroundColor(0x1f222b).borderRadius(6).width(280)
+            .fontSize(13).fontColor(this.th().textPrimary).backgroundColor(this.th().inputBg).borderRadius(6).width(280)
             .onChange((v: string) => {
               this.user = v
             })
           TextInput({ placeholder: '密码', text: this.password })
-            .fontSize(13).fontColor(0xe6e8ed).backgroundColor(0x1f222b).borderRadius(6).width(280)
+            .fontSize(13).fontColor(this.th().textPrimary).backgroundColor(this.th().inputBg).borderRadius(6).width(280)
             .type(InputType.Password)
             .onChange((v: string) => {
               this.password = v
             })
           Text('连接')
-            .fontSize(14).fontColor(0x14171d).fontWeight(FontWeight.Bold)
+            .fontSize(14).fontColor(this.th().bgBase).fontWeight(FontWeight.Bold)
             .padding({ left: 30, right: 30, top: 9, bottom: 9 })
-            .backgroundColor(0x22d3ee).borderRadius(6)
+            .backgroundColor(this.th().accent).borderRadius(6)
             .onClick(() => this.doConnect())
           if (this.errText !== '') {
-            Text(this.errText).fontSize(11).fontColor(0xf87171).padding(6)
+            Text(this.errText).fontSize(11).fontColor(this.th().danger).padding(6)
           }
           Blank()
         }
-        .width('100%').height('100%').backgroundColor(0x14171d)
+        .width('100%').height('100%').backgroundColor(this.th().bgBase)
       } else {
         Column() {
           Row() {
             Text('RDP ' + this.host + ':' + this.port)
-              .fontSize(12).fontColor(0xe6e8ed)
+              .fontSize(12).fontColor(this.th().textPrimary)
             Blank()
             Text(this.fbW.toString() + 'x' + this.fbH.toString())
-              .fontSize(11).fontColor(0x9ea3ae)
+              .fontSize(11).fontColor(this.th().textSecondary)
             Text('断开')
-              .fontSize(11).fontColor(0xf87171)
+              .fontSize(11).fontColor(this.th().danger)
               .padding({ left: 8, right: 8 })
               .onClick(() => this.disconnect())
           }
-          .width('100%').padding(8).backgroundColor(0x191c24)
+          .width('100%').padding(8).backgroundColor(this.th().bgSurface)
           if (this.pm !== null) {
             Image(this.pm)
               .objectFit(ImageFit.Contain)
@@ -145,9 +149,9 @@ export struct RdpTab {
               .width('100%')
           } else {
             Column({ space: 8 }) {
-              LoadingProgress().width(32).height(32).color(0x22d3ee)
+              LoadingProgress().width(32).height(32).color(this.th().accent)
               Text('正在协商 RDP 连接…')
-                .fontSize(11).fontColor(0x9ea3ae)
+                .fontSize(11).fontColor(this.th().textSecondary)
             }
             .layoutWeight(1).width('100%').justifyContent(FlexAlign.Center)
           }

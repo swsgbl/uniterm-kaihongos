@@ -18,6 +18,7 @@ import { fileIo } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { SessionService } from '../service/SessionService';
 import { libssh } from '@ohos/libssh';
+import { UniTheme, themeByName } from '../common/UniTheme';
 
 interface SftpEntry {
   name: string;
@@ -34,6 +35,9 @@ interface SftpListResp {
 
 @Component
 export struct SftpPanel {
+  // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
+  @StorageProp('ut.theme') themeName: string = 'dark'
+  private th(): UniTheme { return themeByName(this.themeName) }
   @Prop connIdIn: string = ''
   @State cwd: string = '.';
   @State entries: SftpEntry[] = [];
@@ -247,11 +251,11 @@ export struct SftpPanel {
             Text(this.title)
               .fontSize(17)
               .fontWeight(FontWeight.Bold)
-              .fontColor(Color.White)
+              .fontColor(this.th().bgElevated)
               .maxLines(1)
             Text(this.status + (this.busy ? ' ...' : '') + '  ' + this.entries.length.toString() + ' items')
               .fontSize(11)
-              .fontColor(0x9aa5b8)
+              .fontColor(this.th().textSecondary)
               .maxLines(1)
           }
           .alignItems(HorizontalAlign.Start)
@@ -259,7 +263,7 @@ export struct SftpPanel {
 
           Button('close')
             .fontSize(13)
-            .backgroundColor(0x8a2f3d)
+            .backgroundColor(this.th().danger)
             .onClick(() => {
               this.closePanel();
             })
@@ -270,7 +274,7 @@ export struct SftpPanel {
         if (this.status === 'error' && this.errText.length > 0) {
           Text('error: ' + this.errText)
             .fontSize(12)
-            .fontColor(0xffb4b4)
+            .fontColor(this.th().danger)
             .maxLines(3)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .width('100%')
@@ -279,19 +283,19 @@ export struct SftpPanel {
         if (this.lastOp.length > 0) {
           Text(this.lastOp)
             .fontSize(11)
-            .fontColor(0x67c23a)
+            .fontColor(this.th().success)
             .width('100%')
             .padding({ left: 12, right: 12, bottom: 4 })
         }
       }
       .width('100%')
-      .backgroundColor(0x1f2d3d)
+      .backgroundColor(this.th().bgSurface)
 
       // cwd bar: [..] path [refresh] [upload]
       Row({ space: 8 }) {
         Button('..')
           .fontSize(13)
-          .backgroundColor(0x2c3e50)
+          .backgroundColor(this.th().bgSurface)
           .onClick(() => {
             if (this.busy) {
               return;
@@ -305,13 +309,13 @@ export struct SftpPanel {
           })
         Text(this.cwd)
           .fontSize(13)
-          .fontColor(0xd0d7e2)
+          .fontColor(this.th().textPrimary)
           .layoutWeight(1)
           .maxLines(1)
           .fontFamily('monospace')
         Button('refresh')
           .fontSize(13)
-          .backgroundColor(0x2c3e50)
+          .backgroundColor(this.th().bgSurface)
           .onClick(() => {
             if (this.busy) {
               return;
@@ -324,7 +328,7 @@ export struct SftpPanel {
           })
         Button('upload')
           .fontSize(13)
-          .backgroundColor(0x2f9e6e)
+          .backgroundColor(this.th().success)
           .onClick(() => {
             if (this.busy) {
               return;
@@ -334,13 +338,13 @@ export struct SftpPanel {
       }
       .width('100%')
       .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-      .backgroundColor(0x161b22)
+      .backgroundColor(this.th().bgBase)
 
       // transfer line
       if (this.xferText.length > 0) {
         Text(this.xferText)
           .fontSize(11)
-          .fontColor(0xe6a23c)
+          .fontColor(this.th().warn)
           .width('100%')
           .padding({ left: 12, right: 12, top: 2, bottom: 2 })
       }
@@ -352,21 +356,21 @@ export struct SftpPanel {
             Row({ space: 8 }) {
               Text(e.isDir ? 'd' : '-')
                 .fontSize(14)
-                .fontColor(e.isDir ? 0xe6a23c : 0x8a93a5)
+                .fontColor(e.isDir ? this.th().warn : this.th().textSecondary)
                 .width(16)
               Text(e.name)
                 .fontSize(14)
-                .fontColor(e.isDir ? 0x7ab8ff : 0xd0d7e2)
+                .fontColor(e.isDir ? this.th().accent : this.th().textPrimary)
                 .layoutWeight(1)
                 .maxLines(1)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
               Text(this.fmtSize(e.size))
                 .fontSize(11)
-                .fontColor(0x8a93a5)
+                .fontColor(this.th().textSecondary)
             }
             .width('100%')
             .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-            .backgroundColor(idx % 2 === 0 ? 0x10141b : 0x161b22)
+            .backgroundColor(idx % 2 === 0 ? this.th().bgBase : this.th().bgBase)
             .borderRadius(4)
             .onClick(() => {
               this.onTapEntry(e);
@@ -376,12 +380,12 @@ export struct SftpPanel {
       }
       .layoutWeight(1)
       .width('100%')
-      .backgroundColor(0x0d1117)
+      .backgroundColor(this.th().bgBase)
 
       // footer
       Text('tap dir=navigate  tap file=download to filesDir/sftp/  upload=newest local file')
         .fontSize(10)
-        .fontColor(0x6b7280)
+        .fontColor(this.th().textSecondary)
         .width('100%')
         .textAlign(TextAlign.Center)
         .padding({ top: 4, bottom: 6 })

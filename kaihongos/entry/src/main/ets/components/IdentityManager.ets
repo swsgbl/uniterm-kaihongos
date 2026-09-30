@@ -10,6 +10,7 @@
 import { IdentityRec } from '../store/IdentityStore';
 import { CredentialManager } from '../store/CredentialManager';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { UniTheme, themeByName } from '../common/UniTheme';
 
 const ITAG: string = 'uniterm.identui';
 const IDOMAIN: number = 0x0110;
@@ -17,6 +18,9 @@ const AUTH_TYPES: string[] = ['password', 'key', 'keyText'];
 
 @Component
 export struct IdentityManager {
+  // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
+  @StorageProp('ut.theme') themeName: string = 'dark'
+  private th(): UniTheme { return themeByName(this.themeName) }
   @Prop identities: IdentityRec[] = [];
   cred: CredentialManager | null = null;
   onSaved: (changed: IdentityRec[]) => void = () => {};
@@ -46,7 +50,7 @@ export struct IdentityManager {
         Blank()
         Text('关闭')
           .fontSize(14)
-          .fontColor(0x909399)
+          .fontColor(this.th().textSecondary)
           .padding(6)
           .onClick(() => {
             this.onClose();
@@ -57,7 +61,7 @@ export struct IdentityManager {
       if (this.cred === null || !this.cred.hasMasterPassword()) {
         Text('提示: 未设置主密码,身份密钥/密码将以明文保存(建议先设置主密码)')
           .fontSize(12)
-          .fontColor(0xe6a23c)
+          .fontColor(this.th().warn)
       }
 
       Scroll() {
@@ -66,31 +70,31 @@ export struct IdentityManager {
             Row({ space: 8 }) {
               Text(id.authType)
                 .fontSize(10)
-                .fontColor(Color.White)
-                .backgroundColor(id.authType === 'password' ? 0x2f9e6e :
-                  (id.authType === 'keyText' ? 0x9a6ecc : 0x576b95))
+                .fontColor(this.th().bgElevated)
+                .backgroundColor(id.authType === 'password' ? this.th().success :
+                  (id.authType === 'keyText' ? this.th().accent : this.th().textSecondary))
                 .borderRadius(4)
                 .padding({ left: 6, right: 6, top: 2, bottom: 2 })
               Column({ space: 2 }) {
                 Text(id.name)
                   .fontSize(15)
-                  .fontColor(0x1f2d3d)
+                  .fontColor(this.th().bgBase)
                 Text(id.username + (id.keyPath.length > 0 ? ' key:' + id.keyPath : ''))
                   .fontSize(12)
-                  .fontColor(0x909399)
+                  .fontColor(this.th().textSecondary)
               }
               .alignItems(HorizontalAlign.Start)
               .layoutWeight(1)
               Text('编辑')
                 .fontSize(13)
-                .fontColor(0x576b95)
+                .fontColor(this.th().textSecondary)
                 .padding(4)
                 .onClick(() => {
                   this.beginEdit(idx);
                 })
               Text('删除')
                 .fontSize(13)
-                .fontColor(0xf56c6c)
+                .fontColor(this.th().danger)
                 .padding(4)
                 .onClick(() => {
                   this.deleteIdent(idx);
@@ -102,7 +106,7 @@ export struct IdentityManager {
           if (this.list.length === 0) {
             Text('(空) 添加一个身份后,主机可选择"身份"认证引用它')
               .fontSize(13)
-              .fontColor(0x909399)
+              .fontColor(this.th().textSecondary)
           }
         }
         .width('100%')
@@ -112,7 +116,7 @@ export struct IdentityManager {
 
       Button('+ 新增身份')
         .width('100%')
-        .backgroundColor(0x9a6ecc)
+        .backgroundColor(this.th().accent)
         .onClick(() => {
           this.beginEdit(-1);
         })
@@ -124,7 +128,7 @@ export struct IdentityManager {
     .width('86%')
     .height('86%')
     .padding(16)
-    .backgroundColor(Color.White)
+    .backgroundColor(this.th().bgElevated)
     .borderRadius(12)
     .alignItems(HorizontalAlign.Start)
   }
@@ -179,8 +183,8 @@ export struct IdentityManager {
         ForEach(AUTH_TYPES, (t: string) => {
           Text(t)
             .fontSize(13)
-            .fontColor(this.eAuth === t ? Color.White : 0x303133)
-            .backgroundColor(this.eAuth === t ? 0x9a6ecc : 0xf0f2f5)
+            .fontColor(this.eAuth === t ? this.th().bgElevated : this.th().textPrimary)
+            .backgroundColor(this.eAuth === t ? this.th().accent : this.th().bgSurface)
             .borderRadius(6)
             .padding({ left: 10, right: 10, top: 6, bottom: 6 })
             .onClick(() => {
@@ -217,11 +221,11 @@ export struct IdentityManager {
           })
       }
       if (this.err.length > 0) {
-        Text(this.err).fontSize(13).fontColor(Color.Red)
+        Text(this.err).fontSize(13).fontColor(this.th().danger)
       }
       Row({ space: 10 }) {
         Button('取消')
-          .backgroundColor(0x909399)
+          .backgroundColor(this.th().textSecondary)
           .layoutWeight(1)
           .onClick(() => {
             this.editing = false;
@@ -237,7 +241,7 @@ export struct IdentityManager {
     .width('100%')
     .padding(12)
     .borderRadius(8)
-    .backgroundColor(0xf5f7fa)
+    .backgroundColor(this.th().bgElevated)
   }
 
   private saveForm(): void {

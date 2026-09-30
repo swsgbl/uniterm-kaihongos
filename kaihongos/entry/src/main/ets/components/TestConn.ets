@@ -6,9 +6,13 @@
  */
 import { libssh } from '@ohos/libssh';
 import { ConnRec } from '../store/ConnStore';
+import { UniTheme, themeByName } from '../common/UniTheme';
 
 @Component
 export struct TestConn {
+  // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
+  @StorageProp('ut.theme') themeName: string = 'dark'
+  private th(): UniTheme { return themeByName(this.themeName) }
   conn: ConnRec | null = null;
   onClose: () => void = () => {};
 
@@ -61,16 +65,16 @@ export struct TestConn {
       Text(this.conn !== null ? this.conn.name + '  ' + this.conn.host + ':' +
         (this.conn !== null ? this.conn.port.toString() : '') : '')
         .fontSize(14)
-        .fontColor(0x909399)
+        .fontColor(this.th().textSecondary)
       Scroll() {
         Text(this.result)
           .fontSize(15)
-          .fontColor(this.busy ? 0x909399 : (this.ok ? 0x2f9e6e : Color.Red))
+          .fontColor(this.busy ? this.th().textSecondary : (this.ok ? this.th().success : this.th().danger))
           .padding(6)
       }
       .constraintSize({ maxHeight: 160 })
       .width('100%')
-      .backgroundColor(0xF1F3F5)
+      .backgroundColor(this.th().bgElevated)
       .borderRadius(8)
 
       if (this.busy) {
@@ -79,14 +83,14 @@ export struct TestConn {
 
       Row({ space: 12 }) {
         Button('重测')
-          .backgroundColor(0x576b95)
+          .backgroundColor(this.th().textSecondary)
           .layoutWeight(1)
           .enabled(!this.busy)
           .onClick(() => {
             this.run();
           })
         Button('关闭')
-          .backgroundColor(0x909399)
+          .backgroundColor(this.th().textSecondary)
           .layoutWeight(1)
           .onClick(() => {
             this.onClose();
@@ -96,7 +100,7 @@ export struct TestConn {
     }
     .width('78%')
     .padding(18)
-    .backgroundColor(Color.White)
+    .backgroundColor(this.th().bgElevated)
     .borderRadius(12)
     .justifyContent(FlexAlign.Center)
   }

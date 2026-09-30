@@ -39,6 +39,9 @@ struct Index {
   @State aiVisible: boolean = false
   @State splitTabId: number = -1 // 分屏右侧固定的标签(-1 关闭)
   @State searchText: string = ''
+  // M6 relay1 P0-6: 全局悬停态(hoverTip 记录当前悬停目标 id,驱动 tooltip + 图标高亮)
+  @State hoverTip: string = ''
+  @State hoverOn: boolean = false
   // M5 relay6 fix: th 原为 private 普通属性,applyTheme 重赋值不触发重渲染,
   // 主题切换从未真正生效(菜单高亮变、颜色不变)。改 @State 使颜色随主题刷新。
   @State th: UniTheme = themeByName('dark')
@@ -193,14 +196,24 @@ struct Index {
   @Builder
   HeaderBtn(icon: string, tip: string, action: () => void) {
     Text(icon)
-      .fontSize(14)
-      .fontColor(this.th.textSecondary)
-      .width(28)
-      .height(28)
+      .fontSize(15)
+      .fontWeight(FontWeight.Medium)
+      .fontColor(this.hoverOn && this.hoverTip === tip ? this.th.accent : this.th.iconMuted)
+      .width(30)
+      .height(30)
       .textAlign(TextAlign.Center)
-      .borderRadius(4)
+      .borderRadius(6)
       .margin({ left: 2, right: 2 })
+      .backgroundColor(this.hoverOn && this.hoverTip === tip ? this.th.bgOverlay : Color.Transparent)
       .onClick(() => action())
+      .onHover((h: boolean) => {
+        this.hoverTip = h ? tip : ''
+        this.hoverOn = h
+      })
+      .bindPopup(this.hoverOn && this.hoverTip === tip, {
+        message: tip,
+        placementOnTop: true
+      })
   }
 
   @Builder
@@ -218,9 +231,19 @@ struct Index {
       Blank()
       Text('×')
         .fontSize(12)
-        .fontColor(this.th.textSecondary)
-        .padding({ left: 3, right: 3 })
+        .fontWeight(FontWeight.Medium)
+        .fontColor(this.hoverOn && this.hoverTip === ('close' + t.id.toString()) ? this.th.danger : this.th.textSecondary)
+        .padding({ left: 4, right: 4, top: 2, bottom: 2 })
+        .borderRadius(3)
         .onClick(() => this.closeTab(t.id))
+        .onHover((h: boolean) => {
+          this.hoverTip = h ? ('close' + t.id.toString()) : ''
+          this.hoverOn = h
+        })
+        .bindPopup(this.hoverOn && this.hoverTip === ('close' + t.id.toString()), {
+          message: '关闭标签 ' + t.name,
+          placementOnTop: true
+        })
     }
     .height(28)
     .constraintSize({ minWidth: 120 })
@@ -237,15 +260,24 @@ struct Index {
   @Builder
   SideIcon(idx: number) {
     Text(this.sideIcons[idx])
-      .fontSize(14)
-      .fontColor(this.sideView === idx ? this.th.accent : this.th.textSecondary)
-      .width(26)
-      .height(26)
+      .fontSize(15)
+      .fontWeight(FontWeight.Bold)
+      .fontColor(this.sideView === idx ? this.th.accent : this.th.iconMuted)
+      .width(28)
+      .height(28)
       .textAlign(TextAlign.Center)
       .borderRadius(4)
       .backgroundColor(this.sideView === idx ? this.th.bgOverlay : Color.Transparent)
       .onClick(() => {
         this.sideView = idx
+      })
+      .onHover((h: boolean) => {
+        this.hoverTip = h ? ('side' + idx.toString()) : ''
+        this.hoverOn = h
+      })
+      .bindPopup(this.hoverOn && this.hoverTip === ('side' + idx.toString()), {
+        message: this.sideTips[idx],
+        placementOnTop: true
       })
   }
 
@@ -279,7 +311,8 @@ struct Index {
   StartConnCard(c: ConnRec) {
     Row({ space: 10 }) {
       Text(this.cardIcon(c))
-        .fontSize(20)
+        .fontSize(22)
+        .fontWeight(FontWeight.Medium)
         .fontColor(this.cardIconColor(c))
         .width(36)
         .height(36)
@@ -556,12 +589,21 @@ struct Index {
               }, (t: TabInfo) => t.id.toString())
               Text('+')
                 .fontSize(15)
-                .fontColor(this.th.textSecondary)
+                .fontWeight(FontWeight.Bold)
+                .fontColor(this.th.iconMuted)
                 .width(28)
                 .height(28)
                 .textAlign(TextAlign.Center)
                 .borderRadius(6)
                 .onClick(() => this.addStartTab())
+                .onHover((h: boolean) => {
+                  this.hoverTip = h ? 'newTab' : ''
+                  this.hoverOn = h
+                })
+                .bindPopup(this.hoverOn && this.hoverTip === 'newTab', {
+                  message: '新建开始标签页',
+                  placementOnTop: true
+                })
             }
             .alignItems(VerticalAlign.Center)
           }
@@ -604,13 +646,22 @@ struct Index {
                 Blank()
                 Text('«')
                   .fontSize(13)
-                  .fontColor(this.th.textSecondary)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor(this.th.iconMuted)
                   .width(26)
                   .height(26)
                   .textAlign(TextAlign.Center)
                   .borderRadius(4)
                   .onClick(() => {
                     this.sidebarVisible = false
+                  })
+                  .onHover((h: boolean) => {
+                    this.hoverTip = h ? 'collapseSide' : ''
+                    this.hoverOn = h
+                  })
+                  .bindPopup(this.hoverOn && this.hoverTip === 'collapseSide', {
+                    message: '收起侧栏',
+                    placementOnTop: true
                   })
               }
               .width('100%')

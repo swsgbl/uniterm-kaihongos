@@ -1,8 +1,12 @@
 // SPICE 标签页(连接 + 状态显示;帧渲染管线后续棒)
 import { SpiceClient } from '../service/SpiceClient';
+import { UniTheme, themeByName } from '../common/UniTheme';
 
 @Component
 export struct SpiceTab {
+  // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
+  @StorageProp('ut.theme') themeName: string = 'dark'
+  private th(): UniTheme { return themeByName(this.themeName) }
   @State host: string = ''
   @State port: string = '5900'
   @State password: string = ''
@@ -43,16 +47,16 @@ export struct SpiceTab {
         Text('SPICE')
           .fontSize(15)
           .fontWeight(FontWeight.Medium)
-          .fontColor(0xe6e8ed)
+          .fontColor(this.th().textPrimary)
           .alignSelf(ItemAlign.Start)
         Row({ space: 6 }) {
           TextInput({ placeholder: 'host', text: this.host })
-            .fontSize(12).fontColor(0xe6e8ed).backgroundColor(0x1f222b).borderRadius(6).layoutWeight(2)
+            .fontSize(12).fontColor(this.th().textPrimary).backgroundColor(this.th().inputBg).borderRadius(6).layoutWeight(2)
             .onChange((v: string) => {
               this.host = v
             })
           TextInput({ placeholder: '端口', text: this.port })
-            .fontSize(12).fontColor(0xe6e8ed).backgroundColor(0x1f222b).borderRadius(6).layoutWeight(1)
+            .fontSize(12).fontColor(this.th().textPrimary).backgroundColor(this.th().inputBg).borderRadius(6).layoutWeight(1)
             .onChange((v: string) => {
               this.port = v
             })
@@ -60,7 +64,7 @@ export struct SpiceTab {
         .width('100%')
         Row({ space: 6 }) {
           TextInput({ placeholder: '密码(可空)', text: this.password })
-            .fontSize(12).fontColor(0xe6e8ed).backgroundColor(0x1f222b).borderRadius(6).layoutWeight(1)
+            .fontSize(12).fontColor(this.th().textPrimary).backgroundColor(this.th().inputBg).borderRadius(6).layoutWeight(1)
             .type(InputType.Password)
             .onChange((v: string) => {
               this.password = v
@@ -68,12 +72,12 @@ export struct SpiceTab {
           Text(this.st === 'connecting' ? '连接中…' : '连接')
             .fontSize(12).fontColor(0xffffff)
             .padding({ left: 14, right: 14, top: 8, bottom: 8 })
-            .backgroundColor(0x22d3ee).borderRadius(6)
+            .backgroundColor(this.th().accent).borderRadius(6)
             .onClick(() => this.doConnect())
         }
         .width('100%')
         Text(this.errText === '' ? ' ' : this.errText)
-          .fontSize(11).fontColor(this.st === 'error' ? 0xf87171 : 0x9ea3ae)
+          .fontSize(11).fontColor(this.st === 'error' ? this.th().danger : this.th().textSecondary)
           .width('100%')
       } else {
         Column({ space: 10 }) {
@@ -82,17 +86,17 @@ export struct SpiceTab {
             .fontSize(40)
           Text('SPICE 会话已建立')
             .fontSize(14)
-            .fontColor(0x34d399)
+            .fontColor(this.th().success)
           Text(this.errText)
             .fontSize(11)
-            .fontColor(0x9ea3ae)
+            .fontColor(this.th().textSecondary)
           Text('显示表面 ' + (this.cli !== null ? this.cli.width.toString() + 'x' + this.cli.height.toString() : '-'))
             .fontSize(12)
-            .fontColor(0xe6e8ed)
+            .fontColor(this.th().textPrimary)
           Text('断开')
-            .fontSize(12).fontColor(0xf87171)
+            .fontSize(12).fontColor(this.th().danger)
             .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-            .backgroundColor(0x252933).borderRadius(6)
+            .backgroundColor(this.th().bgOverlay).borderRadius(6)
             .onClick(() => {
               if (this.cli !== null) {
                 this.cli.close()
@@ -108,7 +112,7 @@ export struct SpiceTab {
     .width('100%')
     .height('100%')
     .padding(14)
-    .backgroundColor(0x191c24)
+    .backgroundColor(this.th().bgSurface)
     .alignItems(HorizontalAlign.Start)
   }
 }

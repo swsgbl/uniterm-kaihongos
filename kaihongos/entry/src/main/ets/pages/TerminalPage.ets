@@ -23,6 +23,7 @@ import { TelnetService, TelKind } from '../service/TelnetService';
 import { LocalTerminalService } from '../service/LocalTerminalService';
 import { TermModel, TermLine, lineToSpans, SpanRun, TERM_DEFAULT_FG, TERM_DEFAULT_BG } from '../components/TermModel';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { UniTheme, themeByName } from '../common/UniTheme';
 
 const TERM_FONT_SIZE: number = 14;
 const TERM_FONT_FAMILY: string = 'monospace';
@@ -57,6 +58,9 @@ interface Dims {
 
 @Component
 export struct TerminalPage {
+  // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
+  @StorageProp('ut.theme') themeName: string = 'dark'
+  private th(): UniTheme { return themeByName(this.themeName) }
   @StorageProp('ut.term.status') storageStatus: string = 'idle';
   @StorageProp('ut.term.reason') storageReason: string = '';
   @Prop connIdIn: string = '';
@@ -613,7 +617,7 @@ export struct TerminalPage {
   StatusBadge() {
     Text(this.badgeText())
       .fontSize(12)
-      .fontColor(Color.White)
+      .fontColor(this.th().bgElevated)
       .backgroundColor(this.badgeColor())
       .borderRadius(8)
       .padding({ left: 8, right: 8, top: 3, bottom: 3 })
@@ -639,15 +643,15 @@ export struct TerminalPage {
   private badgeColor(): ResourceColor {
     const s = this.storageStatus;
     if (s === 'connected') {
-      return 0x2f9e6e;
+      return this.th().success;
     }
     if (s === 'connecting') {
-      return 0xe6a23c;
+      return this.th().warn;
     }
     if (s === 'error') {
-      return 0xf56c6c;
+      return this.th().danger;
     }
-    return 0x909399;
+    return this.th().textSecondary;
   }
 
   @Builder
@@ -692,12 +696,12 @@ export struct TerminalPage {
             Text(this.title)
               .fontSize(17)
               .fontWeight(FontWeight.Bold)
-              .fontColor(Color.White)
+              .fontColor(this.th().bgElevated)
               .maxLines(1)
             Text(this.cols.toString() + 'x' + this.rows.toString() + '  ' + this.measureNote
               + (this.focused ? '  [key-passthrough]' : ''))
               .fontSize(11)
-              .fontColor(0x9aa5b8)
+              .fontColor(this.th().textSecondary)
               .maxLines(1)
           }
           .alignItems(HorizontalAlign.Start)
@@ -707,14 +711,14 @@ export struct TerminalPage {
 
           Button('SFTP')
             .fontSize(13)
-            .backgroundColor(0x2c6fbb)
+            .backgroundColor(this.th().accent)
             .enabled(this.storageStatus === 'connected')
             .onClick(() => {
               AppStorage.setOrCreate('ut.openSftp', this.connId);
             })
           Button('close')
             .fontSize(13)
-            .backgroundColor(0x8a2f3d)
+            .backgroundColor(this.th().danger)
             .onClick(() => {
               if (TelnetService.active()) {
                 TelnetService.disconnect();
@@ -728,14 +732,14 @@ export struct TerminalPage {
 
         Text(this.statText)
           .fontSize(11)
-          .fontColor(0x8a93a5)
+          .fontColor(this.th().textSecondary)
           .width('100%')
           .padding({ left: 12, right: 12, bottom: 4 })
 
         if (this.storageStatus === 'error' && this.storageReason.length > 0) {
           Text('error: ' + this.storageReason)
             .fontSize(12)
-            .fontColor(0xffb4b4)
+            .fontColor(this.th().danger)
             .maxLines(2)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .width('100%')
@@ -743,7 +747,7 @@ export struct TerminalPage {
         }
       }
       .width('100%')
-      .backgroundColor(0x1f2d3d)
+      .backgroundColor(this.th().bgSurface)
 
       // terminal body: focusable surface for hardware key passthrough
       Scroll(this.scroller) {
@@ -787,14 +791,14 @@ export struct TerminalPage {
           })
         Text('PT')
           .fontSize(12)
-          .fontColor(this.passthrough ? 0x2f9e6e : 0x8a93a5)
+          .fontColor(this.passthrough ? this.th().success : this.th().textSecondary)
         TextInput({ placeholder: 'input + Enter...', text: this.input })
           .layoutWeight(1)
           .fontSize(14)
           .fontFamily(TERM_FONT_FAMILY)
-          .backgroundColor(0x161b22)
+          .backgroundColor(this.th().bgBase)
           .fontColor(TERM_DEFAULT_FG)
-          .placeholderColor(0x6b7280)
+          .placeholderColor(this.th().textSecondary)
           .onChange((v: string) => {
             this.input = v;
           })
@@ -803,14 +807,14 @@ export struct TerminalPage {
           })
         Button('send')
           .fontSize(14)
-          .backgroundColor(0x2f9e6e)
+          .backgroundColor(this.th().success)
           .onClick(() => {
             this.send();
           })
       }
       .width('100%')
       .padding({ left: 10, right: 10, top: 8, bottom: 10 })
-      .backgroundColor(0x1f2d3d)
+      .backgroundColor(this.th().bgSurface)
     }
     .width('100%')
     .height('100%')

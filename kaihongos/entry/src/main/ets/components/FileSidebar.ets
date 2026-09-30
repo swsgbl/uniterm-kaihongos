@@ -1,5 +1,6 @@
 // 官方 FileSidebar 复刻(本地设备版):文件/目录浏览 + 面包屑 + 基本信息卡
 import fs from '@ohos.file.fs';
+import { UniTheme, themeByName } from '../common/UniTheme';
 
 interface FileRow {
   name: string
@@ -10,6 +11,9 @@ interface FileRow {
 
 @Component
 export struct FileSidebar {
+  // M6 relay1 P0-4: 主题接入(父 Index 经 AppStorage('ut.theme') 广播)
+  @StorageProp('ut.theme') themeName: string = 'dark'
+  private th(): UniTheme { return themeByName(this.themeName) }
   @State cwd: string = '/data/local/home'
   @State rows: FileRow[] = []
   @State err: string = ''
@@ -80,18 +84,18 @@ export struct FileSidebar {
       Text('文件')
         .fontSize(13)
         .fontWeight(FontWeight.Medium)
-        .fontColor(0xe6e8ed)
+        .fontColor(this.th().textPrimary)
         .padding({ top: 10, left: 4 })
       // 面包屑 + 上级
       Row({ space: 4 }) {
         Text('↑')
           .fontSize(12)
-          .fontColor(0x9ea3ae)
+          .fontColor(this.th().textSecondary)
           .padding(4)
           .onClick(() => this.up())
         Text(this.cwd)
           .fontSize(11)
-          .fontColor(0x9ea3ae)
+          .fontColor(this.th().textSecondary)
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .layoutWeight(1)
@@ -100,7 +104,7 @@ export struct FileSidebar {
       if (this.err !== '') {
         Text(this.err)
           .fontSize(11)
-          .fontColor(0xf87171)
+          .fontColor(this.th().danger)
           .padding(8)
       }
       List({ space: 1 }) {
@@ -111,20 +115,20 @@ export struct FileSidebar {
                 .fontSize(12)
               Text(r.name)
                 .fontSize(12)
-                .fontColor(this.selected === r.name ? 0x22d3ee : 0xe6e8ed)
+                .fontColor(this.selected === r.name ? this.th().accent : this.th().textPrimary)
                 .maxLines(1)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
                 .layoutWeight(1)
               if (!r.isDir) {
                 Text(this.fmtSize(r.size))
                   .fontSize(10)
-                  .fontColor(0x6b7280)
+                  .fontColor(this.th().textSecondary)
               }
             }
             .width('100%')
             .padding({ left: 6, right: 6, top: 5, bottom: 5 })
             .borderRadius(4)
-            .backgroundColor(this.selected === r.name ? 0x252933 : Color.Transparent)
+            .backgroundColor(this.selected === r.name ? this.th().bgOverlay : Color.Transparent)
             .onClick(() => {
               if (r.isDir) {
                 this.enter(r.name)
@@ -139,11 +143,11 @@ export struct FileSidebar {
       .width('100%')
       Text('本地文件浏览 · SFTP 远程文件经终端标签 ▦ 打开')
         .fontSize(10)
-        .fontColor(0x6b7280)
+        .fontColor(this.th().textSecondary)
         .padding(6)
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(0x14171d)
+    .backgroundColor(this.th().bgBase)
   }
 }
