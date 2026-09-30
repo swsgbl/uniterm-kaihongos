@@ -39,7 +39,9 @@ struct Index {
   @State aiVisible: boolean = false
   @State splitTabId: number = -1 // 分屏右侧固定的标签(-1 关闭)
   @State searchText: string = ''
-  private th: UniTheme = themeByName('dark')
+  // M5 relay6 fix: th 原为 private 普通属性,applyTheme 重赋值不触发重渲染,
+  // 主题切换从未真正生效(菜单高亮变、颜色不变)。改 @State 使颜色随主题刷新。
+  @State th: UniTheme = themeByName('dark')
   private sideIcons: string[] = ['⌗', '▤', '∿', '⇄', '⚡', '◷', '◑']
   private sideTips: string[] = ['连接', '文件', '监控', '隧道', '快捷命令', '历史', '个性化']
 
@@ -583,7 +585,8 @@ struct Index {
         .alignItems(VerticalAlign.Center)
         Divider()
           .strokeWidth(1)
-          .color('#2622d3ee')
+          // M5 relay6: 顶栏分隔线原先硬编码青色透明,浅色主题下几乎不可见 — 随主题取色
+          .color(this.themeName === 'light' ? '#1a000000' : '#2622d3ee')
       }
       .width('100%')
       .height(44)

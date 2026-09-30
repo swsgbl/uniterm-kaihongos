@@ -4,15 +4,24 @@
 
 > 定位:与官方 uniterm 一致,仅做 KaihongOS 系统环境适配。
 
-## 当前版本能力(1.0.0)
+## 当前版本能力(1.1.0)
+
+以下能力均已在 KaihongOS 虚拟机完成端到端验收(证据: `evidence/M4`、`evidence/M5`):
 
 - **SSH 远程终端**:完整交互终端(ANSI 颜色/键盘映射/窗口自适应/会话保活);密码、密钥(keyText)、身份库三种认证
 - **SFTP 文件传输**:远程目录浏览、上传、下载(复用终端连接的 SSH 会话)
-- **连接管理**:分组/收藏/最近连接;兼容官方 connections.json 与 .utm(含加密 .utm)导入导出
+- **本地终端**:forkpty + /bin/sh 原生桥,VM 内真实 shell 交互
+- **Telnet**:纯 TS IAC 协商,WSL telnetd 实连
+- **PostgreSQL**:wire v3 + md5 纯 TS,真实查询
+- **Redis**:RESP 纯 TS,真实读写
+- **VNC**:RFB 3.8 纯 TS + PixelMap 渲染(None 认证;DES challenge-response 未实现)
+- **RDP**:FreerDP 3.9 NAPI 桥,xrdp 登录画面级
+- **AI 侧栏**:Anthropic/OpenAI 双协议,真连 bigmodel 对话 + 终端执行 Agent
+- **系统监控**:/proc 实时采集(CPU/内存/进程)
+- **连接管理**:分组/收藏/最近;官方 connections.json 与 .utm(含加密)双向互导
 - **凭据安全**:主密码 + PBKDF2(600k)→ AES-256-GCM 本地加密,密文落盘,与官方格式互认
-- **细节**:GBK 编码主机、退格键三模式(del/bs/vt220)、终端编码选项
 
-官方完整版的 30+ 协议(RDP/VNC/数据库/Kubernetes/AI 助手等)将按官方路线图在后续版本逐步适配。
+MySQL/Kubernetes/SPICE/X11 转发/Zmodem/SSH 隧道等仍按官方路线图在后续版本逐步适配(详见 RELEASE-NOTES.md 后续路线节)。
 
 ## 技术路线
 
