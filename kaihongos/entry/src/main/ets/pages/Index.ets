@@ -1,5 +1,7 @@
-// 官方 uniterm 外壳 1:1 复刻(v2):AppHeader 44px(TabsList)+ Sidebar 240px(7视图+搜索+连接树)+ StartTab
-// 样式基准:upstream/frontend/src/style.css :root token(2026-09-27 规格书)
+// 一站AI终端(One AI Term)自有外壳 M6 relay2 布局①:
+// 命令栏44px(品牌+坞折叠+搜索命令面板+AI/齿轮/分屏)+ TabsList pill 条(28px)
+// + 左坞双态(56窄/200宽,宽态嵌 ConnList)+ 底部状态栏24px + 工作台首页(收藏pill+最近卡片)
+// 红线: 全部 tab/conn/sftp/DB 组件与逻辑原样复用,只改外壳。
 import { ConnectionStore, ConnRec, getSharedStore } from '../store/ConnStore';
 import { ConnList } from './ConnList';
 import { TerminalPage } from './TerminalPage';
@@ -26,6 +28,15 @@ interface TabInfo {
   connId: string
 }
 
+// 命令面板条目(命令+连接混合,键盘上下/回车,鼠标点击)
+interface PaletteItem {
+  key: string
+  icon: string
+  label: string
+  hint: string
+  run: () => void
+}
+
 @Entry
 @Component
 struct Index {
@@ -39,6 +50,11 @@ struct Index {
   @State aiVisible: boolean = false
   @State splitTabId: number = -1 // 分屏右侧固定的标签(-1 关闭)
   @State searchText: string = ''
+  // M6 relay2 布局①: 左坞双态(宽200 icon+文字 / 窄56 icon)
+  @State dockWide: boolean = true
+  // 命令面板(focus 搜索框展开)
+  @State paletteFocus: boolean = false
+  @State paletteSel: number = 0
   // M6 relay1 P0-6: 全局悬停态(hoverTip 记录当前悬停目标 id,驱动 tooltip + 图标高亮)
   @State hoverTip: string = ''
   @State hoverOn: boolean = false
@@ -47,6 +63,9 @@ struct Index {
   @State th: AppTheme = themeByName('dark')
   private sideIcons: string[] = ['⌗', '▤', '∿', '⇄', '⚡', '◷', '◑']
   private sideTips: string[] = ['连接', '文件', '监控', '隧道', '快捷命令', '历史', '个性化']
+  private sideViewNames: string[] = ['连接', '文件', '监控', '隧道', '快捷命令', '历史', '个性化']
+  // 状态栏: 当前连接名(活跃终端标签)
+  @State statusConn: string = ''
 
   aboutToAppear(): void {
     this.applyTheme(this.themeName)
@@ -66,6 +85,7 @@ struct Index {
           this.closeTab(t.id)
         }
       }
+      this.refreshStatusConn()
     }, 400)
   }
 
@@ -73,6 +93,101 @@ struct Index {
     this.themeName = name
     this.th = themeByName(name)
     AppStorage.setOrCreate('ut.theme', name)
+  }
+
+  // ===== 命令面板数据源(命令 + 连接混合) =====
+  paletteItems(): PaletteItem[] {
+    const items: PaletteItem[] = []
+    items.push({
+      key: 'cmd.newconn', icon: '+', label: '新建连接', hint: '打开连接面板',
+      run: () => { this.sideView = 0; this.sidebarVisible = true }
+    })
+    items.push({
+      key: 'cmd.local', icon: '▤', label: '本地终端', hint: '开一个本地 shell 标签',
+      run: () => this.openLocalTerminal()
+    })
+    items.push({
+      key: 'cmd.settings', icon: '⚙', label: '设置', hint: '打开设置标签页',
+      run: () => this.openSettingsTab()
+    })
+    items.push({
+      key: 'cmd.theme.dark', icon: '●', label: '主题 · 暗色', hint: '深蓝紫底+琥珀',
+      run: () => this.applyTheme('dark')
+    })
+    items.push({
+      key: 'cmd.theme.light', icon: '●', label: '主题 · 浅色', hint: '暖白底+琥珀',
+      run: () => this.applyTheme('light')
+    })
+    items.push({
+      key: 'cmd.sftp', icon: '▦', label: 'SFTP 文件传输', hint: '打开 SFTP 标签',
+      run: () => this.openKindTab('sftp', 'SFTP')
+    })
+    items.push({
+      key: 'cmd.pg', icon: '⬮', label: 'PostgreSQL', hint: '打开数据库标签',
+      run: () => this.openKindTab('pg', 'PostgreSQL')
+    })
+    items.push({
+      key: 'cmd.redis', icon: '⬮', label: 'Redis', hint: '打开数据库标签',
+      run: () => this.openKindTab('redis', 'Redis')
+    })
+    items.push({
+      key: 'cmd.mysql', icon: '⬮', label: 'MySQL', hint: '打开数据库标签',
+      run: () => this.openKindTab('mysql', 'MySQL')
+    })
+    items.push({
+      key: 'cmd.k8s', icon: '☸', label: 'K8s', hint: '打开集群标签',
+      run: () => this.openKindTab('k8s', 'K8s')
+    })
+    items.push({
+      key: 'cmd.vnc', icon: '◫', label: 'VNC', hint: '远程桌面',
+      run: () => this.openKindTab('vnc', 'VNC')
+    })
+    items.push({
+      key: 'cmd.rdp', icon: '▣', label: 'RDP', hint: '远程桌面',
+      run: () => this.openKindTab('rdp', 'RDP')
+    })
+    items.push({
+      key: 'cmd.spice', icon: '◈', label: 'SPICE', hint: '远程桌面',
+      run: () => this.openKindTab('spice', 'SPICE')
+    })
+    items.push({
+      key: 'cmd.split', icon: '◫', label: '分屏', hint: '当前标签钉到右栏',
+      run: () => this.toggleSplit()
+    })
+    // 连接: 按搜索词过滤
+    try {
+      const ctx = getContext(this) as common.UIAbilityContext
+      const store = new ConnectionStore(ctx.filesDir)
+      const kw = this.searchText.trim().toLowerCase()
+      for (const c of store.connections) {
+        const name = (c.name !== '' ? c.name : (c.user + '@' + c.host))
+        if (kw !== '' && name.toLowerCase().indexOf(kw) < 0) {
+          continue
+        }
+        items.push({
+          key: 'conn.' + c.id, icon: this.cardIcon(c), label: name,
+          hint: '打开终端连接',
+          run: () => this.openConnTab(c.id)
+        })
+      }
+    } catch (e) {
+    }
+    return items
+  }
+
+  // ===== 状态栏数据 =====
+  refreshStatusConn(): void {
+    const t = this.tabs.find(x => x.id === this.activeTab)
+    if (t !== undefined && t.kind === 'terminal') {
+      this.statusConn = t.name
+      return
+    }
+    const anyTerm = this.tabs.find(x => x.kind === 'terminal')
+    if (anyTerm !== undefined) {
+      this.statusConn = anyTerm.name
+      return
+    }
+    this.statusConn = ''
   }
 
   activeTabKind(): string {
@@ -192,7 +307,7 @@ struct Index {
     }
   }
 
-  // ===== 官方 AppHeader 44px:连接切换钮 + TabsList(flex:1) + AI 钮 + 设置菜单 =====
+  // ===== 命令栏图标钮(悬停高亮+tooltip) =====
   @Builder
   HeaderBtn(icon: string, tip: string, action: () => void) {
     Text(icon)
@@ -216,23 +331,23 @@ struct Index {
       })
   }
 
+  // ===== TabsList pill(28px 圆角卡片条,命令栏正下方) =====
   @Builder
   TabItem(t: TabInfo) {
     Row({ space: 5 }) {
       Text(t.kind === 'start' ? '⌂' : (t.kind === 'sftp' ? '▦' : (t.kind === 'settings' ? '⚙' : '▸')))
         .fontSize(11)
-        .fontColor(t.id === this.activeTab ? this.th.brand : this.th.inkSubtle)
+        .fontColor(t.id === this.activeTab ? this.th.surface : this.th.inkSubtle)
       Text(t.name)
         .fontSize(12)
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
-        .fontColor(t.id === this.activeTab ? this.th.ink : this.th.inkSubtle)
-        .constraintSize({ maxWidth: 220 })
-      Blank()
+        .fontColor(t.id === this.activeTab ? this.th.surface : this.th.inkSubtle)
+        .constraintSize({ maxWidth: 180 })
       Text('×')
         .fontSize(12)
         .fontWeight(FontWeight.Medium)
-        .fontColor(this.hoverOn && this.hoverTip === ('close' + t.id.toString()) ? this.th.danger : this.th.inkSubtle)
+        .fontColor(this.hoverOn && this.hoverTip === ('close' + t.id.toString()) ? this.th.danger : (t.id === this.activeTab ? this.th.surface : this.th.inkSubtle))
         .padding({ left: 4, right: 4, top: 2, bottom: 2 })
         .borderRadius(3)
         .onClick(() => this.closeTab(t.id))
@@ -245,43 +360,59 @@ struct Index {
           placementOnTop: true
         })
     }
-    .height(28)
-    .constraintSize({ minWidth: 120 })
+    .height(24)
+    .constraintSize({ minWidth: 110 })
     .padding({ left: 10, right: 6 })
-    .borderRadius(4)
-    .backgroundColor(t.id === this.activeTab ? this.th.hover : Color.Transparent)
-    .margin({ left: 1, right: 1 })
+    .borderRadius(12)
+    .backgroundColor(t.id === this.activeTab ? this.th.brand : this.th.panel)
+    .border({ width: 1, color: t.id === this.activeTab ? this.th.brand : this.th.hairline })
+    .margin({ left: 2, right: 2 })
     .alignItems(VerticalAlign.Center)
     .onClick(() => {
       this.activeTab = t.id
     })
   }
 
+  // ===== 左坞图标钮(窄态56/宽态200 共用;宽态右侧带文字) =====
   @Builder
-  SideIcon(idx: number) {
-    Text(this.sideIcons[idx])
-      .fontSize(15)
-      .fontWeight(FontWeight.Bold)
-      .fontColor(this.sideView === idx ? this.th.brand : this.th.iconMuted)
-      .width(28)
-      .height(28)
-      .textAlign(TextAlign.Center)
-      .borderRadius(4)
-      .backgroundColor(this.sideView === idx ? this.th.hover : Color.Transparent)
-      .onClick(() => {
-        this.sideView = idx
-      })
-      .onHover((h: boolean) => {
-        this.hoverTip = h ? ('side' + idx.toString()) : ''
-        this.hoverOn = h
-      })
-      .bindPopup(this.hoverOn && this.hoverTip === ('side' + idx.toString()), {
-        message: this.sideTips[idx],
-        placementOnTop: true
-      })
+  DockIcon(idx: number) {
+    Row({ space: 8 }) {
+      Text(this.sideIcons[idx])
+        .fontSize(15)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(this.sideView === idx ? this.th.brand : this.th.iconMuted)
+        .width(28)
+        .height(28)
+        .textAlign(TextAlign.Center)
+        .borderRadius(6)
+        .backgroundColor(this.sideView === idx ? this.th.hover : Color.Transparent)
+      if (this.dockWide) {
+        Text(this.sideViewNames[idx])
+          .fontSize(12)
+          .fontColor(this.sideView === idx ? this.th.ink : this.th.inkSubtle)
+          .layoutWeight(1)
+      }
+    }
+    .height(32)
+    .width(this.dockWide ? '100%' : 56)
+    .padding({ left: this.dockWide ? 10 : 14 })
+    .borderRadius(6)
+    .alignItems(VerticalAlign.Center)
+    .onClick(() => {
+      this.sideView = idx
+      this.sidebarVisible = true
+    })
+    .onHover((h: boolean) => {
+      this.hoverTip = h ? ('side' + idx.toString()) : ''
+      this.hoverOn = h
+    })
+    .bindPopup(this.hoverOn && this.hoverTip === ('side' + idx.toString()) && !this.dockWide, {
+      message: this.sideTips[idx],
+      placementOnTop: true
+    })
   }
 
-  // ===== 官方 StartTabContent:brand 2rem brand / 搜索行 / 按钮行 / 分节标签 / 240px 卡片网格 =====
+  // ===== 工作台卡片辅助 =====
   cardMeta(c: ConnRec): string {
     if (c.type === 'local') return 'local';
     let s = c.user + '@' + c.host;
@@ -301,9 +432,6 @@ struct Index {
   cardIconColor(c: ConnRec): string {
     if (c.type === 'local') return '#34d399';
     if (c.type === 'rdp') return '#60a5fa';
-    if (c.type === 'vnc') return '#a78bfa';
-    if (c.type === 'redis') return '#f87171';
-    if (c.type === 'mysql' || c.type === 'pg') return '#f59e0b';
     return '#' + this.th.brand.toString(16).padStart(6, '0');
   }
 
@@ -311,13 +439,13 @@ struct Index {
   StartConnCard(c: ConnRec) {
     Row({ space: 10 }) {
       Text(this.cardIcon(c))
-        .fontSize(22)
+        .fontSize(20)
         .fontWeight(FontWeight.Medium)
         .fontColor(this.cardIconColor(c))
-        .width(36)
-        .height(36)
+        .width(34)
+        .height(34)
         .textAlign(TextAlign.Center)
-        .borderRadius(7)
+        .borderRadius(8)
         .backgroundColor(this.th.hover)
       Column({ space: 2 }) {
         Text(c.name)
@@ -335,9 +463,9 @@ struct Index {
       .alignItems(HorizontalAlign.Start)
       .layoutWeight(1)
     }
-    .width(240)
-    .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-    .borderRadius(10)
+    .width(230)
+    .padding({ left: 12, right: 12, top: 10, bottom: 10 })
+    .borderRadius(12)
     .backgroundColor(this.th.panel)
     .border({ width: 1, color: this.th.hairline })
     .alignItems(VerticalAlign.Center)
@@ -348,92 +476,37 @@ struct Index {
     })
   }
 
+  // ===== 工作台首页(收藏 pill 横排 + 最近连接卡片流 + 快速新建) =====
   @Builder
   StartPane() {
     Column() {
       Scroll() {
         Column() {
-          Text('uniTerm')
-            .fontSize(30)
-            .fontWeight(FontWeight.Bold)
-            .fontColor(this.th.brand)
-            .margin({ top: 56, bottom: 32 })
+          // 收藏 pill 行(quickItems 范式: 一键直达)
           Row({ space: 8 }) {
-            Row({ space: 5 }) {
-              Text('⏷')
-                .fontSize(11)
-                .fontColor(this.th.inkSubtle)
-              Text('All')
+            Row({ space: 6 }) {
+              Text('▍')
+                .fontSize(13)
+                .fontColor(this.th.brand)
+              Text('本地终端')
                 .fontSize(12)
-                .fontColor(this.th.inkSubtle)
-            }
-            .height(32)
-            .padding({ left: 12, right: 12 })
-            .borderRadius(6)
-            .backgroundColor(this.th.panel)
-            .border({ width: 1, color: this.th.hairline })
-            .alignItems(VerticalAlign.Center)
-            TextInput({ placeholder: 'Search or quick connect...', text: this.searchText })
-              .onChange((v: string) => {
-                this.searchText = v
-              })
-              .fontSize(13)
-              .fontColor(this.th.ink)
-              .placeholderColor(this.th.inkSubtle)
-              .height(32)
-              .backgroundColor(this.th.panel)
-              .borderRadius(6)
-              .padding({ left: 12, right: 12 })
-              .layoutWeight(1)
-              .underlineColor(Color.Transparent)
-              .caretColor(this.th.brand)
-          }
-          .width(440)
-          Row({ space: 10 }) {
-            Row({ space: 6 }) {
-              Text('+')
-                .fontSize(14)
-                .fontWeight(FontWeight.Bold)
-                .fontColor(this.th.surface)
-              Text('New Connection')
-                .fontSize(13)
-                .fontColor(this.th.surface)
-            }
-            .height(32)
-            .padding({ left: 16, right: 16 })
-            .borderRadius(6)
-            .backgroundColor(this.th.brand)
-            .alignItems(VerticalAlign.Center)
-            .onClick(() => {
-              this.sideView = 0
-              this.sidebarVisible = true
-            })
-            // M5 relay4 fix(bug1): Local Terminal 按钮原先无 onClick,点击无反应。
-            // 现在确保 store 里有 type=local 连接(无则建)并直接开终端标签。
-            Row({ space: 6 }) {
-              Text('▤')
-                .fontSize(13)
-                .fontColor(this.th.ink)
-              Text('Local Terminal')
-                .fontSize(13)
                 .fontColor(this.th.ink)
             }
-            .height(32)
-            .padding({ left: 16, right: 16 })
-            .borderRadius(6)
+            .height(30)
+            .padding({ left: 14, right: 14 })
+            .borderRadius(15)
             .backgroundColor(this.th.panel)
             .border({ width: 1, color: this.th.hairline })
             .alignItems(VerticalAlign.Center)
             .onClick(() => {
               this.openLocalTerminal()
             })
-            // M5 relay4 fix(bug2): PgTab/RedisTab 原先零 UI 入口(openKindTab 无人调)。
             Text('PostgreSQL')
               .fontSize(12)
               .fontColor(this.th.ink)
-              .height(32)
-              .padding({ left: 12, right: 12 })
-              .borderRadius(6)
+              .height(30)
+              .padding({ left: 14, right: 14 })
+              .borderRadius(15)
               .backgroundColor(this.th.panel)
               .border({ width: 1, color: this.th.hairline })
               .onClick(() => {
@@ -442,21 +515,31 @@ struct Index {
             Text('Redis')
               .fontSize(12)
               .fontColor(this.th.ink)
-              .height(32)
-              .padding({ left: 12, right: 12 })
-              .borderRadius(6)
+              .height(30)
+              .padding({ left: 14, right: 14 })
+              .borderRadius(15)
               .backgroundColor(this.th.panel)
               .border({ width: 1, color: this.th.hairline })
               .onClick(() => {
                 this.openKindTab('redis', 'Redis')
               })
-            // M5 relay5 fix(bug3): VncTab/RdpTab 原先零 UI 入口,与 relay4 PG/Redis 同病。
+            Text('MySQL')
+              .fontSize(12)
+              .fontColor(this.th.ink)
+              .height(30)
+              .padding({ left: 14, right: 14 })
+              .borderRadius(15)
+              .backgroundColor(this.th.panel)
+              .border({ width: 1, color: this.th.hairline })
+              .onClick(() => {
+                this.openKindTab('mysql', 'MySQL')
+              })
             Text('VNC')
               .fontSize(12)
               .fontColor(this.th.ink)
-              .height(32)
-              .padding({ left: 12, right: 12 })
-              .borderRadius(6)
+              .height(30)
+              .padding({ left: 14, right: 14 })
+              .borderRadius(15)
               .backgroundColor(this.th.panel)
               .border({ width: 1, color: this.th.hairline })
               .onClick(() => {
@@ -465,25 +548,69 @@ struct Index {
             Text('RDP')
               .fontSize(12)
               .fontColor(this.th.ink)
-              .height(32)
-              .padding({ left: 12, right: 12 })
-              .borderRadius(6)
+              .height(30)
+              .padding({ left: 14, right: 14 })
+              .borderRadius(15)
               .backgroundColor(this.th.panel)
               .border({ width: 1, color: this.th.hairline })
               .onClick(() => {
                 this.openKindTab('rdp', 'RDP')
               })
           }
-          .margin({ top: 16, bottom: 20 })
+          .margin({ top: 28, bottom: 8 })
+          .alignItems(VerticalAlign.Center)
 
-          Text('RECENT')
-            .fontSize(11)
+          // 快速新建行
+          Row({ space: 10 }) {
+            Row({ space: 6 }) {
+              Text('+')
+                .fontSize(14)
+                .fontWeight(FontWeight.Bold)
+                .fontColor(this.th.surface)
+              Text('新建连接')
+                .fontSize(13)
+                .fontColor(this.th.surface)
+            }
+            .height(32)
+            .padding({ left: 16, right: 16 })
+            .borderRadius(16)
+            .backgroundColor(this.th.brand)
+            .alignItems(VerticalAlign.Center)
+            .onClick(() => {
+              this.sideView = 0
+              this.sidebarVisible = true
+            })
+            // M5 relay4 fix(bug1): Local Terminal 按钮原先无 onClick,点击无反应。
+            Row({ space: 6 }) {
+              Text('▤')
+                .fontSize(13)
+                .fontColor(this.th.ink)
+              Text('本地终端')
+                .fontSize(13)
+                .fontColor(this.th.ink)
+            }
+            .height(32)
+            .padding({ left: 16, right: 16 })
+            .borderRadius(16)
+            .backgroundColor(this.th.panel)
+            .border({ width: 1, color: this.th.hairline })
+            .alignItems(VerticalAlign.Center)
+            .onClick(() => {
+              this.openLocalTerminal()
+            })
+          }
+          .margin({ top: 8, bottom: 24 })
+          .alignItems(VerticalAlign.Center)
+
+          Text('最近连接')
+            .fontSize(12)
+            .fontWeight(FontWeight.Medium)
             .fontColor(this.th.inkSubtle)
             .letterSpacing(1)
             .alignSelf(ItemAlign.Start)
-            .margin({ left: 40, bottom: 8 })
+            .margin({ left: 40, bottom: 10 })
           Column({ space: 10 }) {
-            Text('暂无连接,点击 New Connection 开始')
+            Text('暂无连接,点击「新建连接」或左侧「连接」面板开始')
               .fontSize(13)
               .fontColor(this.th.inkSubtle)
               .margin({ top: 40 })
@@ -501,7 +628,62 @@ struct Index {
     .alignItems(HorizontalAlign.Center)
   }
 
-  // ===== 官方设置下拉菜单(顶栏齿轮) =====
+  // ===== 命令面板下拉(focus 搜索框时展开;点击条目执行) =====
+  @Builder
+  PaletteRow(item: PaletteItem, idx: number) {
+    Row({ space: 8 }) {
+      Text(item.icon)
+        .fontSize(13)
+        .fontColor(this.paletteSel === idx ? this.th.brand : this.th.inkSubtle)
+        .width(20)
+        .textAlign(TextAlign.Center)
+      Text(item.label)
+        .fontSize(12)
+        .fontColor(this.paletteSel === idx ? this.th.ink : this.th.inkSubtle)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .layoutWeight(1)
+      Text(item.hint)
+        .fontSize(10)
+        .fontColor(this.th.inkSubtle)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+    }
+    .width('100%')
+    .height(30)
+    .padding({ left: 12, right: 12 })
+    .borderRadius(6)
+    .backgroundColor(this.paletteSel === idx ? this.th.hover : Color.Transparent)
+    .alignItems(VerticalAlign.Center)
+    .onClick(() => {
+      this.paletteFocus = false
+      item.run()
+    })
+    .onHover((h: boolean) => {
+      if (h) {
+        this.paletteSel = idx
+      }
+    })
+  }
+
+  @Builder
+  CommandPalette() {
+    Column() {
+      ForEach(this.paletteItems(), (item: PaletteItem, idx: number) => {
+        this.PaletteRow(item, idx)
+      }, (item: PaletteItem) => item.key + '.' + this.searchText)
+    }
+    .width(360)
+    .constraintSize({ maxHeight: 300 })
+    .padding(6)
+    .borderRadius(10)
+    .backgroundColor(this.th.surfaceRaised)
+    .border({ width: 1, color: this.th.hairline })
+    .shadow({ radius: 16, color: '#66000000', offsetX: 0, offsetY: 6 })
+    .position({ x: 210, y: 4 })
+  }
+
+  // ===== 设置下拉菜单(命令栏齿轮) =====
   @Builder
   SettingsMenu() {
     Column({ space: 1 }) {
@@ -531,8 +713,8 @@ struct Index {
         .borderRadius(4)
         .alignSelf(ItemAlign.Start)
         .onClick(() => {
-          this.showSettingsMenu = false
           this.openSettingsTab()
+          this.showSettingsMenu = false
         })
       Text('导入 / 导出')
         .fontSize(12)
@@ -562,7 +744,7 @@ struct Index {
       Text('Redis / K8s / PostgreSQL / MySQL / VNC / RDP / SPICE')
         .fontSize(10)
         .fontColor(this.th.inkSubtle)
-        .padding({ left: 10, right: 10, top: 4, bottom: 6 })
+        .padding({ left: 10, right: 40, top: 4, bottom: 6 })
         .alignSelf(ItemAlign.Start)
     }
     .width(200)
@@ -576,170 +758,184 @@ struct Index {
 
   build() {
     Column() {
-      // ===== AppHeader(官方 44px, bg-elevated) =====
-      Column() {
-        Row() {
-          this.HeaderBtn('▤', '连接列表', () => {
-            this.sidebarVisible = !this.sidebarVisible
-          })
-          Scroll() {
-            Row({ space: 2 }) {
-              ForEach(this.tabs, (t: TabInfo) => {
-                this.TabItem(t)
-              }, (t: TabInfo) => t.id.toString())
-              Text('+')
-                .fontSize(15)
-                .fontWeight(FontWeight.Bold)
-                .fontColor(this.th.iconMuted)
-                .width(28)
-                .height(28)
-                .textAlign(TextAlign.Center)
-                .borderRadius(6)
-                .onClick(() => this.addStartTab())
-                .onHover((h: boolean) => {
-                  this.hoverTip = h ? 'newTab' : ''
-                  this.hoverOn = h
-                })
-                .bindPopup(this.hoverOn && this.hoverTip === 'newTab', {
-                  message: '新建开始标签页',
-                  placementOnTop: true
-                })
-            }
-            .alignItems(VerticalAlign.Center)
+      // ===== 命令栏(44px): 品牌 + 坞折叠钮 + 搜索命令面板 + AI/齿轮/分屏 =====
+      Row() {
+        Text('一站AI终端')
+          .fontSize(14)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(this.th.brand)
+          .margin({ left: 12, right: 4 })
+        this.HeaderBtn(this.dockWide ? '«' : '»', this.dockWide ? '收起侧坞' : '展开侧坞', () => {
+          this.dockWide = !this.dockWide
+          this.sidebarVisible = true
+        })
+        this.HeaderBtn('⌗', '连接列表', () => {
+          this.sideView = 0
+          this.sidebarVisible = !this.sidebarVisible
+        })
+        // 搜索命令面板(focus 展开;失焦收起;回车执行选中项)
+        Stack({ alignContent: Alignment.TopStart }) {
+          TextInput({ placeholder: '搜索命令或连接...', text: this.searchText })
+            .onChange((v: string) => {
+              this.searchText = v
+              this.paletteSel = 0
+            })
+            .onFocus(() => {
+              this.paletteFocus = true
+            })
+            .onBlur(() => {
+              this.paletteFocus = false
+            })
+            .onSubmit(() => {
+              const items = this.paletteItems()
+              if (items.length > 0) {
+                const pick = items[Math.min(this.paletteSel, items.length - 1)]
+                this.paletteFocus = false
+                pick.run()
+              }
+            })
+            .fontSize(12)
+            .fontColor(this.th.ink)
+            .placeholderColor(this.th.inkSubtle)
+            .height(30)
+            .width(240)
+            .backgroundColor(this.th.inputBg)
+            .borderRadius(6)
+            .padding({ left: 12, right: 12 })
+            .underlineColor(Color.Transparent)
+            .caretColor(this.th.brand)
+          if (this.paletteFocus) {
+            this.CommandPalette()
           }
-          .scrollable(ScrollDirection.Horizontal)
-          .scrollBar(BarState.Off)
-          .layoutWeight(1)
-          .height(28)
-          .margin({ left: 4 })
-          Blank()
-          this.HeaderBtn('▣', '分屏', () => this.toggleSplit())
-          this.HeaderBtn('✦', 'AI', () => {
-            this.aiVisible = !this.aiVisible
-          })
-          this.HeaderBtn('⚙', '设置', () => {
-            this.showSettingsMenu = !this.showSettingsMenu
-          })
         }
-        .width('100%')
-        .height(40)
-        .padding({ left: 8, right: 8 })
-        .alignItems(VerticalAlign.Center)
-        Divider()
-          .strokeWidth(1)
-          // M5 relay6: 顶栏分隔线原先硬编码青色透明,浅色主题下几乎不可见 — 随主题取色
-          .color('rgba(0,0,0,0.10)')
+        .width(240)
+        .height(30)
+        Blank()
+        this.HeaderBtn('▣', '分屏', () => this.toggleSplit())
+        this.HeaderBtn('✦', 'AI 助手', () => {
+          this.aiVisible = !this.aiVisible
+        })
+        this.HeaderBtn('⚙', '设置', () => {
+          this.showSettingsMenu = !this.showSettingsMenu
+        })
       }
       .width('100%')
       .height(44)
-      .backgroundColor(this.th.surface)
+      .padding({ left: 0, right: 8 })
+      .alignItems(VerticalAlign.Center)
+      .backgroundColor(this.th.surfaceRaised)
+      .border({ width: { bottom: 1 }, color: this.th.hairline })
+
+      // ===== TabsList pill 条(28px,命令栏正下方,可横滚) =====
+      Scroll() {
+          Row({ space: 2 }) {
+            ForEach(this.tabs, (t: TabInfo) => {
+              this.TabItem(t)
+            }, (t: TabInfo) => t.id.toString())
+            Text('+')
+              .fontSize(15)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(this.th.iconMuted)
+              .width(26)
+              .height(26)
+              .textAlign(TextAlign.Center)
+              .borderRadius(13)
+              .backgroundColor(this.th.panel)
+              .border({ width: 1, color: this.th.hairline })
+              .onClick(() => this.addStartTab())
+              .onHover((h: boolean) => {
+                this.hoverTip = h ? 'newTab' : ''
+                this.hoverOn = h
+              })
+              .bindPopup(this.hoverOn && this.hoverTip === 'newTab', {
+                message: '新建开始标签页',
+                placementOnTop: true
+              })
+          }
+          .alignItems(VerticalAlign.Center)
+        }
+        .scrollable(ScrollDirection.Horizontal)
+        .scrollBar(BarState.Off)
+        .height(28)
+        .width('100%')
+        .padding({ left: 12 })
+        .margin({ top: 4, bottom: 4 })
+        .backgroundColor(this.th.surface)
 
       // ===== 主体 =====
       Stack({ alignContent: Alignment.TopEnd }) {
         Row() {
           if (this.sidebarVisible) {
             Column() {
-              Row({ space: 2 }) {
+              // 坞顶: 视图切换 icon(双态)
+              Column({ space: 2 }) {
                 ForEach([0, 1, 2, 3, 4, 5, 6], (i: number) => {
-                  this.SideIcon(i)
-                }, (i: number) => i.toString())
-                Blank()
-                Text('«')
-                  .fontSize(13)
-                  .fontWeight(FontWeight.Medium)
-                  .fontColor(this.th.iconMuted)
-                  .width(26)
-                  .height(26)
-                  .textAlign(TextAlign.Center)
-                  .borderRadius(4)
-                  .onClick(() => {
-                    this.sidebarVisible = false
-                  })
-                  .onHover((h: boolean) => {
-                    this.hoverTip = h ? 'collapseSide' : ''
-                    this.hoverOn = h
-                  })
-                  .bindPopup(this.hoverOn && this.hoverTip === 'collapseSide', {
-                    message: '收起侧栏',
-                    placementOnTop: true
-                  })
+                  this.DockIcon(i)
+                }, (i: number) => i.toString() + (this.dockWide ? 'w' : 'n'))
               }
               .width('100%')
-              .padding({ left: 10, right: 10, top: 10, bottom: 6 })
+              .padding({ top: 8, bottom: 4 })
 
-              if (this.sideView === 0) {
-                Row({ space: 4 }) {
-                  TextInput({ placeholder: '搜索或快捷连接...', text: this.searchText })
-                    .onChange((v: string) => {
-                      this.searchText = v
-                    })
-                    .fontSize(12)
-                    .fontColor(this.th.ink)
-                    .placeholderColor(this.th.inkSubtle)
-                    .height(28)
-                    .backgroundColor(this.th.panel)
-                    .borderRadius(4)
-                    .padding({ left: 10, right: 4 })
+              // 宽态: 视图名 + 面板内容(连接视图嵌 ConnList)
+              if (this.dockWide) {
+                Text(this.sideViewNames[this.sideView])
+                  .fontSize(11)
+                  .fontColor(this.th.inkSubtle)
+                  .letterSpacing(1)
+                  .width('100%')
+                  .padding({ left: 12, right: 10, top: 6, bottom: 6 })
+                  .border({ width: { bottom: 1 }, color: this.th.hairline })
+                  .margin({ bottom: 4 })
+
+                if (this.sideView === 0) {
+                  ConnList({
+                    onOpenConn: (id: string) => {
+                      this.openConnTab(id)
+                    },
+                    onNeedStore: (): ConnectionStore => {
+                      const ctx = getContext(this) as common.UIAbilityContext
+                      return new ConnectionStore(ctx.filesDir)
+                    }
+                  })
                     .layoutWeight(1)
-                    .underlineColor(Color.Transparent)
-                    .caretColor(this.th.brand)
-                  Text('⏷')
-                    .fontSize(11)
-                    .fontColor(this.th.inkSubtle)
-                    .width(24)
-                    .height(24)
-                    .textAlign(TextAlign.Center)
-                    .borderRadius(4)
-                }
-                .width('100%')
-                .padding({ left: 10, right: 10, bottom: 6 })
-              }
-
-              if (this.sideView === 0) {
-                ConnList({
-                  onOpenConn: (id: string) => {
-                    this.openConnTab(id)
-                  },
-                  onNeedStore: (): ConnectionStore => {
-                    const ctx = getContext(this) as common.UIAbilityContext
-                    return new ConnectionStore(ctx.filesDir)
+                } else if (this.sideView === 1) {
+                  FileSidebar()
+                    .layoutWeight(1)
+                } else if (this.sideView === 2) {
+                  MonitorPanel()
+                    .layoutWeight(1)
+                } else if (this.sideView === 4) {
+                  QuickCommandsPanel()
+                    .layoutWeight(1)
+                } else if (this.sideView === 5) {
+                  HistoryPanel()
+                    .layoutWeight(1)
+                } else if (this.sideView === 6) {
+                  PersonalizationPanel({
+                    onThemeChange: (t: string) => this.applyTheme(t)
+                  })
+                    .layoutWeight(1)
+                } else {
+                  Column() {
+                    Text(this.sideTips[this.sideView])
+                      .fontSize(13)
+                      .fontColor(this.th.inkSubtle)
+                      .margin(16)
+                    Text('按官方路线图逐步开放')
+                      .fontSize(11)
+                      .fontColor(this.th.inkSubtle)
                   }
-                })
                   .layoutWeight(1)
-              } else if (this.sideView === 1) {
-                FileSidebar()
-                  .layoutWeight(1)
-              } else if (this.sideView === 2) {
-                MonitorPanel()
-                  .layoutWeight(1)
-              } else if (this.sideView === 4) {
-                QuickCommandsPanel()
-                  .layoutWeight(1)
-              } else if (this.sideView === 5) {
-                HistoryPanel()
-                  .layoutWeight(1)
-              } else if (this.sideView === 6) {
-                PersonalizationPanel({
-                  onThemeChange: (t: string) => this.applyTheme(t)
-                })
-                  .layoutWeight(1)
-              } else {
-                Column() {
-                  Text(this.sideTips[this.sideView])
-                    .fontSize(13)
-                    .fontColor(this.th.inkSubtle)
-                    .margin(16)
-                  Text('按官方路线图逐步开放')
-                    .fontSize(11)
-                    .fontColor(this.th.inkSubtle)
+                  .width('100%')
                 }
-                .layoutWeight(1)
-                .width('100%')
+              } else {
+                Blank()
               }
             }
-            .width(280)
+            .width(this.dockWide ? 200 : 56)
             .height('100%')
             .backgroundColor(this.th.surface)
+            .border({ width: { right: 1 }, color: this.th.hairline })
           }
 
           // 内容区:主栏 + 可选分屏右栏
@@ -819,9 +1015,44 @@ struct Index {
       }
       .layoutWeight(1)
       .width('100%')
+
+      // ===== 底部状态栏(24px) =====
+      Row({ space: 10 }) {
+        Row({ space: 6 }) {
+          Circle()
+            .width(8)
+            .height(8)
+            .fill(this.statusConn !== '' ? this.th.success : this.th.inkSubtle)
+          Text(this.statusConn !== '' ? this.statusConn : '未连接')
+            .fontSize(10)
+            .fontColor(this.statusConn !== '' ? this.th.ink : this.th.inkSubtle)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .constraintSize({ maxWidth: 200 })
+        }
+        .alignItems(VerticalAlign.Center)
+
+        Text('UTF-8')
+          .fontSize(10)
+          .fontColor(this.th.inkSubtle)
+        Text('v1.1.0')
+          .fontSize(10)
+          .fontColor(this.th.inkSubtle)
+        Blank()
+        Text('一站AI终端 · One AI Term')
+          .fontSize(10)
+          .fontColor(this.th.inkSubtle)
+      }
+      .width('100%')
+      .height(24)
+      .padding({ left: 12, right: 12 })
+      .alignItems(VerticalAlign.Center)
+      .backgroundColor(this.th.surfaceRaised)
+      .border({ width: { top: 1 }, color: this.th.hairline })
     }
     .width('100%')
     .height('100%')
     .backgroundColor(this.th.surface)
   }
 }
+
