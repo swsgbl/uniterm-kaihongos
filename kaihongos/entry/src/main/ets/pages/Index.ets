@@ -19,6 +19,7 @@ import { VncTab } from '../components/VncTab';
 import { RdpTab } from '../components/RdpTab';
 import { SpiceTab } from '../components/SpiceTab';
 import { themeByName, AppTheme } from '../common/AppTheme';
+import { AIDock } from '../components/AIDock';
 import { common } from '@kit.AbilityKit';
 
 interface TabInfo {
@@ -48,6 +49,8 @@ struct Index {
   @State nextTabId: number = 1
   @State showSettingsMenu: boolean = false
   @State aiVisible: boolean = false
+  // M6 relay3: 底部 AI 智能体 Dock
+  @State aiDockOpen: boolean = false
   @State splitTabId: number = -1 // 分屏右侧固定的标签(-1 关闭)
   @State searchText: string = ''
   // M6 relay2 布局①: 左坞双态(宽200 icon+文字 / 窄56 icon)
@@ -812,6 +815,10 @@ struct Index {
         .height(30)
         Blank()
         this.HeaderBtn('▣', '分屏', () => this.toggleSplit())
+        // M6 relay3: 智能体 Dock 切换钮
+        this.HeaderBtn('✧', '智能体', () => {
+          this.aiDockOpen = !this.aiDockOpen
+        })
         this.HeaderBtn('✦', 'AI 助手', () => {
           this.aiVisible = !this.aiVisible
         })
@@ -1015,6 +1022,11 @@ struct Index {
       }
       .layoutWeight(1)
       .width('100%')
+
+      // ===== M6 relay3: AI 智能体 Dock(主体与状态栏之间, 横跨全宽) =====
+      if (this.aiDockOpen) {
+        AIDock()
+      }
 
       // ===== 底部状态栏(24px) =====
       Row({ space: 10 }) {

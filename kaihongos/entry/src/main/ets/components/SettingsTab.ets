@@ -1,6 +1,7 @@
 // 官方 SettingsTab 复刻:左侧分类(基础/终端/主题/语言/AI)+ 右侧配置区
 // M6 relay1: 全量主题化(P0-4) + 保存 toast(P0-1/3) + 密钥框可见性修复(P0-2) + 悬停 tooltip(P0-6) + 版本号 v1.1.0
 import { LlmConfigStore } from '../service/LlmConfigStore';
+import { AgentSettings, AgentSettingsStore, ApprovalMode } from '../service/AgentSettingsStore';
 import { common } from '@kit.AbilityKit';
 import { AppTheme, themeByName } from '../common/AppTheme';
 
@@ -29,6 +30,9 @@ export struct SettingsTab {
   @State showKey: boolean = false // 密钥明文切换(P0-2)
   @State toast: string = '' // 保存反馈(P0-3)
   @State toastErr: boolean = false
+  // M6 relay3: 智能体审批门三档
+  @State agentMode: ApprovalMode = 'confirm_all'
+  @State agentToast: string = ''
   // tooltip 公共悬停态(P0-6)
   @State hoverTip: string = ''
   @State hoverOn: boolean = false
@@ -47,6 +51,26 @@ export struct SettingsTab {
     this.cfgApiKey = cfg.apiKey
     this.cfgModel = cfg.model
     this.theme = this.themeName
+    this.agentMode = AgentSettingsStore.read(this.filesDir).mode
+  }
+
+  // M6 relay3: 智能体审批门三档写入(即时保存+toast)
+  saveAgentMode(m: ApprovalMode): void {
+    this.agentMode = m
+    const s = new AgentSettings()
+    s.mode = m
+    const err = AgentSettingsStore.write(this.filesDir, s)
+    this.agentToast = err === '' ? '审批策略已保存: ' + this.agentModeLabel(m) : err
+  }
+
+  agentModeLabel(m: ApprovalMode): string {
+    if (m === 'confirm_all') {
+      return '全部确认'
+    }
+    if (m === 'confirm_dangerous') {
+      return '仅危险确认'
+    }
+    return '全自动'
   }
 
   saveAi(): void {
@@ -314,6 +338,60 @@ export struct SettingsTab {
               }
             }
             .alignItems(HorizontalAlign.Start)
+
+            // ===== M6 relay3: 智能体审批门三档 =====
+            Divider()
+              .strokeWidth(1)
+              .color(this.th().hairline)
+              .margin({ top: 18, bottom: 14 })
+            Text('智能体审批')
+              .fontSize(13)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(this.th().ink)
+              .alignSelf(ItemAlign.Start)
+            Column({ space: 6 }) {
+              ForEach(['confirm_all', 'confirm_dangerous', 'bypass'], (m: string) => {
+                Text(this.agentModeLabel(m as ApprovalMode))
+                  .fontSize(12)
+                  .fontColor(this.agentMode === m ? this.th().brand : this.th().inkSubtle)
+                  .padding({ left: 12, right: 12, top: 7, bottom: 7 })
+                  .borderRadius(6)
+                  .border({ width: 1, color: this.agentMode === m ? this.th().brand : this.th().hairline })
+                  .backgroundColor(this.agentMode === m ? this.th().hover : this.th().panel)
+                  .onClick(() => this.saveAgentMode(m as ApprovalMode))
+              }, (m: string) => m)
+            }
+            .alignItems(HorizontalAlign.Start)
+            Text(this.agentMode === 'confirm_all' ? '每次工具调用都弹审批卡' :
+              (this.agentMode === 'confirm_dangerous' ? '只读命令直放, 危险命令才审批' : '所有命令直接执行(风险自担)'))
+              .fontSize(10)
+              .fontColor(this.th().inkSubtle)
+            if (this.agentToast !== '') {
+              Text(this.agentToast)
+                .fontSize(11)
+                .fontColor(this.th().success)
+                .padding({ left: 10, right: 10, top: 5, bottom: 5 })
+                .borderRadius(4)
+                .backgroundColor(this.th().hover)
+                .alignSelf(ItemAlign.Start)
+                .onClick(() => {
+                  this.agentToast = ''
+                })
+            }
+
+            // ===== 模式B 占位: 增强模式(即将推出) =====
+            Divider()
+              .strokeWidth(1)
+              .color(this.th().hairline)
+              .margin({ top: 18, bottom: 14 })
+            Text('增强模式(即将推出)')
+              .fontSize(13)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(this.th().inkSubtle)
+              .alignSelf(ItemAlign.Start)
+            Text('自主规划+多步执行的后台智能体,按官方路线图后续开放')
+              .fontSize(10)
+              .fontColor(this.th().inkSubtle)
           }
         }
         .alignItems(HorizontalAlign.Start)
