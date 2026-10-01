@@ -1,0 +1,3120 @@
+
+/* ========== 第 1 页 ========== */
+// ===== 文件: AgentKernel.ets (444 行) =====
+/**
+ * uniterm M6 relay3 - AI 智能体内核(ArkTS 原生, hmharness 式多轮 function-calling)。
+ *
+ * 回路: run(userText) → while(round < 12):
+ *   chatWithTools(带 4 工具) → 有 tool_calls → 逐个过审批门(需确认时 emit 审批卡
+ *   + Promise 挂起, UI 允许/拒绝回调续跑) → 执行 → role:'tool' 回填 → continue;
+ *   无 tool_calls → 最终答复, done。
+ *
+ * 4 工具(走既有服务):
+ *   term_write(cmd)    → SessionService.write(危险判定黑名单正则)
+ *   term_read(lastN)   → SessionService.screenText
+ *   session_info()     → 会话状态快照
+ *   sftp_list(path)    → ssh.sftpList(sessionId)
+ *
+ * 审计: 每轮 append filesDir/agent-audit.jsonl(ts/round/tool/args/result 摘要)。
+ * 上下文预算: term_read lastN≤40 行; 历史消息 >20 轮时截断中间。
+ * 全程事件回调驱动 UI(无后台 setInterval);轮次推进靠 Promise 续跑。
+ */
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import fs from '@ohos.file.fs';
+import { Llm, LlmConfig, LlmMsg, OaiToolCall } from './Llm';
+import { LlmConfigStore } from './LlmConfigStore';
+import { SessionService } from './SessionService';
+import { AgentSettings, AgentSettingsStore, ApprovalMode } from './AgentSettingsStore';
+
+const TAG: string = 'oat.agent';
+const DOMAIN: number = 0x0110;
+const MAX_ROUNDS: number = 12;
+const MAX_HISTORY: number = 20;
+
+/** 内核发往 UI 的事件(AIDock 渲染三类消息 + 审批卡)。 */
+export interface KernelEvent {
+  kind: string
+  // 'user' 用户指令 | 'assistant' 模型文本 | 'tool' 工具卡(name+args+result)
+  // | 'need_approval' 审批请求(callId+name+args) | 'approved'/'denied' 审批结果
+  // | 'round' 轮次指示 | 'done' 完成 | 'err' 错误
+  text: string
+  name: string
+  args: string
+  result: string
+  callId: string
+  round: number
+}
+
+/** 审计 jsonl 单行结构。 */
+interface AuditRow {
+  ts: number
+  round: number
+  tool: string
+
+/* ========== 第 2 页 ========== */
+  args: string
+  ok: boolean
+  approved: boolean
+  result: string
+}
+
+export class AgentKernel {
+  static onEvent: (e: KernelEvent) => void = (e: KernelEvent) => {
+  }
+  private static busy: boolean = false
+  private static round: number = 0
+  // 审批挂起: callId → resolver(true=允许 / false=拒绝)
+  private static pendingResolve: ((ok: boolean) => void) | null = null
+  private static pendingCallId: string = ''
+
+  /** UI 允许按钮回调(续跑挂起的轮次)。 */
+  static approve(): void {
+    hilog.info(DOMAIN, TAG, 'approve callId=%{public}s', AgentKernel.pendingCallId)
+    const r = AgentKernel.pendingResolve
+    if (r !== null) {
+      AgentKernel.pendingResolve = null
+      AgentKernel.pendingCallId = ''
+      r(true)
+    }
+  }
+
+  /** UI 拒绝按钮回调(工具结果=已拒绝, 模型继续)。 */
+  static deny(): void {
+    hilog.info(DOMAIN, TAG, 'deny callId=%{public}s', AgentKernel.pendingCallId)
+    const r = AgentKernel.pendingResolve
+    if (r !== null) {
+      AgentKernel.pendingResolve = null
+      AgentKernel.pendingCallId = ''
+      r(false)
+    }
+  }
+
+  /** 4 工具的 OpenAI tools 参数 JSON(Record 组装避免双重序列化)。 */
+  static toolsJson(): string {
+    // parameters JSON Schema 子对象(properties 值必须是 schema 对象, 非描述文本)
+    const p1: Record<string, Object> = {}
+    const p1cmd: Record<string, Object> = {}
+    p1cmd['type'] = 'string'
+    p1cmd['description'] = 'shell 命令文本(不含换行结尾)'
+    p1['cmd'] = p1cmd
+    const fn1p: Record<string, Object> = {}
+    fn1p['type'] = 'object'
+    fn1p['properties'] = p1
+    const fn1req: string[] = ['cmd']
+    fn1p['required'] = fn1req
+
+/* ========== 第 3 页 ========== */
+    const fn1: Record<string, Object> = {}
+    fn1['name'] = 'term_write'
+    fn1['description'] = '在当前终端会话执行一条 shell 命令并等待输出完成。危险命令需用户审批。'
+    fn1['parameters'] = fn1p
+
+    const p2: Record<string, Object> = {}
+    const p2n: Record<string, Object> = {}
+    p2n['type'] = 'number'
+    p2n['description'] = '返回最后 N 行'
+    p2['lastN'] = p2n
+    const fn2p: Record<string, Object> = {}
+    fn2p['type'] = 'object'
+    fn2p['properties'] = p2
+    const fn2: Record<string, Object> = {}
+    fn2['name'] = 'term_read'
+    fn2['description'] = '读取终端屏幕最近输出。lastN: 返回最后 N 行(1-40, 默认 24)'
+    fn2['parameters'] = fn2p
+
+    const fn3p: Record<string, Object> = {}
+    fn3p['type'] = 'object'
+    const fn3: Record<string, Object> = {}
+    fn3['name'] = 'session_info'
+    fn3['description'] = '获取当前终端会话信息(类型/状态/连接标签)'
+    fn3['parameters'] = fn3p
+
+    const p4: Record<string, Object> = {}
+    const p4p: Record<string, Object> = {}
+    p4p['type'] = 'string'
+    p4p['description'] = '远端路径'
+    p4['path'] = p4p
+    const fn4p: Record<string, Object> = {}
+    fn4p['type'] = 'object'
+    fn4p['properties'] = p4
+    const fn4: Record<string, Object> = {}
+    fn4['name'] = 'sftp_list'
+    fn4['description'] = '列出当前 SSH 会话远端目录内容。path: 远端路径(默认 .)'
+    fn4['parameters'] = fn4p
+
+    const mk = (fn: Record<string, Object>): Record<string, Object> => {
+      const s: Record<string, Object> = {}
+      s['type'] = 'function'
+      s['function'] = fn
+      return s
+    }
+    const arr: Record<string, Object>[] = [mk(fn1), mk(fn2), mk(fn3), mk(fn4)]
+    return JSON.stringify(arr)
+  }
+
+  /** 危险命令黑名单(rm -rf 必中: rm 后跟空白)。 */
+  static riskOf(cmd: string): string {
+
+/* ========== 第 4 页 ========== */
+    const d = /rm\s|mkfs|dd\s|reboot|shutdown|kill|chmod|chown|>\s*\/|curl.*\|\s*sh|wget.*\|\s*sh/
+    if (d.test(cmd)) {
+      return 'dangerous'
+    }
+    const r = /^(ls|cat|pwd|whoami|uname|df|free|ps|ip|ifconfig|netstat|uptime|top|head|tail|grep|echo|date|id)\b/
+    if (r.test(cmd)) {
+      return 'read'
+    }
+    return 'write'
+  }
+
+  /** 审批门: 全部确认→true; 仅危险→risk==='dangerous'; 全自动→false。 */
+  static needConfirm(mode: ApprovalMode, risk: string): boolean {
+    if (mode === 'confirm_all') {
+      return true
+    }
+    if (mode === 'confirm_dangerous') {
+      return risk === 'dangerous'
+    }
+    return false
+  }
+
+  /** 入口: 用户指令 → 多轮回路。 */
+  static async run(userText: string): Promise<void> {
+    if (AgentKernel.busy) {
+      hilog.warn(DOMAIN, TAG, 'busy, ignore new run')
+      return
+    }
+    AgentKernel.busy = true
+    AgentKernel.round = 0
+    AgentKernel.emit({ kind: 'user', text: userText, name: '', args: '', result: '', callId: '', round: 0 })
+    try {
+      const filesDir = AppStorage.get<string>('ut.filesDir') ?? ''
+      const cfg: LlmConfig = LlmConfigStore.read(filesDir)
+      if (cfg.apiKey === '') {
+        AgentKernel.emit({ kind: 'err', text: '未配置模型(设置→AI 模型)', name: '', args: '', result: '', callId: '', round: 0 })
+        return
+      }
+      const settings = AgentSettingsStore.read(filesDir)
+      hilog.info(DOMAIN, TAG, 'run mode=%{public}s rounds<=12', settings.mode)
+      const system = '你是一站AI终端的智能体。可用工具: term_write(执行shell命令,危险命令需用户审批)、' +
+        'term_read(读终端屏幕)、session_info(会话信息)、sftp_list(列远端目录)。' +
+        '完成用户任务时优先用工具,所有命令必须经 term_write 执行;' +
+        '执行后用 term_read 查看输出再决定下一步;完成后直接文字答复,不再调用工具。'
+      const hist: LlmMsg[] = []
+      const userMsg = new LlmMsg()
+      userMsg.role = 'user'
+      userMsg.text = userText
+      hist.push(userMsg)
+      let final = ''
+
+/* ========== 第 5 页 ========== */
+      for (let r = 1; r <= MAX_ROUNDS; r++) {
+        AgentKernel.round = r
+        AgentKernel.emit({ kind: 'round', text: '', name: '', args: '', result: '', callId: '', round: r })
+        const res = await Llm.chatWithTools(cfg, AgentKernel.trimHistory(hist), system, AgentKernel.toolsJson())
+        hilog.info(DOMAIN, TAG, 'round %{public}d finish=%{public}s calls=%{public}s',
+          r, res.finishReason, res.toolCallsJson.substring(0, 120))
+        if (res.toolCallsJson === '[]' || res.toolCallsJson === '') {
+          final = res.content
+          break
+        }
+        // assistant 轮回填(tool_calls)
+        const am = new LlmMsg()
+        am.role = 'assistant'
+        am.text = res.content
+        am.toolCallsJson = res.toolCallsJson
+        hist.push(am)
+        const calls = JSON.parse(res.toolCallsJson) as OaiToolCall[]
+        for (const tc of calls) {
+          const outcome = await AgentKernel.handleToolCall(tc, settings.mode, r)
+          // role:tool 回填
+          const tm = new LlmMsg()
+          tm.role = 'tool'
+          tm.toolCallId = tc.id
+          tm.text = outcome
+          hist.push(tm)
+        }
+      }
+      if (final === '') {
+        final = '已达最大轮次(12),任务暂停。可继续发送指令续跑。'
+      }
+      AgentKernel.emit({ kind: 'done', text: final, name: '', args: '', result: '', callId: '', round: AgentKernel.round })
+      AgentKernel.audit(0, 'run', userText.substring(0, 200), true, true, final.substring(0, 200))
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : JSON.stringify(e)
+      hilog.error(DOMAIN, TAG, 'run FAIL %{public}s', msg)
+      AgentKernel.emit({ kind: 'err', text: '执行失败: ' + msg, name: '', args: '', result: '', callId: '', round: AgentKernel.round })
+    } finally {
+      AgentKernel.busy = false
+    }
+  }
+
+  /** 单个 tool_call: 审批门 → 执行 → 返回工具结果文本。 */
+  private static async handleToolCall(tc: OaiToolCall, mode: ApprovalMode, round: number): Promise<string> {
+    let args: string = ''
+    if (tc.name === 'term_write') {
+      args = AgentKernel.argString(tc.arguments, 'cmd')
+    } else if (tc.name === 'term_read') {
+      args = AgentKernel.argString(tc.arguments, 'lastN')
+    } else if (tc.name === 'sftp_list') {
+      args = AgentKernel.argString(tc.arguments, 'path')
+
+/* ========== 第 6 页 ========== */
+    } else if (tc.name === 'session_info') {
+      args = ''
+    } else {
+      AgentKernel.emit({ kind: 'tool', text: '', name: tc.name, args: tc.arguments, result: '未知工具: ' + tc.name, callId: tc.id, round: round })
+      return '未知工具: ' + tc.name
+    }
+    // 审批门
+    if (tc.name === 'term_write') {
+      const risk = AgentKernel.riskOf(args)
+      if (AgentKernel.needConfirm(mode, risk)) {
+        const ok = await AgentKernel.requestApproval(tc.id, tc.name, args, round)
+        if (!ok) {
+          const denied = '用户拒绝执行该命令。'
+          AgentKernel.emit({ kind: 'tool', text: '', name: tc.name, args: args, result: denied, callId: tc.id, round: round })
+          AgentKernel.audit(round, tc.name, args, false, false, denied)
+          return denied
+        }
+      }
+    }
+    // 执行
+    let out = ''
+    let ok = true
+    try {
+      if (tc.name === 'term_write') {
+        out = await AgentKernel.termWrite(args)
+      } else if (tc.name === 'term_read') {
+        out = AgentKernel.termRead(tc.arguments)
+      } else if (tc.name === 'session_info') {
+        out = AgentKernel.sessionInfo()
+      } else if (tc.name === 'sftp_list') {
+        out = await AgentKernel.sftpList(args)
+      }
+    } catch (e) {
+      ok = false
+      out = '工具执行异常: ' + (e instanceof Error ? e.message : JSON.stringify(e))
+    }
+    AgentKernel.emit({ kind: 'tool', text: '', name: tc.name, args: args, result: out, callId: tc.id, round: round })
+    AgentKernel.audit(round, tc.name, args, ok, true, out)
+    return out
+  }
+
+  /** 挂起等待 UI 审批(Promise 不落地不推进)。 */
+  private static requestApproval(callId: string, name: string, args: string, round: number): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      AgentKernel.pendingResolve = resolve
+      AgentKernel.pendingCallId = callId
+      AgentKernel.emit({ kind: 'need_approval', text: '', name: name, args: args, result: '', callId: callId, round: round })
+      hilog.info(DOMAIN, TAG, 'need_approval callId=%{public}s cmd=%{public}s', callId, args)
+    })
+  }
+
+/* ========== 第 7 页 ========== */
+
+  /** term_write: 写入命令 → 屏幕指纹轮询等输出稳定 → 返回增量输出。 */
+  private static async termWrite(cmd: string): Promise<string> {
+    if (!SessionService.hasSession()) {
+      return '无活动终端会话'
+    }
+    const before = SessionService.screenText(4000)
+    const n = SessionService.write(cmd + '\n')
+    if (n < 0) {
+      return '命令写入失败'
+    }
+    // 屏幕指纹对比轮询(上限 8s): 文本稳定 1.2s 或命中提示符即收
+    return await AgentKernel.waitScreen(before, 8000)
+  }
+
+  /** 轮询屏幕文本直到稳定(与 before 不同且连续两次采样一致)。 */
+  private static async waitScreen(before: string, maxMs: number): Promise<string> {
+    const t0 = Date.now()
+    let last = ''
+    let stable = 0
+    while (Date.now() - t0 < maxMs) {
+      await AgentKernel.sleep(400)
+      const cur = SessionService.screenText(4000)
+      if (cur !== before && cur === last) {
+        stable++
+        if (stable >= 2) {
+          return cur
+        }
+      } else {
+        stable = 0
+      }
+      last = cur
+      // 提示符回落启发: 新行以 $/#/❯ 结尾且长度>4 → 已回到 shell
+      const lines = cur.split('\n')
+      const lastLine = lines.length > 0 ? lines[lines.length - 2] : ''
+      if (cur !== before && lastLine !== '' && /[$#❯]\s*$/.test(lastLine)) {
+        return cur
+      }
+    }
+    return last
+  }
+
+  /** term_read: 屏幕末 lastN 行(≤40)。 */
+  private static termRead(argsJson: string): string {
+    let n = 24
+    try {
+      const o = JSON.parse(argsJson) as Record<string, Object>
+      const v = o['lastN']
+      if (typeof v === 'number') {
+        n = v as number
+
+/* ========== 第 8 页 ========== */
+      }
+    } catch (e) {
+    }
+    if (n < 1) {
+      n = 1
+    }
+    if (n > 40) {
+      n = 40
+    }
+    return SessionService.screenText(4000).split('\n').slice(-n).join('\n')
+  }
+
+  /** session_info: 会话状态快照。 */
+  private static sessionInfo(): string {
+    const status = AppStorage.get<string>('ut.term.status') ?? 'unknown'
+    const title = AppStorage.get<string>('ut.term.title') ?? ''
+    return JSON.stringify({ status: status, title: title, hasSession: SessionService.hasSession(), sessionId: SessionService.getSessionId() })
+  }
+
+  /** sftp_list: 列远端目录(复用活动 SSH 会话)。 */
+  private static async sftpList(path: string): Promise<string> {
+    const ssh = SessionService.sshHandle()
+    const sid = SessionService.getSessionId()
+    if (ssh === null || sid < 0) {
+      return '无活动 SSH 会话'
+    }
+    const json = await ssh.sftpList(sid, path === '' ? '.' : path)
+    return json.substring(0, 3000)
+  }
+
+  /** 历史预算: >MAX_HISTORY 条消息截断中间(保头尾)。 */
+  private static trimHistory(hist: LlmMsg[]): LlmMsg[] {
+    if (hist.length <= MAX_HISTORY) {
+      return hist
+    }
+    const head = hist.slice(0, 2)
+    const tail = hist.slice(hist.length - (MAX_HISTORY - 2))
+    return head.concat(tail)
+    // 注: 中间被截断,模型可能看不到早期上下文;预算换 token 安全。
+  }
+
+  private static argString(argsJson: string, key: string): string {
+    try {
+      const o = JSON.parse(argsJson) as Record<string, Object>
+      const v = o[key]
+      if (typeof v === 'string') {
+        return v
+      }
+      if (typeof v === 'number') {
+        return (v as number).toString()
+
+/* ========== 第 9 页 ========== */
+      }
+    } catch (e) {
+    }
+    return ''
+  }
+
+  /** 审计: append 一行 jsonl(filesDir/agent-audit.jsonl)。 */
+  private static audit(round: number, tool: string, args: string, ok: boolean, approved: boolean, result: string): void {
+    try {
+      const filesDir = AppStorage.get<string>('ut.filesDir') ?? ''
+      if (filesDir === '') {
+        return
+      }
+      const row: AuditRow = {
+        ts: Date.now(), round: round, tool: tool, args: args,
+        ok: ok, approved: approved, result: result.substring(0, 300)
+      }
+      const p = filesDir + '/agent-audit.jsonl'
+      let f: fs.File | null = null
+      try {
+        f = fs.openSync(p, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.APPEND)
+        fs.writeSync(f.fd, JSON.stringify(row) + '\n')
+        fs.closeSync(f)
+      } catch (e) {
+        if (f !== null) {
+          try {
+            fs.closeSync(f)
+          } catch (e2) {
+          }
+        }
+        hilog.warn(DOMAIN, TAG, 'audit append fail %{public}s', JSON.stringify(e))
+      }
+    } catch (e) {
+    }
+  }
+
+  private static emit(e: KernelEvent): void {
+    AgentKernel.onEvent(e)
+  }
+
+  private static sleep(ms: number): Promise<void> {
+    return new Promise<void>(resolve => setTimeout(resolve, ms))
+  }
+}
+
+
+// ===== 文件: HarnessClient.ets (234 行) =====
+// M6 relay5 - hmharness Web 直连(模式B):纯网络层,不碰 ArkUI。
+// 协议(实勘 G:\hmharness\packages\web):
+//   POST {base}/api/task   body {text,mode} -> 200 入队/开跑
+
+/* ========== 第 10 页 ========== */
+//   GET  {base}/api/events SSE(text/event-stream,事件带 id,支持 Last-Event-ID 补发)
+//   GET  {base}/api/state  连接测试端点
+// 流式: @ohos.net.http HttpRequest.requestInStream + on('dataReceive')/on('dataEnd')
+//   —— SDK d.ts 实证(SDK 默认 openharmony ets api)支持,无需降级轮询。
+// 事件名与载荷(JSON):
+//   hello|busy|line|delta|tool|toolResult|approvalReq|approvalDone|final|error|injected|queue|state
+// hilog tag: oat.harness(域 0x0111)
+import http from '@ohos.net.http';
+import hilog from '@ohos.hilog';
+
+const HS_TAG: string = 'oat.harness';
+const HS_DOMAIN: number = 0x0111;
+
+/** SSE 事件分发回调(事件名 -> data JSON 解析失败时给出原文)。 */
+export interface HarnessEventCbs {
+  onEvent: (name: string, data: string) => void
+  onError: (msg: string) => void
+  onEnd: () => void
+}
+
+/** 单条已解析 SSE 消息(事件名+data,可能多行 data: 合并)。 */
+class SseMsg {
+  name: string = ''
+  data: string = ''
+}
+
+/**
+ * HarnessStream - 一条到 {base}/api/events 的 SSE 流 + /api/task 发任务。
+ * 用法: connect(cbs) 建流 -> send(task,mode) 发任务 -> close()。
+ * 内部: dataReceive 字节缓冲,按 \n 切行;空行=一条消息边界;
+ * 行形如 "event: xxx" / "data: {...}";事件 id 记录(断线重连 Last-Event-ID)。
+ */
+export class HarnessStream {
+  private req: http.HttpRequest | null = null
+  private buffer: string = ''
+  private curEvent: string = ''
+  private curData: string = ''
+  private lastId: number = -1
+  private base: string = ''
+  private cbs: HarnessEventCbs | null = null
+  private closed: boolean = false
+
+  constructor(base: string) {
+    this.base = base.replace(/\/+$/, '')
+  }
+
+  /** 建立 SSE 长连接(GET /api/events, Accept: text/event-stream)。 */
+  connect(cbs: HarnessEventCbs): void {
+    this.cbs = cbs
+    this.closed = false
+
+/* ========== 第 11 页 ========== */
+    this.req = http.createHttp()
+    this.req.on('dataReceive', (buf: ArrayBuffer) => {
+      this.onBytes(buf)
+    })
+    this.req.on('dataEnd', () => {
+      hilog.info(HS_DOMAIN, HS_TAG, 'stream dataEnd lastId=%{public}d', this.lastId)
+      this.emitMessage()
+      if (this.cbs !== null) {
+        this.cbs.onEnd()
+      }
+    })
+    const opts: http.HttpRequestOptions = {
+      method: http.RequestMethod.GET,
+      header: { 'Accept': 'text/event-stream', 'Last-Event-ID': this.lastId.toString() },
+      connectTimeout: 15000,
+      readTimeout: 600000
+    }
+    this.req.requestInStream(this.base + '/api/events', opts, (err: Error, code: number) => {
+      if (err !== undefined && err !== null && err.message !== '') {
+        hilog.error(HS_DOMAIN, HS_TAG, 'stream start fail err=%{public}s', JSON.stringify(err))
+        if (this.cbs !== null) {
+          this.cbs.onError('连接失败: ' + JSON.stringify(err).substring(0, 120))
+        }
+        return
+      }
+      if (code !== 200) {
+        hilog.error(HS_DOMAIN, HS_TAG, 'stream start code=%{public}d', code)
+        if (this.cbs !== null) {
+          this.cbs.onError('服务返回 ' + code)
+        }
+        return
+      }
+      hilog.info(HS_DOMAIN, HS_TAG, 'stream opened base=%{public}s', this.base)
+    })
+  }
+
+  private onBytes(buf: ArrayBuffer): void {
+    this.buffer += this.buf2str(buf)
+    // 逐行处理,末行可能不完整留在 buffer
+    let nl = this.buffer.indexOf('\n')
+    while (nl >= 0) {
+      const line = this.buffer.substring(0, nl)
+      this.buffer = this.buffer.substring(nl + 1)
+      this.onLine(line)
+      nl = this.buffer.indexOf('\n')
+    }
+  }
+
+  private onLine(raw: string): void {
+    const line = raw.replace(/\r$/, '')
+
+/* ========== 第 12 页 ========== */
+    if (line === '') {
+      // 空行=一条消息结束
+      this.emitMessage()
+      return
+    }
+    if (line.startsWith('event:')) {
+      this.curEvent = line.substring(6).trim()
+    } else if (line.startsWith('data:')) {
+      const d = line.substring(5)
+      this.curData = this.curData === '' ? d : this.curData + '\n' + d
+    } else if (line.startsWith('id:')) {
+      const idStr = line.substring(3).trim()
+      const n = Number(idStr)
+      if (!isNaN(n)) {
+        this.lastId = n
+      }
+    }
+  }
+
+  private emitMessage(): void {
+    if (this.curEvent === '' && this.curData === '') {
+      return
+    }
+    const cbs = this.cbs
+    if (cbs !== null) {
+      cbs.onEvent(this.curEvent, this.curData)
+    }
+    this.curEvent = ''
+    this.curData = ''
+  }
+
+  private buf2str(buf: ArrayBuffer): string {
+    const u8 = new Uint8Array(buf)
+    let out = ''
+    for (let i = 0; i < u8.length; i++) {
+      out += String.fromCharCode(u8[i])
+    }
+    return out
+  }
+
+  /** 发任务: POST /api/task {text,mode}。失败时经 cbs.onError 上抛。 */
+  send(task: string, mode: string): void {
+    const bodyObj: Record<string, string> = {}
+    bodyObj['text'] = task
+    bodyObj['mode'] = mode
+    bodyObj['fresh'] = 'true'
+    const p = this.base + '/api/task'
+    const r = http.createHttp()
+    r.request(p, {
+      method: http.RequestMethod.POST,
+
+/* ========== 第 13 页 ========== */
+      header: { 'Content-Type': 'application/json' },
+      extraData: JSON.stringify(bodyObj),
+      connectTimeout: 15000,
+      readTimeout: 30000
+    }, (err: Error, resp: http.HttpResponse) => {
+      if (err !== undefined && err !== null && err.message !== '') {
+        hilog.error(HS_DOMAIN, HS_TAG, 'task send fail err=%{public}s', JSON.stringify(err))
+        if (this.cbs !== null) {
+          this.cbs.onError('任务发送失败: ' + JSON.stringify(err).substring(0, 120))
+        }
+        return
+      }
+      if (resp.responseCode !== 200) {
+        hilog.error(HS_DOMAIN, HS_TAG, 'task send code=%{public}d', resp.responseCode)
+        if (this.cbs !== null) {
+          this.cbs.onError('服务返回 ' + resp.responseCode + '(busy/入队?看事件流)')
+        }
+        return
+      }
+      hilog.info(HS_DOMAIN, HS_TAG, 'task sent len=%{public}d mode=%{public}s', task.length, mode)
+    })
+  }
+
+  close(): void {
+    this.closed = true
+    this.cbs = null
+    const r = this.req
+    this.req = null
+    if (r !== null) {
+      try {
+        r.destroy()
+      } catch (e) {
+      }
+    }
+    hilog.info(HS_DOMAIN, HS_TAG, 'stream closed')
+  }
+
+  get isClosed(): boolean {
+    return this.closed
+  }
+}
+
+/** 连接测试结果。 */
+export interface HarnessTestResult {
+  ok: boolean
+  detail: string
+}
+
+export class HarnessClient {
+  /** 连接测试: GET {base}/api/state,断言 200 且 json.model 存在即在线。 */
+
+/* ========== 第 14 页 ========== */
+  static test(base: string): Promise<HarnessTestResult> {
+    return new Promise<HarnessTestResult>((resolve) => {
+      const r = http.createHttp()
+      r.request(base.replace(/\/+$/, '') + '/api/state', {
+        method: http.RequestMethod.GET,
+        connectTimeout: 8000,
+        readTimeout: 8000
+      }, (err: Error, resp: http.HttpResponse) => {
+        if (err !== undefined && err !== null && err.message !== '') {
+          resolve({ ok: false, detail: '不可达: ' + JSON.stringify(err).substring(0, 80) })
+          return
+        }
+        if (resp.responseCode !== 200) {
+          resolve({ ok: false, detail: '返回 ' + resp.responseCode })
+          return
+        }
+        try {
+          const obj = JSON.parse(resp.result as string) as Record<string, string>
+          if (obj['model'] !== undefined) {
+            resolve({ ok: true, detail: '在线 model=' + obj['model'] })
+          } else {
+            resolve({ ok: false, detail: '响应无 model 字段' })
+          }
+        } catch (e) {
+          resolve({ ok: false, detail: '响应解析失败' })
+        }
+      })
+    })
+  }
+}
+
+
+// ===== 文件: Llm.ets (213 行) =====
+// LLM 接入:官方兼容 Anthropic / OpenAI 协议(设置中配 base URL + key + model)
+// M6 relay3: chatWithTools 支持 OpenAI 兼容 function-calling(tools 参数 +
+// assistant tool_calls 回传 + role:tool 结果回填),供 AgentKernel 多轮驱动。
+import http from '@ohos.net.http';
+
+export class LlmConfig {
+  provider: string = 'anthropic'
+  baseUrl: string = 'https://api.anthropic.com'
+  apiKey: string = ''
+  model: string = 'claude-sonnet-4-5'
+  /** M6 relay5: 增强模式 hmharness 服务地址(空=未启用) */
+  harnessUrl: string = ''
+}
+
+export class LlmMsg {
+  role: string = 'user'
+  text: string = ''
+
+/* ========== 第 15 页 ========== */
+  /** M6 relay3: assistant 轮的 tool_calls JSON(OaiToolCall[] 序列化,空串=无) */
+  toolCallsJson: string = ''
+  /** M6 relay3: role='tool' 轮对应的 tool_call id */
+  toolCallId: string = ''
+}
+
+/** chatWithTools 的单个 tool_call(拍平 OpenAI 的 function.name/arguments)。 */
+export class OaiToolCall {
+  id: string = ''
+  type: string = 'function'
+  name: string = ''
+  arguments: string = ''
+}
+
+/** chatWithTools 结果。 */
+export class ToolCallResult {
+  content: string = ''
+  toolCallsJson: string = '[]'
+  finishReason: string = ''
+  raw: string = ''
+}
+
+class AnthMsg {
+  role: string = 'user'
+  content: string = ''
+}
+
+class AnthBody {
+  model: string = ''
+  max_tokens: number = 1024
+  system: string = ''
+  messages: AnthMsg[] = []
+}
+
+export class Llm {
+  static async chat(cfg: LlmConfig, msgs: LlmMsg[], system: string): Promise<string> {
+    if (cfg.provider === 'anthropic') {
+      return Llm.anthropic(cfg, msgs, system)
+    }
+    const r = await Llm.openaiChat(cfg, msgs, system, null)
+    return r.content
+  }
+
+  /**
+   * M6 relay3: OpenAI 兼容 function-calling 一轮调用。
+   * - msgs 中 role='assistant' 且 toolCallsJson 非空 → 序列化为 tool_calls 轮(content 兼容空)
+   * - role='tool' → {role, tool_call_id, content}
+   * - toolsJson: OpenAI tools 数组 JSON;null=不带 tools(普通 chat)
+   */
+  static async chatWithTools(cfg: LlmConfig, msgs: LlmMsg[], system: string, toolsJson: string | null): Promise<ToolCallResult> {
+
+/* ========== 第 16 页 ========== */
+    if (cfg.provider === 'anthropic') {
+      throw new Error('function-calling 暂不支持 anthropic,请在设置中切换 OpenAI 兼容 provider')
+    }
+    return Llm.openaiChat(cfg, msgs, system, toolsJson)
+  }
+
+  private static async anthropic(cfg: LlmConfig, msgs: LlmMsg[], system: string): Promise<string> {
+    const body = new AnthBody()
+    body.model = cfg.model
+    body.system = system
+    for (const m of msgs) {
+      const a = new AnthMsg()
+      a.role = m.role
+      a.content = m.text
+      body.messages.push(a)
+    }
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-api-key': cfg.apiKey,
+      'anthropic-version': '2023-06-01'
+    }
+    const resp = await Llm.post(cfg.baseUrl.replace(/\/+$/, '') + '/v1/messages', JSON.stringify(body), headers)
+    class AnthPart { type: string = ''; text: string = '' }
+    class AnthResp { content: AnthPart[] = [] }
+    const obj = JSON.parse(resp) as AnthResp
+    if (obj.content.length === 0) {
+      throw new Error('anthropic bad resp: ' + resp.substring(0, 200))
+    }
+    let out = ''
+    for (const p of obj.content) {
+      if (p.type === 'text') {
+        out += p.text
+      }
+    }
+    return out
+  }
+
+  private static async openaiChat(cfg: LlmConfig, msgs: LlmMsg[], system: string, toolsJson: string | null): Promise<ToolCallResult> {
+    // 请求体用 Record 组装:assistant tool_calls 轮与 role:tool 轮需精确字段名
+    const msgsRec: Record<string, Object>[] = []
+    const sysRec: Record<string, Object> = {}
+    sysRec['role'] = 'system'
+    sysRec['content'] = system
+    msgsRec.push(sysRec)
+    for (const m of msgs) {
+      const r: Record<string, Object> = {}
+      r['role'] = m.role
+      if (m.role === 'tool') {
+        r['tool_call_id'] = m.toolCallId
+        r['content'] = m.text
+
+/* ========== 第 17 页 ========== */
+      } else if (m.role === 'assistant' && m.toolCallsJson !== '') {
+        r['content'] = m.text
+        const tcs = JSON.parse(m.toolCallsJson) as OaiToolCall[]
+        const arr: Record<string, Object>[] = []
+        for (const t of tcs) {
+          const fn: Record<string, Object> = {}
+          fn['name'] = t.name
+          fn['arguments'] = t.arguments
+          const tc: Record<string, Object> = {}
+          tc['id'] = t.id
+          tc['type'] = t.type
+          tc['function'] = fn
+          arr.push(tc)
+        }
+        r['tool_calls'] = arr
+      } else {
+        r['content'] = m.text
+      }
+      msgsRec.push(r)
+    }
+    const body: Record<string, Object> = {}
+    body['model'] = cfg.model
+    body['max_tokens'] = 1024
+    body['messages'] = msgsRec
+    if (toolsJson !== null) {
+      body['tools'] = JSON.parse(toolsJson) as Object
+      const choice: Record<string, Object> = {}
+      choice['type'] = 'auto'
+      body['tool_choice'] = choice
+    }
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + cfg.apiKey
+    }
+    const resp = await Llm.post(cfg.baseUrl.replace(/\/+$/, '') + '/chat/completions', JSON.stringify(body), headers)
+    class OaiFnOut { name: string = ''; arguments: string = '' }
+    class OaiToolCallOut { id: string = ''; type: string = ''; function: OaiFnOut = new OaiFnOut() }
+    class OaiMsgOut { content: string | null = null; tool_calls: OaiToolCallOut[] | null = null }
+    class OaiChoice { message: OaiMsgOut = new OaiMsgOut(); finish_reason: string = '' }
+    class OaiResp { choices: OaiChoice[] = [] }
+    const obj = JSON.parse(resp) as OaiResp
+    if (obj.choices.length === 0) {
+      throw new Error('openai bad resp: ' + resp.substring(0, 200))
+    }
+    const c0 = obj.choices[0]
+    const out = new ToolCallResult()
+    out.finishReason = c0.finish_reason
+    out.raw = resp
+    if (c0.message.content !== null && c0.message.content !== undefined) {
+      out.content = c0.message.content
+
+/* ========== 第 18 页 ========== */
+    }
+    const tcs: OaiToolCall[] = []
+    if (c0.message.tool_calls !== null && c0.message.tool_calls !== undefined) {
+      for (const t of c0.message.tool_calls) {
+        const tc = new OaiToolCall()
+        tc.id = t.id
+        tc.type = t.type
+        tc.name = t.function.name
+        tc.arguments = t.function.arguments
+        tcs.push(tc)
+      }
+    }
+    out.toolCallsJson = JSON.stringify(tcs)
+    return out
+  }
+
+  private static async post(url: string, body: string, headers: Record<string, string>): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const h = http.createHttp()
+      h.request(url, {
+        method: http.RequestMethod.POST,
+        header: headers,
+        extraData: body,
+        connectTimeout: 30000,
+        readTimeout: 60000,
+        expectDataType: http.HttpDataType.STRING
+      }, (err, resp) => {
+        h.destroy()
+        if (err) {
+          reject(new Error('http ' + JSON.stringify(err)))
+          return
+        }
+        if (resp.responseCode >= 400) {
+          let d = ''
+          if (typeof resp.result === 'string') {
+            d = resp.result
+          }
+          reject(new Error('http ' + resp.responseCode + ' ' + d.substring(0, 300)))
+          return
+        }
+        resolve(typeof resp.result === 'string' ? resp.result : '')
+      })
+    })
+  }
+}
+
+
+// ===== 文件: AIDock.ets (597 行) =====
+/**
+ * M6 relay3 - AI 智能体 Dock(底部可折叠工作坞)。
+
+/* ========== 第 19 页 ========== */
+ * 展开态 ~320px: Dock 头(输入行 + 模式三档切换 + 轮次指示 R1/12 + 折叠钮) +
+ * 消息流(用户气泡/AI 气泡/工具卡三类; 工具卡=命令+结果摘要+审批按钮 允许/拒绝)。
+ * 折叠态 28px 细条。复用 LlmConfigStore 配置 + AgentSettingsStore 三档。
+ * 主题经 @StorageProp('ut.theme') 接入(relay1 P0-4 范式)。
+ */
+import { common } from '@kit.AbilityKit';
+import { AppTheme, themeByName } from '../common/AppTheme';
+import { AgentKernel, KernelEvent } from '../service/AgentKernel';
+import { AgentSettings, AgentSettingsStore, ApprovalMode } from '../service/AgentSettingsStore';
+import { LlmConfigStore } from '../service/LlmConfigStore';
+import { HarnessStream, HarnessEventCbs } from '../service/HarnessClient';
+import hilog from '@ohos.hilog';
+
+const HS_TAG: string = 'oat.dock';
+
+/** Dock 消息条目(三类: user/assistant/tool + 审批态)。 */
+class DockMsg {
+  kind: string = 'user' // 'user' | 'assistant' | 'tool'
+  text: string = ''
+  name: string = ''
+  args: string = ''
+  result: string = ''
+  callId: string = ''
+  pending: boolean = false // 工具卡待审批(显示允许/拒绝按钮)
+  refused: boolean = false
+  // M6 relay5: 增强模式(hmharness SSE)标记
+  harnessNote: string = '' // 增强模式卡片附注(等待宿主审批/结果摘要/中断提示)
+  harnessDone: boolean = false // 增强模式结果已回填
+}
+
+@Component
+export struct AIDock {
+  @StorageProp('ut.theme') themeName: string = 'dark'
+  @State open: boolean = false
+  @State input: string = ''
+  @State msgs: DockMsg[] = []
+  @State mode: ApprovalMode = 'confirm_all'
+  @State round: number = 0
+  @State running: boolean = false
+  @State approvalPending: boolean = false
+  @State msgSeq: number = 0
+  // M6 relay5: 双引擎(内置内核 / 增强模式 hmharness 直连)
+  @State enhanced: boolean = false
+  private hStream: HarnessStream | null = null
+  private hAssistant: DockMsg | null = null
+  private hToolMsgs: DockMsg[] = []
+  private hPendingApproval: DockMsg | null = null
+  private lastTask: string = ''
+  private scroller: Scroller = new Scroller()
+  private filesDir: string = ''
+
+/* ========== 第 20 页 ========== */
+  private modeNames: string[] = ['全部确认', '仅危险', '全自动']
+  private modeVals: ApprovalMode[] = ['confirm_all', 'confirm_dangerous', 'bypass']
+
+  private th(): AppTheme {
+    return themeByName(this.themeName)
+  }
+
+  aboutToAppear(): void {
+    const ctx = getContext(this) as common.UIAbilityContext
+    this.filesDir = ctx.filesDir
+    const s = AgentSettingsStore.read(this.filesDir)
+    this.mode = s.mode
+    AgentKernel.onEvent = (e: KernelEvent): void => {
+      this.onKernelEvent(e)
+    }
+  }
+
+  aboutToDisappear(): void {
+    AgentKernel.onEvent = (e: KernelEvent): void => {
+    }
+    this.closeHarness()
+  }
+
+  private closeHarness(): void {
+    const st = this.hStream
+    this.hStream = null
+    if (st !== null) {
+      st.close()
+    }
+    this.hAssistant = null
+    this.hToolMsgs = []
+    this.hPendingApproval = null
+  }
+
+  private pushMsg(m: DockMsg): void {
+    this.msgSeq++
+    this.msgs.push(m)
+  }
+
+  private onKernelEvent(e: KernelEvent): void {
+    if (e.kind === 'user') {
+      const m = new DockMsg()
+      m.kind = 'user'
+      m.text = e.text
+      this.pushMsg(m)
+    } else if (e.kind === 'assistant' || e.kind === 'done') {
+      const m = new DockMsg()
+      m.kind = 'assistant'
+      m.text = e.text
+      this.pushMsg(m)
+
+/* ========== 第 21 页 ========== */
+    } else if (e.kind === 'tool') {
+      const m = new DockMsg()
+      m.kind = 'tool'
+      m.name = e.name
+      m.args = e.args
+      m.result = e.result
+      m.callId = e.callId
+      this.pushMsg(m)
+    } else if (e.kind === 'need_approval') {
+      const m = new DockMsg()
+      m.kind = 'tool'
+      m.name = e.name
+      m.args = e.args
+      m.callId = e.callId
+      m.pending = true
+      this.pushMsg(m)
+      this.approvalPending = true
+    } else if (e.kind === 'round') {
+      this.round = e.round
+    } else if (e.kind === 'err') {
+      const m = new DockMsg()
+      m.kind = 'assistant'
+      m.text = e.text
+      this.pushMsg(m)
+    }
+    this.scrollBottom()
+  }
+
+  private scrollBottom(): void {
+    setTimeout(() => {
+      this.scroller.scrollEdge(Edge.Bottom)
+    }, 50)
+  }
+
+  private send(): void {
+    const t = this.input.trim()
+    if (t === '' || this.running) {
+      return
+    }
+    this.input = ''
+    this.lastTask = t
+    this.running = true
+    if (this.enhanced) {
+      this.sendEnhanced(t)
+      return
+    }
+    AgentKernel.run(t).then(() => {
+      this.running = false
+    }).catch((e: Object) => {
+      this.running = false
+
+/* ========== 第 22 页 ========== */
+    })
+  }
+
+  // ===== M6 relay5: 增强模式(hm harness 直连) =====
+  private sendEnhanced(task: string): void {
+    const cfg = LlmConfigStore.read(this.filesDir)
+    const url = cfg.harnessUrl === undefined ? '' : cfg.harnessUrl
+    if (url === '') {
+      this.pushHarnessError('未配置增强模式服务地址(设置→AI 模型→增强模式)')
+      this.running = false
+      return
+    }
+    const m = new DockMsg()
+    m.kind = 'user'
+    m.text = task
+    this.pushMsg(m)
+    const st = new HarnessStream(url)
+    this.hStream = st
+    // 流式 assistant 气泡(打字机追加 line/delta)
+    const ab = new DockMsg()
+    ab.kind = 'assistant'
+    ab.text = ''
+    this.hAssistant = ab
+    const cbs: HarnessEventCbs = {
+      onEvent: (name: string, data: string): void => {
+        this.onHarnessEvent(name, data)
+      },
+      onError: (msg: string): void => {
+        this.onHarnessError(msg)
+      },
+      onEnd: (): void => {
+        this.onHarnessEnd()
+      }
+    }
+    st.connect(cbs)
+    st.send(task, 'default')
+  }
+
+  private onHarnessEvent(name: string, data: string): void {
+    let obj: Record<string, string> = {}
+    try {
+      obj = JSON.parse(data) as Record<string, string>
+    } catch (e) {
+      obj = {}
+    }
+    if (name === 'line') {
+      const ab = this.hAssistant
+      if (ab !== null) {
+        ab.text = ab.text === '' ? (obj['text'] === undefined ? '' : obj['text']) : ab.text + '\n' + (obj['text'] === undefined ? '' : obj['text'])
+        // 首次有内容时入消息流
+
+/* ========== 第 23 页 ========== */
+        if (this.msgs.indexOf(ab) < 0 && ab.text !== '') {
+          this.pushMsg(ab)
+        }
+      }
+      this.scrollBottom()
+    } else if (name === 'delta') {
+      const ab = this.hAssistant
+      if (ab !== null) {
+        const chunk = obj['chunk'] === undefined ? '' : obj['chunk']
+        ab.text = ab.text + chunk
+        if (this.msgs.indexOf(ab) < 0 && ab.text !== '') {
+          this.pushMsg(ab)
+        }
+      }
+      this.scrollBottom()
+    } else if (name === 'tool') {
+      const cm = new DockMsg()
+      cm.kind = 'tool'
+      cm.name = obj['name'] === undefined ? 'tool' : obj['name']
+      cm.args = obj['args'] === undefined ? '' : obj['args'].toString().substring(0, 160)
+      this.pushMsg(cm)
+      this.hToolMsgs.push(cm)
+      this.scrollBottom()
+    } else if (name === 'toolResult') {
+      const last = this.hToolMsgs.length > 0 ? this.hToolMsgs[this.hToolMsgs.length - 1] : null
+      if (last !== null) {
+        last.harnessDone = true
+        const err = obj['isError'] === undefined ? false : obj['isError'] === 'true'
+        last.result = err ? '✗ ' + (obj['preview'] === undefined ? '' : obj['preview'].toString().substring(0, 200))
+          : '✓ ' + (obj['preview'] === undefined ? '' : obj['preview'].toString().substring(0, 200))
+      }
+      this.scrollBottom()
+    } else if (name === 'approvalReq') {
+      const am = new DockMsg()
+      am.kind = 'tool'
+      am.name = obj['name'] === undefined ? 'approval' : obj['name']
+      am.args = obj['args'] === undefined ? '' : obj['args'].toString().substring(0, 160)
+      am.harnessNote = '⚠ hmharness 等待宿主审批(web UI 决定), 5 分钟超时自动拒绝'
+      this.pushMsg(am)
+      this.hToolMsgs.push(am)
+      this.hPendingApproval = am
+      this.scrollBottom()
+    } else if (name === 'approvalDone') {
+      const pa = this.hPendingApproval
+      if (pa !== null) {
+        const granted = obj['granted'] === undefined ? false : obj['granted'] === 'true'
+        pa.harnessDone = true
+        pa.harnessNote = granted ? '✓ 宿主已批准' : '✗ 宿主已拒绝/超时'
+      }
+      this.hPendingApproval = null
+
+/* ========== 第 24 页 ========== */
+      this.scrollBottom()
+    } else if (name === 'final') {
+      const ab = this.hAssistant
+      const full = obj['text'] === undefined ? obj['result'] === undefined ? '' : obj['result'].toString() : obj['text']
+      if (ab !== null && full !== '') {
+        ab.text = full
+      } else if (full !== '') {
+        const fm = new DockMsg()
+        fm.kind = 'assistant'
+        fm.text = full
+        this.pushMsg(fm)
+      }
+      this.finishHarness()
+    } else if (name === 'error') {
+      const ab = this.hAssistant
+      if (ab !== null) {
+        ab.text = ab.text === '' ? (obj['message'] === undefined ? '服务报错' : obj['message']) : ab.text + '\n' + (obj['message'] === undefined ? '' : obj['message'])
+      }
+      this.finishHarness()
+    } else if (name === 'busy') {
+      const b = obj['busy']
+      if (b !== undefined) {
+        hilog.info(0x0111, HS_TAG, 'busy=%{public}s', b)
+      }
+    }
+  }
+
+  private onHarnessError(msg: string): void {
+    // 连接失败/不可达 -> 回落内置内核
+    this.pushHarnessFallback(msg)
+  }
+
+  private onHarnessEnd(): void {
+    // SSE 流断开: 任务可能仍在宿主跑
+    const ab = this.hAssistant
+    if (ab !== null && ab.text === '') {
+      ab.text = '连接中断, 任务在宿主继续'
+      this.pushMsg(ab)
+    }
+    this.finishHarness()
+  }
+
+  private finishHarness(): void {
+    this.running = false
+    this.closeHarness()
+  }
+
+  private pushHarnessError(msg: string): void {
+    const m = new DockMsg()
+    m.kind = 'assistant'
+
+/* ========== 第 25 页 ========== */
+    m.text = msg
+    this.pushMsg(m)
+    this.scrollBottom()
+  }
+
+  private pushHarnessFallback(msg: string): void {
+    this.pushHarnessError('服务不可达(' + msg + '), 已回落内置内核')
+    this.closeHarness()
+    this.enhanced = false
+    const t = this.lastTask
+    if (t !== '') {
+      this.running = true
+      AgentKernel.run(t).then(() => {
+        this.running = false
+      }).catch((e: Object) => {
+        this.running = false
+      })
+    }
+  }
+
+
+  private setMode(m: ApprovalMode): void {
+    this.mode = m
+    const s = new AgentSettings()
+    s.mode = m
+    AgentSettingsStore.write(this.filesDir, s)
+  }
+
+  private approve(callId: string): void {
+    for (const m of this.msgs) {
+      if (m.callId === callId && m.pending) {
+        m.pending = false
+      }
+    }
+    this.approvalPending = false
+    AgentKernel.approve()
+  }
+
+  private deny(callId: string): void {
+    for (const m of this.msgs) {
+      if (m.callId === callId && m.pending) {
+        m.pending = false
+        m.refused = true
+        m.result = '已拒绝执行'
+      }
+    }
+    this.approvalPending = false
+    AgentKernel.deny()
+  }
+
+
+/* ========== 第 26 页 ========== */
+  @Builder
+  ModePill(label: string, idx: number) {
+    Text(label)
+      .fontSize(10)
+      .fontColor(this.mode === this.modeVals[idx] ? this.th().surface : this.th().inkSubtle)
+      .padding({ left: 8, right: 8, top: 3, bottom: 3 })
+      .borderRadius(9)
+      .border({ width: 1, color: this.mode === this.modeVals[idx] ? this.th().brand : this.th().hairline })
+      .backgroundColor(this.mode === this.modeVals[idx] ? this.th().brand : Color.Transparent)
+      .margin({ left: 4 })
+      .onClick(() => this.setMode(this.modeVals[idx]))
+  }
+
+  @Builder
+  EnhancedPill() {
+    Text('增强')
+      .fontSize(10)
+      .fontColor(this.enhanced ? this.th().surface : this.th().inkSubtle)
+      .padding({ left: 8, right: 8, top: 3, bottom: 3 })
+      .borderRadius(9)
+      .border({ width: 1, color: this.enhanced ? this.th().success : this.th().hairline })
+      .backgroundColor(this.enhanced ? this.th().success : Color.Transparent)
+      .margin({ left: 4 })
+      .onClick(() => {
+        this.enhanced = !this.enhanced
+      })
+  }
+
+  @Builder
+  MsgRow(m: DockMsg) {
+    if (m.kind === 'user') {
+      Row() {
+        Blank()
+        Text(m.text)
+          .fontSize(12)
+          .fontColor(this.th().surface)
+          .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+          .borderRadius(10)
+          .backgroundColor(this.th().brand)
+          .constraintSize({ maxWidth: '80%' })
+      }
+      .width('100%')
+      .margin({ top: 6, bottom: 2 })
+    } else if (m.kind === 'assistant') {
+      Row() {
+        Text(m.text)
+          .fontSize(12)
+          .fontColor(this.th().ink)
+          .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+          .borderRadius(10)
+
+/* ========== 第 27 页 ========== */
+          .backgroundColor(this.th().panel)
+          .border({ width: 1, color: this.th().hairline })
+          .constraintSize({ maxWidth: '80%' })
+      }
+      .width('100%')
+      .margin({ top: 6, bottom: 2 })
+    } else {
+      // 工具卡: 名称+命令 → 结果摘要 → 审批按钮(待审批时)
+      Column({ space: 4 }) {
+        Row({ space: 6 }) {
+          Text('⚙ ' + m.name)
+            .fontSize(11)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(this.th().brand)
+          Text(m.args)
+            .fontSize(11)
+            .fontColor(this.th().ink)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .layoutWeight(1)
+        }
+        .width('100%')
+        if (m.harnessNote !== '') {
+          Text(m.harnessNote)
+            .fontSize(10)
+            .fontColor(m.harnessDone ? (m.refused ? this.th().danger : this.th().success) : this.th().warn)
+            .width('100%')
+            .maxLines(2)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .padding({ left: 6, right: 6, top: 4, bottom: 4 })
+            .borderRadius(4)
+            .backgroundColor(this.th().hover)
+        }
+        if (m.result !== '' && !m.pending) {
+          Text(m.result)
+            .fontSize(10)
+            .fontColor(this.th().inkSubtle)
+            .maxLines(4)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .width('100%')
+            .padding({ left: 6, right: 6, top: 4, bottom: 4 })
+            .borderRadius(4)
+            .backgroundColor(this.th().hover)
+        }
+        if (m.pending) {
+          Row({ space: 8 }) {
+            Text('允许')
+              .fontSize(11)
+              .fontColor(this.th().surface)
+              .padding({ left: 14, right: 14, top: 4, bottom: 4 })
+
+/* ========== 第 28 页 ========== */
+              .borderRadius(6)
+              .backgroundColor(this.th().success)
+              .onClick(() => this.approve(m.callId))
+            Text('拒绝')
+              .fontSize(11)
+              .fontColor(this.th().surface)
+              .padding({ left: 14, right: 14, top: 4, bottom: 4 })
+              .borderRadius(6)
+              .backgroundColor(this.th().danger)
+              .onClick(() => this.deny(m.callId))
+          }
+          .width('100%')
+          .justifyContent(FlexAlign.End)
+        }
+      }
+      .width('100%')
+      .padding(8)
+      .borderRadius(8)
+      .backgroundColor(this.th().surfaceRaised)
+      .border({ width: 1, color: this.th().hairline })
+      .shadow({ radius: 12, color: '#66000000', offsetX: 0, offsetY: 2 })
+      .margin({ top: 4, bottom: 4 })
+    }
+  }
+
+  build() {
+    Column() {
+      if (this.open) {
+        // ===== Dock 头(32px): 标题+轮次 + 模式三档 + 折叠钮 =====
+        Row({ space: 6 }) {
+          Text('✦ 智能体')
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(this.th().brand)
+            .margin({ left: 10 })
+          Text(this.running ? ('R' + this.round.toString() + '/12') : '空闲')
+            .fontSize(10)
+            .fontColor(this.running ? this.th().brand : this.th().inkSubtle)
+          Blank()
+          this.ModePill(this.modeNames[0], 0)
+          this.ModePill(this.modeNames[1], 1)
+          this.ModePill(this.modeNames[2], 2)
+          this.EnhancedPill()
+          Text('▾')
+            .fontSize(16)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(this.th().iconStrong)
+            .width(26)
+            .height(26)
+            .textAlign(TextAlign.Center)
+
+/* ========== 第 29 页 ========== */
+            .onClick(() => {
+              this.open = false
+            })
+        }
+        .width('100%')
+        .height(32)
+        .alignItems(VerticalAlign.Center)
+        .backgroundColor(this.th().surfaceRaised)
+        .border({ width: { bottom: 1 }, color: this.th().hairline })
+        .shadow({ radius: 12, color: '#66000000', offsetX: 0, offsetY: -4 })
+
+        // ===== 消息流(layoutWeight 撑满中段) =====
+        Scroll(this.scroller) {
+          Column() {
+            ForEach(this.msgs, (m: DockMsg) => {
+              this.MsgRow(m)
+            }, (m: DockMsg) => m.kind + '|' + m.callId + '|' + m.text.substring(0, 40) + '|' + m.pending.toString() + '|' + m.refused.toString())
+          }
+          .width('100%')
+        }
+        .layoutWeight(1)
+        .width('100%')
+        .scrollBar(BarState.Off)
+        .align(Alignment.Top)
+        .padding({ left: 12, right: 12 })
+
+        // ===== 输入行 =====
+        Row({ space: 8 }) {
+          TextInput({ placeholder: '描述任务,如: 在终端执行 uname -a 并告诉我内核版本号', text: this.input })
+            .fontSize(12)
+            .fontColor(this.th().ink)
+            .placeholderColor(this.th().inkSubtle)
+            .backgroundColor(this.th().inputBg)
+            .border({ width: 1, color: this.th().hairline })
+            .borderRadius(6)
+            .height(32)
+            .layoutWeight(1)
+            .onChange((v: string) => {
+              this.input = v
+            })
+            .onSubmit(() => this.send())
+          Text(this.running ? '…' : '发送')
+            .fontSize(12)
+            .fontColor(this.th().surface)
+            .padding({ left: 14, right: 14, top: 7, bottom: 7 })
+            .borderRadius(6)
+            .backgroundColor(this.running ? this.th().iconMuted : this.th().brand)
+            .onClick(() => this.send())
+        }
+        .width('100%')
+
+/* ========== 第 30 页 ========== */
+        .padding({ left: 12, right: 12, top: 6, bottom: 8 })
+        .alignItems(VerticalAlign.Center)
+      } else {
+        // ===== 折叠态(28px 细条) =====
+        Row({ space: 8 }) {
+          Text('✦')
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(this.th().brand)
+          Text('智能体')
+            .fontSize(11)
+            .fontColor(this.th().ink)
+          if (this.enhanced) {
+            Text('增')
+              .fontSize(9)
+              .fontColor(this.th().success)
+              .fontWeight(FontWeight.Bold)
+          }
+          if (this.running) {
+            Text('R' + this.round.toString() + '/12')
+              .fontSize(10)
+              .fontColor(this.th().brand)
+          }
+          Blank()
+          Text('▴')
+            .fontSize(16)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(this.th().iconStrong)
+        }
+        .width('100%')
+        .height(28)
+        .padding({ left: 12, right: 12 })
+        .alignItems(VerticalAlign.Center)
+        .backgroundColor(this.th().surfaceRaised)
+        .border({ width: { top: 1 }, color: this.th().hairline })
+        .onClick(() => {
+          this.open = true
+        })
+      }
+    }
+    .width('100%')
+    .height(this.open ? 320 : 28)
+  }
+}
+
+
+// ===== 文件: PgService.ets (300 行) =====
+// PostgreSQL 客户端:wire 协议 v3 纯 TS(@ohos.net.socket + cryptoFramework MD5)
+// 子集:startup / cleartext+md5 认证(scram 提示不支持) / 简单查询 Q+T/D/C/E/Z
+import socket from '@ohos.net.socket';
+
+/* ========== 第 31 页 ========== */
+/* ……(中略)…… */
+      }
+      const raw = JSON.parse(fileIo.readTextSync(this.metaPath, { encoding: 'utf-8' })) as Record<string, Object>;
+      const m = new CredMeta();
+      m.mode = (raw['mode'] as string) ?? '';
+      m.saltB64 = (raw['salt'] as string) ?? '';
+      return m;
+    } catch (e) {
+      const be = e as Error;
+      hilog.error(DOMAIN, TAG, 'readMeta fail %{public}s', JSON.stringify(be.message));
+      return null;
+    }
+  }
+
+  private writeMeta(m: CredMeta): void {
+    const obj: Record<string, Object> = {};
+    obj['mode'] = m.mode;
+    if (m.saltB64.length > 0) {
+      obj['salt'] = m.saltB64;
+    }
+    fileIo.writeSync(fileIo.openSync(this.metaPath,
+      fileIo.OpenMode.WRITE_ONLY | fileIo.OpenMode.CREATE | fileIo.OpenMode.TRUNC).fd,
+    JSON.stringify(obj));
+  }
+
+  /**
+   * First-time setup: generate a fresh salt, persist meta, derive the key.
+   * Upstream EnableMasterPassword path.
+   */
+  public async setupMasterPassword(password: string): Promise<void> {
+    if (password.length === 0) {
+      throw new CredError('master password must not be empty');
+    }
+    const salt = generateSalt();
+    const m = new CredMeta();
+    m.mode = 'master-password';
+    m.saltB64 = b64u(salt);
+    this.writeMeta(m);
+    this.meta = m;
+    this.key = await deriveKeyPbkdf2(password, salt);
+    this.fireUnlock();
+    hilog.info(DOMAIN, TAG, 'master password set (mode=master-password)');
+  }
+
+  /**
+   * Unlock with an existing master password. Wrong password is detected
+   * lazily at decrypt time (upstream semantics: no verifier blob on disk).
+   * Returns true when a key was derived.
+   */
+  public async unlock(password: string): Promise<boolean> {
+
+/* ========== 第 32 页 ========== */
+    if (!this.hasMasterPassword()) {
+      throw new CredError('no master password configured');
+    }
+    const salt = b64d(this.meta!.saltB64);
+    if (salt === null) {
+      throw new CredError('credentials.meta has no salt');
+    }
+    this.key = await deriveKeyPbkdf2(password, salt);
+    this.fireUnlock();
+    return true;
+  }
+
+  /** Drop the in-memory key (lock). */
+  public lock(): void {
+    this.key = null;
+    hilog.info(DOMAIN, TAG, 'locked');
+  }
+
+  /**
+   * Reset: forget the master password + salt. Existing enc:v1 fields become
+   * permanently unreadable (upstream "forget = unrecoverable").
+   */
+  public reset(): void {
+    try {
+      if (fileIo.accessSync(this.metaPath)) {
+        fileIo.unlinkSync(this.metaPath);
+      }
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'reset unlink fail %{public}s', JSON.stringify(e));
+    }
+    this.meta = null;
+    this.key = null;
+    hilog.info(DOMAIN, TAG, 'master password reset (old ciphertexts unrecoverable)');
+  }
+
+  /** Encrypt one field. Fails closed when not unlocked. */
+  public async seal(plain: string): Promise<string> {
+    if (this.key === null) {
+      throw new CredError('fail-closed: master password not unlocked');
+    }
+    return encryptField(plain, this.key);
+  }
+
+  /**
+   * Decrypt one field. Fails closed when not unlocked. Returns null when the
+   * value is empty; caller marks enc:v1 values it cannot decrypt (wrong
+   * master password) instead of silently emptying them.
+   */
+  public async open(value: string): Promise<string> {
+    if (value.length === 0) {
+
+/* ========== 第 33 页 ========== */
+      return '';
+    }
+    if (!isEncrypted(value)) {
+      return value; // legacy plaintext (imported file without master password)
+    }
+    if (this.key === null) {
+      throw new CredError('fail-closed: enc:v1 field present but master password not unlocked');
+    }
+    try {
+      return await decryptField(value, this.key);
+    } catch (e) {
+      if (e instanceof EncError) {
+        throw new CredError('decrypt failed (wrong master password?)');
+      }
+      const be = e as Error;
+      throw new CredError(be.message);
+    }
+  }
+
+  /** Prefix check helper for UI badging. */
+  public static isEnc(value: string): boolean {
+    return value.indexOf(ENC_PREFIX) === 0;
+  }
+}
+
+function b64u(bytes: Uint8Array): string {
+  const helper = new util.Base64Helper();
+  const out = helper.encodeSync(bytes, util.Type.BASIC);
+  const td = util.TextDecoder.create('utf-8');
+  return td.decodeWithStream(out);
+}
+
+function b64d(s: string): Uint8Array | null {
+  try {
+    const helper = new util.Base64Helper();
+    return helper.decodeSync(s);
+  } catch (e) {
+    return null;
+  }
+}
+
+
+// ===== 文件: Index.ets (1181 行) =====
+// 一站AI终端(One AI Term)自有外壳 M6 relay2 布局①:
+// 命令栏44px(品牌+坞折叠+搜索命令面板+AI/齿轮/分屏)+ TabsList pill 条(28px)
+// + 左坞双态(56窄/200宽,宽态嵌 ConnList)+ 底部状态栏24px + 工作台首页(收藏pill+最近卡片)
+// 红线: 全部 tab/conn/sftp/DB 组件与逻辑原样复用,只改外壳。
+import { ConnectionStore, ConnRec, getSharedStore } from '../store/ConnStore';
+import { ConnList } from './ConnList';
+import { TerminalPage } from './TerminalPage';
+
+/* ========== 第 34 页 ========== */
+import { SftpPanel } from './SftpPanel';
+import { MonitorPanel } from '../components/MonitorPanel';
+import { FileSidebar } from '../components/FileSidebar';
+import { QuickCommandsPanel, HistoryPanel, PersonalizationPanel } from '../components/SidePanels';
+import { SettingsTab } from '../components/SettingsTab';
+import { RedisTab } from '../components/RedisTab';
+import { K8sTab } from '../components/K8sTab';
+import { PgTab } from '../components/PgTab';
+import { MySqlTab } from '../components/MySqlTab';
+import { VncTab } from '../components/VncTab';
+import { RdpTab } from '../components/RdpTab';
+import { SpiceTab } from '../components/SpiceTab';
+import { themeByName, AppTheme } from '../common/AppTheme';
+import { AIDock } from '../components/AIDock';
+import { GuideOverlay } from '../components/GuideOverlay';
+import { common } from '@kit.AbilityKit';
+import { fileIo } from '@kit.CoreFileKit';
+
+interface TabInfo {
+  id: number
+  name: string
+  kind: string // start/terminal/sftp/settings/redis/k8s/pg/mysql/vnc/rdp/spice
+  connId: string
+}
+
+// 命令面板条目(命令+连接混合,键盘上下/回车,鼠标点击)
+interface PaletteItem {
+  key: string
+  icon: string
+  label: string
+  hint: string
+  run: () => void
+}
+
+@Entry
+@Component
+struct Index {
+  @State themeName: string = 'dark'
+  @State sidebarVisible: boolean = true
+  @State sideView: number = 0 // 0连接 1文件 2监控 3隧道 4快捷 5历史 6个性化
+  @State tabs: TabInfo[] = [{ id: 0, name: '开始', kind: 'start', connId: '' }]
+  @State activeTab: number = 0
+  @State nextTabId: number = 1
+  @State showSettingsMenu: boolean = false
+  // M6 relay3: 底部 AI 智能体 Dock
+  @State aiDockOpen: boolean = false
+  @State splitTabId: number = -1 // 分屏右侧固定的标签(-1 关闭)
+  @State searchText: string = ''
+  // M6 relay2 布局①: 左坞双态(宽200 icon+文字 / 窄56 icon)
+  @State dockWide: boolean = true
+
+/* ========== 第 35 页 ========== */
+  // 命令面板(focus 搜索框展开)
+  @State paletteFocus: boolean = false
+  @State paletteSel: number = 0
+  // M6 relay1 P0-6: 全局悬停态(hoverTip 记录当前悬停目标 id,驱动 tooltip + 图标高亮)
+  @State hoverTip: string = ''
+  @State hoverOn: boolean = false
+  // M5 relay6 fix: th 原为 private 普通属性,applyTheme 重赋值不触发重渲染,
+  // 主题切换从未真正生效(菜单高亮变、颜色不变)。改 @State 使颜色随主题刷新。
+  @State th: AppTheme = themeByName('dark')
+  private sideIcons: string[] = ['⌗', '▤', '∿', '⇄', '⚡', '◷', '◈']
+  private sideTips: string[] = ['连接', '文件', '监控', '隧道', '快捷命令', '历史', '工作台']
+  private sideViewNames: string[] = ['连接', '文件', '监控', '隧道', '快捷命令', '历史', '工作台']
+  // 状态栏: 当前连接名(活跃终端标签)
+  @State statusConn: string = ''
+  // relay4 C1: 首启引导浮层(filesDir/guide_done 存在则不再弹)
+  @State guideShow: boolean = false
+
+  aboutToAppear(): void {
+    this.applyTheme(this.themeName)
+    try {
+      const ctx = getContext(this) as common.UIAbilityContext
+      const marker = ctx.filesDir + '/guide_done'
+      let exists = false
+      try {
+        exists = fileIo.accessSync(marker)
+      } catch (e2) {
+        exists = false
+      }
+      if (!exists) {
+        this.guideShow = true
+      }
+    } catch (e) {
+      this.guideShow = true // 拿不到路径宁可弹(有跳过钮)
+    }
+    AppStorage.setOrCreate('ut.openSftp', '')
+    AppStorage.setOrCreate('ut.closeTab', '')
+    setInterval(() => {
+      const sftp = AppStorage.get<string>('ut.openSftp')
+      if (sftp !== null && sftp !== undefined && sftp !== '') {
+        AppStorage.setOrCreate('ut.openSftp', '')
+        this.openSftpTab(sftp)
+      }
+      const closeId = AppStorage.get<string>('ut.closeTab')
+      if (closeId !== null && closeId !== undefined && closeId !== '') {
+        AppStorage.setOrCreate('ut.closeTab', '')
+        const t = this.tabs.find(x => x.connId === closeId)
+        if (t !== undefined) {
+          this.closeTab(t.id)
+        }
+      }
+
+/* ========== 第 36 页 ========== */
+      this.refreshStatusConn()
+    }, 400)
+  }
+
+  applyTheme(name: string): void {
+    this.themeName = name
+    this.th = themeByName(name)
+    AppStorage.setOrCreate('ut.theme', name)
+  }
+
+  // relay4 C1: 引导完成/跳过 → 写标记文件,永不再弹
+  finishGuide(): void {
+    this.guideShow = false
+    try {
+      const ctx = getContext(this) as common.UIAbilityContext
+      const f = fileIo.openSync(ctx.filesDir + '/guide_done',
+        fileIo.OpenMode.WRITE_ONLY | fileIo.OpenMode.CREATE)
+      fileIo.writeSync(f.fd, 'done')
+      fileIo.closeSync(f)
+    } catch (e) {
+    }
+  }
+
+  // ===== 命令面板数据源(命令 + 连接混合) =====
+  paletteItems(): PaletteItem[] {
+    const items: PaletteItem[] = []
+    items.push({
+      key: 'cmd.newconn', icon: '+', label: '新建连接', hint: '打开连接面板',
+      run: () => { this.sideView = 0; this.sidebarVisible = true }
+    })
+    items.push({
+      key: 'cmd.local', icon: '▤', label: '本地终端', hint: '开一个本地 shell 标签',
+      run: () => this.openLocalTerminal()
+    })
+    items.push({
+      key: 'cmd.settings', icon: '⚙', label: '设置', hint: '打开设置标签页',
+      run: () => this.openSettingsTab()
+    })
+    items.push({
+      key: 'cmd.theme.dark', icon: '●', label: '主题 · 暗色', hint: '深蓝紫底+琥珀',
+      run: () => this.applyTheme('dark')
+    })
+    items.push({
+      key: 'cmd.theme.light', icon: '●', label: '主题 · 浅色', hint: '暖白底+琥珀',
+      run: () => this.applyTheme('light')
+    })
+    items.push({
+      key: 'cmd.sftp', icon: '▦', label: 'SFTP 文件传输', hint: '打开 SFTP 标签',
+      run: () => this.openKindTab('sftp', 'SFTP')
+    })
+
+/* ========== 第 37 页 ========== */
+    items.push({
+      key: 'cmd.pg', icon: '⬮', label: 'PostgreSQL', hint: '打开数据库标签',
+      run: () => this.openKindTab('pg', 'PostgreSQL')
+    })
+    items.push({
+      key: 'cmd.redis', icon: '⬮', label: 'Redis', hint: '打开数据库标签',
+      run: () => this.openKindTab('redis', 'Redis')
+    })
+    items.push({
+      key: 'cmd.mysql', icon: '⬮', label: 'MySQL', hint: '打开数据库标签',
+      run: () => this.openKindTab('mysql', 'MySQL')
+    })
+    items.push({
+      key: 'cmd.k8s', icon: '☸', label: 'K8s', hint: '打开集群标签',
+      run: () => this.openKindTab('k8s', 'K8s')
+    })
+    items.push({
+      key: 'cmd.vnc', icon: '◫', label: 'VNC', hint: '远程桌面',
+      run: () => this.openKindTab('vnc', 'VNC')
+    })
+    items.push({
+      key: 'cmd.rdp', icon: '▣', label: 'RDP', hint: '远程桌面',
+      run: () => this.openKindTab('rdp', 'RDP')
+    })
+    items.push({
+      key: 'cmd.spice', icon: '◈', label: 'SPICE', hint: '远程桌面',
+      run: () => this.openKindTab('spice', 'SPICE')
+    })
+    items.push({
+      key: 'cmd.split', icon: '◫', label: '分屏', hint: '当前标签钉到右栏',
+      run: () => this.toggleSplit()
+    })
+    // 连接: 按搜索词过滤
+    try {
+      const ctx = getContext(this) as common.UIAbilityContext
+      const store = new ConnectionStore(ctx.filesDir)
+      const kw = this.searchText.trim().toLowerCase()
+      for (const c of store.connections) {
+        const name = (c.name !== '' ? c.name : (c.user + '@' + c.host))
+        if (kw !== '' && name.toLowerCase().indexOf(kw) < 0) {
+          continue
+        }
+        items.push({
+          key: 'conn.' + c.id, icon: this.cardIcon(c), label: name,
+          hint: '打开终端连接',
+          run: () => this.openConnTab(c.id)
+        })
+      }
+    } catch (e) {
+    }
+
+/* ========== 第 38 页 ========== */
+    return items
+  }
+
+  // ===== 状态栏数据 =====
+  refreshStatusConn(): void {
+    const t = this.tabs.find(x => x.id === this.activeTab)
+    if (t !== undefined && t.kind === 'terminal') {
+      this.statusConn = t.name
+      return
+    }
+    const anyTerm = this.tabs.find(x => x.kind === 'terminal')
+    if (anyTerm !== undefined) {
+      this.statusConn = anyTerm.name
+      return
+    }
+    this.statusConn = ''
+  }
+
+  activeTabKind(): string {
+    const t = this.tabs.find(x => x.id === this.activeTab)
+    return t !== undefined ? t.kind : 'start'
+  }
+
+  activeConnId(): string {
+    const t = this.tabs.find(x => x.id === this.activeTab)
+    return t !== undefined && (t.kind === 'terminal' || t.kind === 'sftp') ? t.connId : ''
+  }
+
+  addStartTab(): void {
+    const id = this.nextTabId++
+    this.tabs.push({ id: id, name: '开始', kind: 'start', connId: '' })
+    this.activeTab = id
+  }
+
+  openConnTab(connId: string): void {
+    const existing = this.tabs.find(t => t.kind === 'terminal' && t.connId === connId)
+    if (existing !== undefined) {
+      this.activeTab = existing.id
+      return
+    }
+    let name = '终端'
+    try {
+      const ctx = getContext(this) as common.UIAbilityContext
+      const store = new ConnectionStore(ctx.filesDir)
+      const c = store.connections.find((x: ConnRec) => x.id === connId)
+      if (c !== undefined) {
+        name = c.name !== '' ? c.name : (c.user + '@' + c.host)
+      }
+    } catch (e) {
+    }
+
+/* ========== 第 39 页 ========== */
+    const id = this.nextTabId++
+    this.tabs.push({ id: id, name: name, kind: 'terminal', connId: connId })
+    this.activeTab = id
+  }
+
+  toggleSplit(): void {
+    const t = this.tabs.find(x => x.id === this.activeTab)
+    if (t === undefined) {
+      return
+    }
+    if (this.splitTabId === t.id) {
+      this.splitTabId = -1
+      return
+    }
+    if (t.kind === 'terminal') {
+      return
+    }
+    this.splitTabId = t.id
+  }
+
+  splitTab(): TabInfo | null {
+    if (this.splitTabId < 0) {
+      return null
+    }
+    return this.tabs.find(x => x.id === this.splitTabId) ?? null
+  }
+
+  openKindTab(kind: string, name: string): void {
+    const existing = this.tabs.find(t => t.kind === kind)
+    if (existing !== undefined) {
+      this.activeTab = existing.id
+      return
+    }
+    const id = this.nextTabId++
+    this.tabs.push({ id: id, name: name, kind: kind, connId: '' })
+    this.activeTab = id
+  }
+
+  openSettingsTab(): void {
+    this.openKindTab('settings', '设置')
+  }
+
+  // M5 relay4 fix(bug1): StartPane Local Terminal 的落点 — 确保 store 有
+  // type=local 连接(共享实例,防解密态被磁盘密文覆盖)后开终端标签。
+  openLocalTerminal(): void {
+    const ctx = getContext(this) as common.UIAbilityContext
+    const store = getSharedStore()
+    if (store === null) {
+      return
+    }
+
+/* ========== 第 40 页 ========== */
+    let local = store.connections.find((c: ConnRec) => c.type === 'local')
+    if (local === undefined) {
+      const c = new ConnRec()
+      c.id = 'local-term-' + Date.now().toString(36)
+      c.name = '本地终端'
+      c.type = 'local'
+      store.upsertConn(c)
+      store.save()
+      local = c
+    }
+    this.openConnTab(local.id)
+  }
+
+  openSftpTab(connId: string): void {
+    const existing = this.tabs.find(t => t.kind === 'sftp' && t.connId === connId)
+    if (existing !== undefined) {
+      this.activeTab = existing.id
+      return
+    }
+    const id = this.nextTabId++
+    this.tabs.push({ id: id, name: 'SFTP', kind: 'sftp', connId: connId })
+    this.activeTab = id
+  }
+
+  closeTab(id: number): void {
+    if (this.tabs.length <= 1) {
+      return
+    }
+    const idx = this.tabs.findIndex(t => t.id === id)
+    this.tabs.splice(idx, 1)
+    if (this.activeTab === id) {
+      this.activeTab = this.tabs[Math.max(0, idx - 1)].id
+    }
+  }
+
+  // ===== 命令栏图标钮(悬停高亮+tooltip) =====
+  @Builder
+  HeaderBtn(icon: string, tip: string, action: () => void) {
+    Text(icon)
+      .fontSize(18)
+      .fontWeight(FontWeight.Bold)
+      .fontColor(this.hoverOn && this.hoverTip === tip ? this.th.brand : this.th.iconStrong)
+      .width(30)
+      .height(30)
+      .textAlign(TextAlign.Center)
+      .borderRadius(6)
+      .margin({ left: 2, right: 2 })
+      .backgroundColor(this.hoverOn && this.hoverTip === tip ? this.th.hover : Color.Transparent)
+      .onClick(() => action())
+      .onHover((h: boolean) => {
+
+/* ========== 第 41 页 ========== */
+        this.hoverTip = h ? tip : ''
+        this.hoverOn = h
+      })
+      .bindPopup(this.hoverOn && this.hoverTip === tip, {
+        message: tip,
+        placementOnTop: true
+      })
+  }
+
+  // ===== TabsList pill(28px 圆角卡片条,命令栏正下方) =====
+  @Builder
+  TabItem(t: TabInfo) {
+    Row({ space: 5 }) {
+      Text(t.kind === 'start' ? '⌂' : (t.kind === 'sftp' ? '▦' : (t.kind === 'settings' ? '⚙' : '▸')))
+        .fontSize(14)
+        .fontColor(t.id === this.activeTab ? this.th.surface : this.th.inkSubtle)
+      Text(t.name)
+        .fontSize(12)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .fontColor(t.id === this.activeTab ? this.th.surface : this.th.inkSubtle)
+        .constraintSize({ maxWidth: 180 })
+      Text('×')
+        .fontSize(12)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(this.hoverOn && this.hoverTip === ('close' + t.id.toString()) ? this.th.danger : (t.id === this.activeTab ? this.th.surface : this.th.inkSubtle))
+        .padding({ left: 4, right: 4, top: 2, bottom: 2 })
+        .borderRadius(3)
+        .onClick(() => this.closeTab(t.id))
+        .onHover((h: boolean) => {
+          this.hoverTip = h ? ('close' + t.id.toString()) : ''
+          this.hoverOn = h
+        })
+        .bindPopup(this.hoverOn && this.hoverTip === ('close' + t.id.toString()), {
+          message: '关闭标签 ' + t.name,
+          placementOnTop: true
+        })
+    }
+    .height(24)
+    .constraintSize({ minWidth: 110 })
+    .padding({ left: 10, right: 6 })
+    .borderRadius(12)
+    .backgroundColor(t.id === this.activeTab ? this.th.brand : this.th.panel)
+    .border({ width: 1, color: t.id === this.activeTab ? this.th.brand : this.th.hairline })
+    .margin({ left: 2, right: 2 })
+    .alignItems(VerticalAlign.Center)
+    .onClick(() => {
+      this.activeTab = t.id
+    })
+  }
+
+/* ========== 第 42 页 ========== */
+
+  // ===== 左坞图标钮(窄态56/宽态200 共用;宽态右侧带文字) =====
+  @Builder
+  DockIcon(idx: number) {
+    Row({ space: 8 }) {
+      Text(this.sideIcons[idx])
+        .fontSize(20)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(this.sideView === idx ? this.th.surface : this.th.iconStrong)
+        .width(28)
+        .height(28)
+        .textAlign(TextAlign.Center)
+        .borderRadius(6)
+      if (this.dockWide) {
+        Text(this.sideViewNames[idx])
+          .fontSize(12)
+          .fontWeight(this.sideView === idx ? FontWeight.Bold : FontWeight.Normal)
+          .fontColor(this.sideView === idx ? this.th.surface : this.th.inkSubtle)
+          .layoutWeight(1)
+      }
+    }
+    .height(32)
+    .width(this.dockWide ? '100%' : 56)
+    .padding({ left: this.dockWide ? 10 : 14 })
+    .borderRadius(this.dockWide ? 8 : 6)
+    .alignItems(VerticalAlign.Center)
+    .backgroundColor(this.sideView === idx ? this.th.brand : (this.hoverOn && this.hoverTip === ('side' + idx.toString()) ? this.th.hover : Color.Transparent))
+    .onClick(() => {
+      this.sideView = idx
+      this.sidebarVisible = true
+    })
+    .onHover((h: boolean) => {
+      this.hoverTip = h ? ('side' + idx.toString()) : ''
+      this.hoverOn = h
+    })
+    .bindPopup(this.hoverOn && this.hoverTip === ('side' + idx.toString()) && !this.dockWide, {
+      message: this.sideTips[idx],
+      placementOnTop: true
+    })
+  }
+
+  // ===== 工作台卡片辅助 =====
+  cardMeta(c: ConnRec): string {
+    if (c.type === 'local') return 'local';
+    let s = c.user + '@' + c.host;
+    if (c.port !== 22) s += ':' + c.port.toString();
+    return s;
+  }
+
+  cardIcon(c: ConnRec): string {
+
+/* ========== 第 43 页 ========== */
+    if (c.type === 'local') return '▤';
+    if (c.type === 'rdp') return '▣';
+    if (c.type === 'vnc') return '◫';
+    if (c.type === 'k8s') return '☸';
+    if (c.type === 'redis' || c.type === 'mysql' || c.type === 'pg') return '⬮';
+    return '⌗';
+  }
+
+  cardIconColor(c: ConnRec): string {
+    if (c.type === 'local') return '#34d399';
+    if (c.type === 'rdp') return '#60a5fa';
+    return '#' + this.th.brand.toString(16).padStart(6, '0');
+  }
+
+  @Builder
+  StartConnCard(c: ConnRec) {
+    Row({ space: 10 }) {
+      Text(this.cardIcon(c))
+        .fontSize(20)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(this.cardIconColor(c))
+        .width(34)
+        .height(34)
+        .textAlign(TextAlign.Center)
+        .borderRadius(8)
+        .backgroundColor(this.th.surfaceRaised)
+      Column({ space: 2 }) {
+        Text(c.name)
+          .fontSize(13)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(this.th.ink)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+        Text(this.cardMeta(c))
+          .fontSize(11)
+          .fontColor(this.th.inkSubtle)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+      }
+      .alignItems(HorizontalAlign.Start)
+      .layoutWeight(1)
+    }
+    .width(230)
+    .padding({ left: 12, right: 12, top: 10, bottom: 10 })
+    .borderRadius(12)
+    .backgroundColor(this.th.panel)
+    .border({ width: 1, color: this.th.hairline })
+    .alignItems(VerticalAlign.Center)
+    .onClick(() => {
+      if (c.type === 'ssh') {
+
+/* ========== 第 44 页 ========== */
+        this.openConnTab(c.id)
+      }
+    })
+  }
+
+  // ===== 工作台首页(收藏 pill 横排 + 最近连接卡片流 + 快速新建) =====
+  @Builder
+  StartPane() {
+    Column() {
+      Scroll() {
+        Column() {
+          // 收藏 pill 行(quickItems 范式: 一键直达)
+          Row({ space: 8 }) {
+            Row({ space: 6 }) {
+              Text('▍')
+                .fontSize(13)
+                .fontColor(this.th.brand)
+              Text('本地终端')
+                .fontSize(12)
+                .fontColor(this.th.ink)
+            }
+            .height(30)
+            .padding({ left: 14, right: 14 })
+            .borderRadius(15)
+            .backgroundColor(this.th.panel)
+            .border({ width: 1, color: this.th.hairline })
+            .alignItems(VerticalAlign.Center)
+            .onClick(() => {
+              this.openLocalTerminal()
+            })
+            Text('PostgreSQL')
+              .fontSize(12)
+              .fontColor(this.th.ink)
+              .height(30)
+              .padding({ left: 14, right: 14 })
+              .borderRadius(15)
+              .backgroundColor(this.th.panel)
+              .border({ width: 1, color: this.th.hairline })
+              .onClick(() => {
+                this.openKindTab('pg', 'PostgreSQL')
+              })
+            Text('Redis')
+              .fontSize(12)
+              .fontColor(this.th.ink)
+              .height(30)
+              .padding({ left: 14, right: 14 })
+              .borderRadius(15)
+              .backgroundColor(this.th.panel)
+              .border({ width: 1, color: this.th.hairline })
+              .onClick(() => {
+
+/* ========== 第 45 页 ========== */
+                this.openKindTab('redis', 'Redis')
+              })
+            Text('MySQL')
+              .fontSize(12)
+              .fontColor(this.th.ink)
+              .height(30)
+              .padding({ left: 14, right: 14 })
+              .borderRadius(15)
+              .backgroundColor(this.th.panel)
+              .border({ width: 1, color: this.th.hairline })
+              .onClick(() => {
+                this.openKindTab('mysql', 'MySQL')
+              })
+            Text('VNC')
+              .fontSize(12)
+              .fontColor(this.th.ink)
+              .height(30)
+              .padding({ left: 14, right: 14 })
+              .borderRadius(15)
+              .backgroundColor(this.th.panel)
+              .border({ width: 1, color: this.th.hairline })
+              .onClick(() => {
+                this.openKindTab('vnc', 'VNC')
+              })
+            Text('RDP')
+              .fontSize(12)
+              .fontColor(this.th.ink)
+              .height(30)
+              .padding({ left: 14, right: 14 })
+              .borderRadius(15)
+              .backgroundColor(this.th.panel)
+              .border({ width: 1, color: this.th.hairline })
+              .onClick(() => {
+                this.openKindTab('rdp', 'RDP')
+              })
+          }
+          .margin({ top: 28, bottom: 8 })
+          .alignItems(VerticalAlign.Center)
+
+          // 快速新建行
+          Row({ space: 10 }) {
+            Row({ space: 6 }) {
+              Text('+')
+                .fontSize(14)
+                .fontWeight(FontWeight.Bold)
+                .fontColor(this.th.surface)
+              Text('新建连接')
+                .fontSize(13)
+                .fontColor(this.th.surface)
+            }
+
+/* ========== 第 46 页 ========== */
+            .height(32)
+            .padding({ left: 16, right: 16 })
+            .borderRadius(16)
+            .backgroundColor(this.th.brand)
+            .alignItems(VerticalAlign.Center)
+            .onClick(() => {
+              this.sideView = 0
+              this.sidebarVisible = true
+            })
+            // M5 relay4 fix(bug1): Local Terminal 按钮原先无 onClick,点击无反应。
+            Row({ space: 6 }) {
+              Text('▤')
+                .fontSize(13)
+                .fontColor(this.th.ink)
+              Text('本地终端')
+                .fontSize(13)
+                .fontColor(this.th.ink)
+            }
+            .height(32)
+            .padding({ left: 16, right: 16 })
+            .borderRadius(16)
+            .backgroundColor(this.th.panel)
+            .border({ width: 1, color: this.th.hairline })
+            .alignItems(VerticalAlign.Center)
+            .onClick(() => {
+              this.openLocalTerminal()
+            })
+          }
+          .margin({ top: 8, bottom: 24 })
+          .alignItems(VerticalAlign.Center)
+
+          Text('最近连接')
+            .fontSize(12)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(this.th.inkSubtle)
+            .letterSpacing(1)
+            .alignSelf(ItemAlign.Start)
+            .margin({ left: 40, bottom: 10 })
+          Column({ space: 10 }) {
+            // relay4 C3: 空状态引导卡(替代单行文案)
+            Column({ space: 8 }) {
+              Text('+')
+                .fontSize(28)
+                .fontWeight(FontWeight.Bold)
+                .fontColor(this.th.brand)
+                .width(52)
+                .height(52)
+                .textAlign(TextAlign.Center)
+                .borderRadius(26)
+                .backgroundColor(this.th.surfaceRaised)
+
+/* ========== 第 47 页 ========== */
+                .border({ width: 1, color: this.th.hairline })
+              Text('新建第一个连接')
+                .fontSize(15)
+                .fontWeight(FontWeight.Medium)
+                .fontColor(this.th.ink)
+              Text('连接一台远程主机,或直接开本地终端')
+                .fontSize(12)
+                .fontColor(this.th.inkSubtle)
+              Row({ space: 10 }) {
+                Text('打开连接面板')
+                  .fontSize(13)
+                  .fontColor(this.th.surface)
+                  .height(34)
+                  .padding({ left: 18, right: 18 })
+                  .borderRadius(17)
+                  .backgroundColor(this.th.brand)
+                  .onClick(() => {
+                    this.sideView = 0
+                    this.sidebarVisible = true
+                  })
+                Text('本地终端')
+                  .fontSize(13)
+                  .fontColor(this.th.ink)
+                  .height(34)
+                  .padding({ left: 18, right: 18 })
+                  .borderRadius(17)
+                  .backgroundColor(this.th.surfaceRaised)
+                  .border({ width: 1, color: this.th.hairline })
+                  .onClick(() => this.openLocalTerminal())
+              }
+              .alignItems(VerticalAlign.Center)
+            }
+            .padding({ top: 36, bottom: 36, left: 24, right: 24 })
+            .borderRadius(14)
+            .backgroundColor(this.th.panel)
+            .border({ width: 1, color: this.th.hairline })
+            .alignItems(HorizontalAlign.Center)
+            .margin({ top: 24 })
+          }
+          .width('100%')
+        }
+        .width('100%')
+      }
+      .layoutWeight(1)
+      .scrollBar(BarState.Off)
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(this.th.surface)
+    .alignItems(HorizontalAlign.Center)
+
+/* ========== 第 48 页 ========== */
+  }
+
+  // ===== 命令面板下拉(focus 搜索框时展开;点击条目执行) =====
+  @Builder
+  PaletteRow(item: PaletteItem, idx: number) {
+    Row({ space: 8 }) {
+      Text(item.icon)
+        .fontSize(15)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(this.paletteSel === idx ? this.th.brand : this.th.iconStrong)
+        .width(20)
+        .textAlign(TextAlign.Center)
+      Text(item.label)
+        .fontSize(12)
+        .fontColor(this.paletteSel === idx ? this.th.ink : this.th.inkSubtle)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .layoutWeight(1)
+      Text(item.hint)
+        .fontSize(10)
+        .fontColor(this.th.inkSubtle)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+    }
+    .width('100%')
+    .height(30)
+    .padding({ left: 12, right: 12 })
+    .borderRadius(6)
+    .backgroundColor(this.paletteSel === idx ? this.th.hover : Color.Transparent)
+    .alignItems(VerticalAlign.Center)
+    .onClick(() => {
+      this.paletteFocus = false
+      item.run()
+    })
+    .onHover((h: boolean) => {
+      if (h) {
+        this.paletteSel = idx
+      }
+    })
+  }
+
+  @Builder
+  CommandPalette() {
+    Column() {
+      ForEach(this.paletteItems(), (item: PaletteItem, idx: number) => {
+        this.PaletteRow(item, idx)
+      }, (item: PaletteItem) => item.key + '.' + this.searchText)
+    }
+    .width(360)
+    .constraintSize({ maxHeight: 300 })
+
+/* ========== 第 49 页 ========== */
+    .padding(6)
+    .borderRadius(10)
+    .backgroundColor(this.th.surfaceRaised)
+    .border({ width: 1, color: this.th.hairline })
+    .shadow({ radius: 24, color: '#99000000', offsetX: 0, offsetY: 8 })
+    .position({ x: 210, y: 4 })
+  }
+
+  // ===== 设置下拉菜单(命令栏齿轮) =====
+  @Builder
+  SettingsMenu() {
+    Column({ space: 1 }) {
+      Text('主题')
+        .fontSize(11)
+        .fontColor(this.th.inkSubtle)
+        .padding({ left: 10, right: 10, top: 6, bottom: 4 })
+        .alignSelf(ItemAlign.Start)
+      ForEach(['dark', 'light'], (n: string) => {
+        Text(n === 'dark' ? '● 暗色' : '● 浅色')
+          .fontSize(12)
+          .fontColor(this.themeName === n ? this.th.brand : this.th.ink)
+          .padding({ left: 24, right: 10, top: 6, bottom: 6 })
+          .borderRadius(4)
+          .backgroundColor(this.themeName === n ? this.th.panel : Color.Transparent)
+          .alignSelf(ItemAlign.Start)
+          .onClick(() => this.applyTheme(n))
+      }, (n: string) => n)
+      Divider()
+        .strokeWidth(1)
+        .color(this.th.hairline)
+        .margin({ top: 4, bottom: 4 })
+      Text('设置')
+        .fontSize(12)
+        .fontColor(this.th.ink)
+        .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+        .borderRadius(4)
+        .alignSelf(ItemAlign.Start)
+        .onClick(() => {
+          this.openSettingsTab()
+          this.showSettingsMenu = false
+        })
+      Text('导入 / 导出')
+        .fontSize(12)
+        .fontColor(this.th.ink)
+        .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+        .borderRadius(4)
+        .alignSelf(ItemAlign.Start)
+        .onClick(() => {
+          this.showSettingsMenu = false
+          this.sideView = 0
+
+/* ========== 第 50 页 ========== */
+          this.sidebarVisible = true
+        })
+      Text('关于')
+        .fontSize(12)
+        .fontColor(this.th.ink)
+        .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+        .borderRadius(4)
+        .alignSelf(ItemAlign.Start)
+        .onClick(() => {
+          this.showSettingsMenu = false
+          this.openSettingsTab()
+        })
+      Divider()
+        .strokeWidth(1)
+        .color(this.th.hairline)
+        .margin({ top: 4, bottom: 4 })
+      Text('Redis / K8s / PostgreSQL / MySQL / VNC / RDP / SPICE')
+        .fontSize(10)
+        .fontColor(this.th.inkSubtle)
+        .padding({ left: 10, right: 40, top: 4, bottom: 6 })
+        .alignSelf(ItemAlign.Start)
+    }
+    .width(200)
+    .padding(6)
+    .borderRadius(8)
+    .backgroundColor(this.th.hover)
+    .border({ width: 1, color: this.th.hairline })
+    .position({ x: '78%', y: 4 })
+    .shadow({ radius: 24, color: '#99000000', offsetX: 0, offsetY: 8 })
+  }
+
+  build() {
+    Stack() {
+      Column() {
+      // ===== 命令栏(44px): 品牌 + 坞折叠钮 + 搜索命令面板 + AI/齿轮/分屏 =====
+      Row() {
+        Text('一站AI终端')
+          .fontSize(14)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(this.th.brand)
+          .margin({ left: 12, right: 4 })
+        this.HeaderBtn(this.dockWide ? '«' : '»', this.dockWide ? '收起侧坞' : '展开侧坞', () => {
+          this.dockWide = !this.dockWide
+          this.sidebarVisible = true
+        })
+        this.HeaderBtn('⌗', '连接列表', () => {
+          this.sideView = 0
+          this.sidebarVisible = !this.sidebarVisible
+        })
+        // 搜索命令面板(focus 展开;失焦收起;回车执行选中项)
+
+/* ========== 第 51 页 ========== */
+        Stack({ alignContent: Alignment.TopStart }) {
+          TextInput({ placeholder: '搜索命令或连接...', text: this.searchText })
+            .onChange((v: string) => {
+              this.searchText = v
+              this.paletteSel = 0
+            })
+            .onFocus(() => {
+              this.paletteFocus = true
+            })
+            .onBlur(() => {
+              this.paletteFocus = false
+            })
+            .onSubmit(() => {
+              const items = this.paletteItems()
+              if (items.length > 0) {
+                const pick = items[Math.min(this.paletteSel, items.length - 1)]
+                this.paletteFocus = false
+                pick.run()
+              }
+            })
+            .fontSize(12)
+            .fontColor(this.th.ink)
+            .placeholderColor(this.th.inkSubtle)
+            .height(30)
+            .width(240)
+            .backgroundColor(this.th.inputBg)
+            .borderRadius(6)
+            .padding({ left: 12, right: 12 })
+            .underlineColor(Color.Transparent)
+            .caretColor(this.th.brand)
+          if (this.paletteFocus) {
+            this.CommandPalette()
+          }
+        }
+        .width(240)
+        .height(30)
+        Blank()
+        this.HeaderBtn('▣', '分屏', () => this.toggleSplit())
+        // M6 relay3: 智能体 Dock 切换钮
+        this.HeaderBtn('✧', '智能体', () => {
+          this.aiDockOpen = !this.aiDockOpen
+        })
+        this.HeaderBtn('⚙', '设置', () => {
+          this.showSettingsMenu = !this.showSettingsMenu
+        })
+      }
+      .width('100%')
+      .height(44)
+      .padding({ left: 0, right: 8 })
+      .alignItems(VerticalAlign.Center)
+
+/* ========== 第 52 页 ========== */
+      .backgroundColor(this.th.surfaceRaised)
+      .border({ width: { bottom: 1 }, color: this.th.hairline })
+
+      // ===== TabsList pill 条(28px,命令栏正下方,可横滚) =====
+      Scroll() {
+          Row({ space: 2 }) {
+            ForEach(this.tabs, (t: TabInfo) => {
+              this.TabItem(t)
+            }, (t: TabInfo) => t.id.toString())
+            Text('+')
+              .fontSize(15)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(this.th.iconMuted)
+              .width(26)
+              .height(26)
+              .textAlign(TextAlign.Center)
+              .borderRadius(13)
+              .backgroundColor(this.th.panel)
+              .border({ width: 1, color: this.th.hairline })
+              .onClick(() => this.addStartTab())
+              .onHover((h: boolean) => {
+                this.hoverTip = h ? 'newTab' : ''
+                this.hoverOn = h
+              })
+              .bindPopup(this.hoverOn && this.hoverTip === 'newTab', {
+                message: '新建开始标签页',
+                placementOnTop: true
+              })
+          }
+          .alignItems(VerticalAlign.Center)
+        }
+        .scrollable(ScrollDirection.Horizontal)
+        .scrollBar(BarState.Off)
+        .height(28)
+        .width('100%')
+        .padding({ left: 12 })
+        .margin({ top: 4, bottom: 4 })
+        .backgroundColor(this.th.surfaceRaised)
+        .border({ width: { top: 1, bottom: 1 }, color: this.th.hairline })
+
+      // ===== 主体 =====
+      Stack({ alignContent: Alignment.TopEnd }) {
+        Row() {
+          if (this.sidebarVisible) {
+            Column() {
+              // 坞顶: 视图切换 icon(双态)
+              Column({ space: 2 }) {
+                ForEach([0, 1, 2, 3, 4, 5, 6], (i: number) => {
+                  this.DockIcon(i)
+                }, (i: number) => i.toString() + (this.dockWide ? 'w' : 'n'))
+
+/* ========== 第 53 页 ========== */
+              }
+              .width('100%')
+              .padding({ top: 8, bottom: 4 })
+
+              // 宽态: 视图名 + 面板内容(连接视图嵌 ConnList)
+              if (this.dockWide) {
+                Text(this.sideViewNames[this.sideView])
+                  .fontSize(11)
+                  .fontColor(this.th.inkSubtle)
+                  .letterSpacing(1)
+                  .width('100%')
+                  .padding({ left: 12, right: 10, top: 6, bottom: 6 })
+                  .border({ width: { bottom: 1 }, color: this.th.hairline })
+                  .margin({ bottom: 4 })
+
+                if (this.sideView === 0) {
+                  ConnList({
+                    onOpenConn: (id: string) => {
+                      this.openConnTab(id)
+                    },
+                    onNeedStore: (): ConnectionStore => {
+                      const ctx = getContext(this) as common.UIAbilityContext
+                      return new ConnectionStore(ctx.filesDir)
+                    }
+                  })
+                    .layoutWeight(1)
+                } else if (this.sideView === 1) {
+                  FileSidebar()
+                    .layoutWeight(1)
+                } else if (this.sideView === 2) {
+                  MonitorPanel()
+                    .layoutWeight(1)
+                } else if (this.sideView === 4) {
+                  QuickCommandsPanel()
+                    .layoutWeight(1)
+                } else if (this.sideView === 5) {
+                  HistoryPanel()
+                    .layoutWeight(1)
+                } else if (this.sideView === 6) {
+                  PersonalizationPanel({
+                    onThemeChange: (t: string) => this.applyTheme(t)
+                  })
+                    .layoutWeight(1)
+                } else if (this.sideView === 7) {
+                  // M6 relay5: 工作台(补位,行为同 sideView=0 开始页)
+                  ConnList({
+                    onOpenConn: (id: string) => {
+                      this.openConnTab(id)
+                    },
+                    onNeedStore: (): ConnectionStore => {
+
+/* ========== 第 54 页 ========== */
+                      const ctx = getContext(this) as common.UIAbilityContext
+                      return new ConnectionStore(ctx.filesDir)
+                    }
+                  })
+                    .layoutWeight(1)
+                } else {
+                  Column() {
+                    Text(this.sideTips[this.sideView])
+                      .fontSize(13)
+                      .fontColor(this.th.inkSubtle)
+                      .margin(16)
+                    Text('按官方路线图逐步开放')
+                      .fontSize(11)
+                      .fontColor(this.th.inkSubtle)
+                  }
+                  .layoutWeight(1)
+                  .width('100%')
+                }
+              } else {
+                Blank()
+              }
+            }
+            .width(this.dockWide ? 200 : 56)
+            .height('100%')
+            .backgroundColor(this.th.surface)
+            .border({ width: { right: 1 }, color: this.th.hairline })
+          }
+
+          // 内容区:主栏 + 可选分屏右栏(relay4: 业务窗口外框 1px hairline+圆角,
+          // 外层 Column 承载边框属性,内层保留 layoutWeight/height 链防塌缩)
+          Row() {
+            Column() {
+              Column() {
+              if (this.activeTabKind() === 'terminal') {
+                TerminalPage({ connIdIn: this.activeConnId() })
+              } else if (this.activeTabKind() === 'sftp') {
+                SftpPanel({
+                  connIdIn: this.activeConnId(),
+                  onClose: () => {
+                    const t = this.tabs.find(x => x.id === this.activeTab)
+                    if (t !== undefined) {
+                      this.closeTab(t.id)
+                    }
+                  }
+                })
+              } else if (this.activeTabKind() === 'settings') {
+                SettingsTab({
+                  onThemeChange: (t: string) => this.applyTheme(t)
+                })
+              } else if (this.activeTabKind() === 'redis') {
+
+/* ========== 第 55 页 ========== */
+                RedisTab()
+              } else if (this.activeTabKind() === 'k8s') {
+                K8sTab()
+              } else if (this.activeTabKind() === 'pg') {
+                PgTab()
+              } else if (this.activeTabKind() === 'mysql') {
+                MySqlTab()
+              } else if (this.activeTabKind() === 'vnc') {
+                VncTab()
+              } else if (this.activeTabKind() === 'rdp') {
+                RdpTab()
+              } else if (this.activeTabKind() === 'spice') {
+                SpiceTab()
+              } else {
+                this.StartPane()
+              }
+              }
+              .layoutWeight(1)
+              .height('100%')
+              .margin(6)
+              .borderRadius(10)
+              .border({ width: 1, color: this.th.hairline })
+              .clip(true)
+              .backgroundColor(this.th.surface)
+            }
+            .layoutWeight(1)
+            .height('100%')
+
+            if (this.splitTab() !== null && this.splitTabId !== this.activeTab) {
+              Column() {
+                Column() {
+                if (this.splitTab()!.kind === 'sftp') {
+                  SftpPanel({
+                    connIdIn: this.splitTab()!.connId,
+                    onClose: () => {
+                      this.splitTabId = -1
+                    }
+                  })
+                } else if (this.splitTab()!.kind === 'settings') {
+                  SettingsTab({
+                    onThemeChange: (t: string) => this.applyTheme(t)
+                  })
+                } else {
+                  this.StartPane()
+                }
+                }
+                .layoutWeight(1)
+                .height('100%')
+                .margin(6)
+                .borderRadius(10)
+
+/* ========== 第 56 页 ========== */
+                .border({ width: 1, color: this.th.hairline })
+                .clip(true)
+                .backgroundColor(this.th.surface)
+              }
+              .layoutWeight(1)
+              .height('100%')
+            }
+          }
+          .layoutWeight(1)
+          .height('100%')
+        }
+        .width('100%')
+        .height('100%')
+
+        if (this.showSettingsMenu) {
+          this.SettingsMenu()
+        }
+      }
+      .layoutWeight(1)
+      .width('100%')
+
+      // ===== M6 relay3: AI 智能体 Dock(主体与状态栏之间, 横跨全宽) =====
+      if (this.aiDockOpen) {
+        AIDock()
+      }
+
+      // ===== 底部状态栏(24px) =====
+      Row({ space: 10 }) {
+        Row({ space: 6 }) {
+          Circle()
+            .width(8)
+            .height(8)
+            .fill(this.statusConn !== '' ? this.th.success : this.th.inkSubtle)
+          Text(this.statusConn !== '' ? this.statusConn : '未连接')
+            .fontSize(10)
+            .fontColor(this.statusConn !== '' ? this.th.ink : this.th.inkSubtle)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .constraintSize({ maxWidth: 200 })
+        }
+        .alignItems(VerticalAlign.Center)
+
+        Text('UTF-8')
+          .fontSize(10)
+          .fontColor(this.th.inkSubtle)
+        Text('v1.1.0')
+          .fontSize(10)
+          .fontColor(this.th.inkSubtle)
+        Blank()
+        Text('一站AI终端 · One AI Term')
+
+/* ========== 第 57 页 ========== */
+          .fontSize(10)
+          .fontColor(this.th.inkSubtle)
+      }
+      .width('100%')
+      .height(24)
+      .padding({ left: 12, right: 12 })
+      .alignItems(VerticalAlign.Center)
+      .backgroundColor(this.th.surfaceRaised)
+      .border({ width: { top: 1 }, color: this.th.hairline })
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor(this.th.surface)
+
+      if (this.guideShow) {
+        GuideOverlay({ onFinish: () => this.finishGuide() })
+      }
+    }
+    .width('100%')
+    .height('100%')
+  }
+}
+
+
+
+// ===== 文件: AppTheme.ets (57 行) =====
+// 一站AI终端(One AI Term)自有主题色板 —— M6 relay2 品牌差异化定案
+// 深色: 深夜蓝紫底 + 琥珀 brand;浅色: 暖白底 + 深琥珀 brand(可读性)。
+// 字段语义: surface=全局底/surfaceRaised=浮层/panel=面板/hover=悬停/ink=主文/inkSubtle=次文/
+// brand=品牌色/hairline=发丝线;success/warn/danger/inputBg/iconMuted 保留 relay1 语义。
+export class AppTheme {
+  surface: number
+  surfaceRaised: number
+  panel: number
+  hover: number
+  ink: number
+  inkSubtle: number
+  brand: number
+  hairline: number
+  success: number
+  warn: number
+  danger: number
+  inputBg: number
+  iconMuted: number
+  iconStrong: number
+
+  constructor(surface: number, surfaceRaised: number, panel: number, hover: number,
+    ink: number, inkSubtle: number, brand: number, hairline: number,
+    success: number, warn: number, danger: number, inputBg: number, iconMuted: number,
+    iconStrong: number) {
+
+/* ========== 第 58 页 ========== */
+    this.surface = surface
+    this.surfaceRaised = surfaceRaised
+    this.panel = panel
+    this.hover = hover
+    this.ink = ink
+    this.inkSubtle = inkSubtle
+    this.brand = brand
+    this.hairline = hairline
+    this.success = success
+    this.warn = warn
+    this.danger = danger
+    this.inputBg = inputBg
+    this.iconMuted = iconMuted
+    this.iconStrong = iconStrong
+  }
+}
+
+// dark: 深夜蓝紫底 + 琥珀 brand(relay4: 分层亮度差拉大 ≥8%,hairline 提亮,新增 iconStrong 高对比图标色)
+export const THEME_DARK: AppTheme = new AppTheme(0x0F1220, 0x1E2438, 0x232A44, 0x2A3252,
+  0xE8EAF2, 0x8a90a5, 0xF5A524, 0x353D5E, 0x34d399, 0xf59e0b, 0xf87171, 0x131729, 0x9aa2b8,
+  0xF2F4FA)
+// light: 暖白底 + 深琥珀 brand(relay4: 分层亮度差拉大 ≥8%,hairline 加深,新增 iconStrong)
+export const THEME_LIGHT: AppTheme = new AppTheme(0xFAFAF7, 0xE8E5DA, 0xEBE8DE, 0xE0DCCF,
+  0x1c1c1a, 0x6b6a66, 0xD97706, 0xCFCABC, 0x108038, 0xb45309, 0xc62828, 0xF6F5F1, 0x6b6a66,
+  0x26262B)
+
+export function themeByName(name: string): AppTheme {
+  if (name === 'light') {
+    return THEME_LIGHT
+  }
+  return THEME_DARK
+}
+
+
+// ===== 文件: GuideOverlay.ets (115 行) =====
+// relay4 C1: 首启 4 步引导浮层(欢迎→新建连接→终端与AI Dock→设置与主题)
+// 可跳过;完成/跳过均调 onFinish(Index 写 filesDir/guide_done 标记永不再弹)
+import { AppTheme, themeByName } from '../common/AppTheme';
+
+@Component
+export struct GuideOverlay {
+  onFinish: () => void = () => {}
+  @State step: number = 0
+  @State th: AppTheme = themeByName('dark')
+
+  aboutToAppear(): void {
+    this.th = themeByName(AppStorage.get<string>('ut.theme') ?? 'dark')
+  }
+
+  private titles: string[] = [
+
+/* ========== 第 59 页 ========== */
+    '欢迎来到一站AI终端',
+    '新建你的第一个连接',
+    '终端与 AI 智能体',
+    '设置与主题'
+  ]
+  private descs: string[] = [
+    'SSH / 本地终端 / 数据库 / 远程桌面,一个应用全搞定。左侧坞切换功能,顶栏搜索直达一切。',
+    '左侧「连接」面板点 + 新建;支持 SSH、本地终端、PostgreSQL、Redis、MySQL、VNC、RDP 等。也可按 Ctrl+K 打开命令面板快速直达。',
+    '底部 ✦ 智能体 Dock:用自然语言驱动终端——读写屏幕、执行命令、传输文件,每一步都有审批卡把关。',
+    '点顶栏齿轮进设置:AI 模型配置(Anthropic / OpenAI 兼容)、主题深浅切换、数据导入导出都在这里。'
+  ]
+  private icons: string[] = ['✦', '+', '▣', '⚙']
+
+  next(): void {
+    if (this.step >= 3) {
+      this.onFinish()
+      return
+    }
+    this.step++
+  }
+
+  build() {
+    Stack() {
+      Column() {
+        // 步序点
+        Row({ space: 6 }) {
+          ForEach([0, 1, 2, 3], (i: number) => {
+            Circle()
+              .width(i === this.step ? 8 : 6)
+              .height(i === this.step ? 8 : 6)
+              .fill(i <= this.step ? this.th.brand : this.th.hairline)
+          }, (i: number) => i.toString() + (i === this.step ? 'a' : 'b'))
+        }
+        .margin({ bottom: 16 })
+
+        Text(this.icons[this.step])
+          .fontSize(36)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(this.th.iconStrong)
+          .width(72)
+          .height(72)
+          .textAlign(TextAlign.Center)
+          .borderRadius(20)
+          .backgroundColor(this.th.surface)
+          .border({ width: 1, color: this.th.hairline })
+          .margin({ bottom: 14 })
+
+        Text(this.titles[this.step])
+          .fontSize(18)
+          .fontWeight(FontWeight.Bold)
+
+/* ========== 第 60 页 ========== */
+          .fontColor(this.th.ink)
+          .margin({ bottom: 10 })
+
+        Text(this.descs[this.step])
+          .fontSize(13)
+          .fontColor(this.th.inkSubtle)
+          .textAlign(TextAlign.Center)
+          .lineHeight(20)
+          .padding({ left: 12, right: 12 })
+
+        Row({ space: 10 }) {
+          Text(this.step === 3 ? '完成' : '跳过')
+            .fontSize(13)
+            .fontColor(this.th.inkSubtle)
+            .height(36)
+            .padding({ left: 18, right: 18 })
+            .borderRadius(18)
+            .backgroundColor(this.th.surface)
+            .border({ width: 1, color: this.th.hairline })
+            .textAlign(TextAlign.Center)
+            .onClick(() => this.onFinish())
+          Text(this.step === 3 ? '开始使用' : '下一步')
+            .fontSize(13)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(this.th.surface)
+            .height(36)
+            .padding({ left: 22, right: 22 })
+            .borderRadius(18)
+            .backgroundColor(this.th.brand)
+            .textAlign(TextAlign.Center)
+            .onClick(() => this.next())
+        }
+        .alignItems(VerticalAlign.Center)
+        .margin({ top: 22 })
+      }
+      .width(380)
+      .padding({ top: 30, bottom: 26, left: 24, right: 24 })
+      .borderRadius(14)
+      .backgroundColor(this.th.surfaceRaised)
+      .border({ width: 1, color: this.th.hairline })
+      .shadow({ radius: 24, color: '#99000000', offsetX: 0, offsetY: 8 })
+      .alignItems(HorizontalAlign.Center)
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor('rgba(0,0,0,0.55)')
+    .alignContent(Alignment.Center)
+  }
+}
+
