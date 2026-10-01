@@ -2,6 +2,7 @@
 // M6 relay1: 全量主题化(P0-4) + 保存 toast(P0-1/3) + 密钥框可见性修复(P0-2) + 悬停 tooltip(P0-6) + 版本号 v1.1.0
 import { LlmConfigStore } from '../service/LlmConfigStore';
 import { AgentSettings, AgentSettingsStore, ApprovalMode } from '../service/AgentSettingsStore';
+import { HarnessClient, HarnessTestResult } from '../service/HarnessClient';
 import { common } from '@kit.AbilityKit';
 import { AppTheme, themeByName } from '../common/AppTheme';
 
@@ -33,6 +34,10 @@ export struct SettingsTab {
   // M6 relay3: 智能体审批门三档
   @State agentMode: ApprovalMode = 'confirm_all'
   @State agentToast: string = ''
+  // M6 relay5: 增强模式(hm harness 直连, 模式B)
+  @State cfgHarnessUrl: string = ''
+  @State harnessToast: string = ''
+  @State harnessTesting: boolean = false
   // tooltip 公共悬停态(P0-6)
   @State hoverTip: string = ''
   @State hoverOn: boolean = false
@@ -50,6 +55,7 @@ export struct SettingsTab {
     this.cfgBaseUrl = cfg.baseUrl
     this.cfgApiKey = cfg.apiKey
     this.cfgModel = cfg.model
+    this.cfgHarnessUrl = cfg.harnessUrl === undefined ? '' : cfg.harnessUrl
     this.theme = this.themeName
     this.agentMode = AgentSettingsStore.read(this.filesDir).mode
   }
@@ -61,6 +67,20 @@ export struct SettingsTab {
     s.mode = m
     const err = AgentSettingsStore.write(this.filesDir, s)
     this.agentToast = err === '' ? '审批策略已保存: ' + this.agentModeLabel(m) : err
+  }
+
+  // M6 relay5: 增强模式-连接测试(GET /api/state)
+  testHarness(): void {
+    const url = this.cfgHarnessUrl.trim()
+    if (url === '') {
+      this.harnessToast = '请先填写服务地址'
+      return
+    }
+    this.harnessTesting = true
+    HarnessClient.test(url).then((r: HarnessTestResult) => {
+      this.harnessTesting = false
+      this.harnessToast = r.detail
+    })
   }
 
   agentModeLabel(m: ApprovalMode): string {
@@ -79,7 +99,8 @@ export struct SettingsTab {
       provider: this.cfgProvider,
       baseUrl: this.cfgBaseUrl,
       apiKey: this.cfgApiKey,
-      model: this.cfgModel
+      model: this.cfgModel,
+      harnessUrl: this.cfgHarnessUrl
     })
     if (err === '') {
       this.toast = 'AI 配置已保存'
@@ -383,17 +404,59 @@ export struct SettingsTab {
                 })
             }
 
-            // ===== 模式B 占位: 增强模式(即将推出) =====
+            // ===== M6 relay5: 增强模式(模式B: hmharness Web 直连) =====
             Divider()
               .strokeWidth(1)
               .color(this.th().hairline)
               .margin({ top: 18, bottom: 14 })
-            Text('增强模式(即将推出)')
+            Text('增强模式(hmharness 直连)')
               .fontSize(13)
               .fontWeight(FontWeight.Medium)
-              .fontColor(this.th().inkSubtle)
+              .fontColor(this.th().ink)
               .alignSelf(ItemAlign.Start)
-            Text('自主规划+多步执行的后台智能体,按官方路线图后续开放')
+            Column({ space: 6 }) {
+              TextInput({ placeholder: 'harness 服务地址(如 http://192.168.161.1:7860)', text: this.cfgHarnessUrl })
+                .fontSize(12)
+                .fontColor(this.th().ink)
+                .placeholderColor(this.th().inkSubtle)
+                .backgroundColor(this.th().inputBg)
+                .border({ width: 1, color: this.th().hairline })
+                .borderRadius(6)
+                .height(36)
+                .onChange((v: string) => {
+                  this.cfgHarnessUrl = v
+                })
+              Row({ space: 8 }) {
+                Text(this.harnessTesting ? '测试中…' : '测试连接')
+                  .fontSize(12)
+                  .fontColor(this.th().surface)
+                  .padding({ left: 14, right: 14, top: 7, bottom: 7 })
+                  .borderRadius(6)
+                  .backgroundColor(this.harnessTesting ? this.th().iconMuted : this.th().brand)
+                  .onClick(() => this.testHarness())
+                Text('保存')
+                  .fontSize(12)
+                  .fontColor(this.th().ink)
+                  .padding({ left: 14, right: 14, top: 7, bottom: 7 })
+                  .borderRadius(6)
+                  .border({ width: 1, color: this.th().hairline })
+                  .backgroundColor(this.th().panel)
+                  .onClick(() => this.saveAi())
+              }
+              if (this.harnessToast !== '') {
+                Text(this.harnessToast)
+                  .fontSize(11)
+                  .fontColor(this.th().success)
+                  .padding({ left: 10, right: 10, top: 5, bottom: 5 })
+                  .borderRadius(4)
+                  .backgroundColor(this.th().hover)
+                  .onClick(() => {
+                    this.harnessToast = ''
+                  })
+              }
+            }
+            .alignItems(HorizontalAlign.Start)
+            Text('连接自建 hmharness 服务(本地/局域网); 开启增强模式后智能体任务经 SSE 流式回显, 服务不可达时自动回落内置内核')
               .fontSize(10)
               .fontColor(this.th().inkSubtle)
           } else {

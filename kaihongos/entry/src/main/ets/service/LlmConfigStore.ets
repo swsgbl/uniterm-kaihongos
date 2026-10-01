@@ -17,13 +17,17 @@ export class LlmConfigStore {
     const p = LlmConfigStore.path(filesDir)
     try {
       if (!fs.accessSync(p)) {
-        return { provider: 'anthropic', baseUrl: 'https://api.anthropic.com', apiKey: '', model: 'claude-sonnet-4-5' }
+        return { provider: 'anthropic', baseUrl: 'https://api.anthropic.com', apiKey: '', model: 'claude-sonnet-4-5', harnessUrl: '' }
       }
       const raw = fs.readTextSync(p)
-      return JSON.parse(raw) as LlmConfig
+      const cfg = JSON.parse(raw) as LlmConfig
+      if (cfg.harnessUrl === undefined) {
+        cfg.harnessUrl = ''
+      }
+      return cfg
     } catch (e) {
       hilog.error(CFG_DOMAIN, CFG_TAG, 'read fail %{public}s', JSON.stringify(e))
-      return { provider: 'anthropic', baseUrl: 'https://api.anthropic.com', apiKey: '', model: 'claude-sonnet-4-5' }
+      return { provider: 'anthropic', baseUrl: 'https://api.anthropic.com', apiKey: '', model: 'claude-sonnet-4-5', harnessUrl: '' }
     }
   }
 
@@ -38,11 +42,12 @@ export class LlmConfigStore {
       f = null
       // 写后立即回读校验,确保配置真实落盘
       const back = LlmConfigStore.read(filesDir)
-      if (back.apiKey !== cfg.apiKey || back.model !== cfg.model || back.provider !== cfg.provider) {
+      if (back.apiKey !== cfg.apiKey || back.model !== cfg.model || back.provider !== cfg.provider ||
+        back.harnessUrl !== cfg.harnessUrl) {
         hilog.error(CFG_DOMAIN, CFG_TAG, 'write verify mismatch p=%{public}s', p)
         return '写入校验不一致,配置可能未保存'
       }
-      hilog.info(CFG_DOMAIN, CFG_TAG, 'write OK p=%{public}s provider=%{public}s model=%{public}s', p, cfg.provider, cfg.model)
+      hilog.info(CFG_DOMAIN, CFG_TAG, 'write OK p=%{public}s provider=%{public}s model=%{public}s harness=%{public}s', p, cfg.provider, cfg.model, cfg.harnessUrl === '' ? 'off' : cfg.harnessUrl)
       return ''
     } catch (e) {
       if (f !== null) {

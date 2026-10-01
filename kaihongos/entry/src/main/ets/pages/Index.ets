@@ -6,7 +6,6 @@ import { ConnectionStore, ConnRec, getSharedStore } from '../store/ConnStore';
 import { ConnList } from './ConnList';
 import { TerminalPage } from './TerminalPage';
 import { SftpPanel } from './SftpPanel';
-import { AISidebar } from '../components/AISidebar';
 import { MonitorPanel } from '../components/MonitorPanel';
 import { FileSidebar } from '../components/FileSidebar';
 import { QuickCommandsPanel, HistoryPanel, PersonalizationPanel } from '../components/SidePanels';
@@ -50,7 +49,6 @@ struct Index {
   @State activeTab: number = 0
   @State nextTabId: number = 1
   @State showSettingsMenu: boolean = false
-  @State aiVisible: boolean = false
   // M6 relay3: 底部 AI 智能体 Dock
   @State aiDockOpen: boolean = false
   @State splitTabId: number = -1 // 分屏右侧固定的标签(-1 关闭)
@@ -66,9 +64,9 @@ struct Index {
   // M5 relay6 fix: th 原为 private 普通属性,applyTheme 重赋值不触发重渲染,
   // 主题切换从未真正生效(菜单高亮变、颜色不变)。改 @State 使颜色随主题刷新。
   @State th: AppTheme = themeByName('dark')
-  private sideIcons: string[] = ['⌗', '▤', '∿', '⇄', '⚡', '◷', '◑']
-  private sideTips: string[] = ['连接', '文件', '监控', '隧道', '快捷命令', '历史', '个性化']
-  private sideViewNames: string[] = ['连接', '文件', '监控', '隧道', '快捷命令', '历史', '个性化']
+  private sideIcons: string[] = ['⌗', '▤', '∿', '⇄', '⚡', '◷', '◈']
+  private sideTips: string[] = ['连接', '文件', '监控', '隧道', '快捷命令', '历史', '工作台']
+  private sideViewNames: string[] = ['连接', '文件', '监控', '隧道', '快捷命令', '历史', '工作台']
   // 状态栏: 当前连接名(活跃终端标签)
   @State statusConn: string = ''
   // relay4 C1: 首启引导浮层(filesDir/guide_done 存在则不再弹)
@@ -899,9 +897,6 @@ struct Index {
         this.HeaderBtn('✧', '智能体', () => {
           this.aiDockOpen = !this.aiDockOpen
         })
-        this.HeaderBtn('✦', 'AI 助手', () => {
-          this.aiVisible = !this.aiVisible
-        })
         this.HeaderBtn('⚙', '设置', () => {
           this.showSettingsMenu = !this.showSettingsMenu
         })
@@ -1001,6 +996,18 @@ struct Index {
                 } else if (this.sideView === 6) {
                   PersonalizationPanel({
                     onThemeChange: (t: string) => this.applyTheme(t)
+                  })
+                    .layoutWeight(1)
+                } else if (this.sideView === 7) {
+                  // M6 relay5: 工作台(补位,行为同 sideView=0 开始页)
+                  ConnList({
+                    onOpenConn: (id: string) => {
+                      this.openConnTab(id)
+                    },
+                    onNeedStore: (): ConnectionStore => {
+                      const ctx = getContext(this) as common.UIAbilityContext
+                      return new ConnectionStore(ctx.filesDir)
+                    }
                   })
                     .layoutWeight(1)
                 } else {
@@ -1108,10 +1115,6 @@ struct Index {
           }
           .layoutWeight(1)
           .height('100%')
-
-          if (this.aiVisible) {
-            AISidebar({ visible: this.aiVisible })
-          }
         }
         .width('100%')
         .height('100%')
