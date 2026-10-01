@@ -859,6 +859,7 @@ export struct ConnList {
         .padding(18)
         .backgroundColor(this.th().surfaceRaised)
         .borderRadius(12)
+        .shadow({ radius: 24, color: '#99000000', offsetX: 0, offsetY: 8 })
         .justifyContent(FlexAlign.Center)
       }
 
@@ -902,6 +903,7 @@ export struct ConnList {
           .padding(18)
           .backgroundColor(this.th().surfaceRaised)
           .borderRadius(12)
+          .shadow({ radius: 24, color: '#99000000', offsetX: 0, offsetY: 8 })
         }
         .width('100%')
         .height('100%')
@@ -949,6 +951,7 @@ export struct ConnList {
           .padding(18)
           .backgroundColor(this.th().surfaceRaised)
           .borderRadius(12)
+          .shadow({ radius: 24, color: '#99000000', offsetX: 0, offsetY: 8 })
         }
         .width('100%')
         .height('100%')
@@ -1031,8 +1034,9 @@ export struct ConnList {
         .width(150)
         .padding(6)
         .borderRadius(8)
-        .backgroundColor(this.th().hover)
-        .border({ width: 1, color: this.th().hover })
+        .backgroundColor(this.th().surfaceRaised)
+        .border({ width: 1, color: this.th().hairline })
+        .shadow({ radius: 24, color: '#99000000', offsetX: 0, offsetY: 8 })
       }
       .position({ x: 100, y: 200 })
       .onClick(() => { this.rowActionVisible = false; })
@@ -1126,6 +1130,7 @@ export struct ConnList {
         .padding(18)
         .backgroundColor(this.th().surfaceRaised)
         .borderRadius(12)
+        .shadow({ radius: 24, color: '#99000000', offsetX: 0, offsetY: 8 })
       }
       .width('100%')
       .height('100%')
@@ -1193,7 +1198,8 @@ export struct ConnList {
           ForEach(this.quickItems(), (c: ConnRec) => {
             Row({ space: 8 }) {
               Text('◷')
-                .fontSize(13)
+                .fontSize(16)
+                .fontWeight(FontWeight.Bold)
                 .fontColor(this.th().brand)
                 .width(16)
                 .textAlign(TextAlign.Center)
@@ -1272,10 +1278,11 @@ export struct ConnList {
   @Builder
   ConnRow(c: ConnRec) {
     Row({ space: 8 }) {
-      // 左侧协议小图标(官方 conn-icon 16px, muted)
+      // 左侧协议小图标(relay4: 16px iconStrong Bold 高对比)
       Text(c.type === 'ssh' ? '⌗' : (c.type === 'rdp' ? '▤' : (c.type === 'vnc' ? '▣' : '○')))
-        .fontSize(13)
-        .fontColor(this.th().inkSubtle)
+        .fontSize(16)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(this.th().iconStrong)
         .width(16)
         .textAlign(TextAlign.Center)
       if (c.undecryptable) {

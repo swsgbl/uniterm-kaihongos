@@ -20,7 +20,9 @@ import { RdpTab } from '../components/RdpTab';
 import { SpiceTab } from '../components/SpiceTab';
 import { themeByName, AppTheme } from '../common/AppTheme';
 import { AIDock } from '../components/AIDock';
+import { GuideOverlay } from '../components/GuideOverlay';
 import { common } from '@kit.AbilityKit';
+import { fileIo } from '@kit.CoreFileKit';
 
 interface TabInfo {
   id: number
@@ -69,9 +71,26 @@ struct Index {
   private sideViewNames: string[] = ['连接', '文件', '监控', '隧道', '快捷命令', '历史', '个性化']
   // 状态栏: 当前连接名(活跃终端标签)
   @State statusConn: string = ''
+  // relay4 C1: 首启引导浮层(filesDir/guide_done 存在则不再弹)
+  @State guideShow: boolean = false
 
   aboutToAppear(): void {
     this.applyTheme(this.themeName)
+    try {
+      const ctx = getContext(this) as common.UIAbilityContext
+      const marker = ctx.filesDir + '/guide_done'
+      let exists = false
+      try {
+        exists = fileIo.accessSync(marker)
+      } catch (e2) {
+        exists = false
+      }
+      if (!exists) {
+        this.guideShow = true
+      }
+    } catch (e) {
+      this.guideShow = true // 拿不到路径宁可弹(有跳过钮)
+    }
     AppStorage.setOrCreate('ut.openSftp', '')
     AppStorage.setOrCreate('ut.closeTab', '')
     setInterval(() => {
@@ -96,6 +115,19 @@ struct Index {
     this.themeName = name
     this.th = themeByName(name)
     AppStorage.setOrCreate('ut.theme', name)
+  }
+
+  // relay4 C1: 引导完成/跳过 → 写标记文件,永不再弹
+  finishGuide(): void {
+    this.guideShow = false
+    try {
+      const ctx = getContext(this) as common.UIAbilityContext
+      const f = fileIo.openSync(ctx.filesDir + '/guide_done',
+        fileIo.OpenMode.WRITE_ONLY | fileIo.OpenMode.CREATE)
+      fileIo.writeSync(f.fd, 'done')
+      fileIo.closeSync(f)
+    } catch (e) {
+    }
   }
 
   // ===== 命令面板数据源(命令 + 连接混合) =====
@@ -314,9 +346,9 @@ struct Index {
   @Builder
   HeaderBtn(icon: string, tip: string, action: () => void) {
     Text(icon)
-      .fontSize(15)
-      .fontWeight(FontWeight.Medium)
-      .fontColor(this.hoverOn && this.hoverTip === tip ? this.th.brand : this.th.iconMuted)
+      .fontSize(18)
+      .fontWeight(FontWeight.Bold)
+      .fontColor(this.hoverOn && this.hoverTip === tip ? this.th.brand : this.th.iconStrong)
       .width(30)
       .height(30)
       .textAlign(TextAlign.Center)
@@ -339,7 +371,7 @@ struct Index {
   TabItem(t: TabInfo) {
     Row({ space: 5 }) {
       Text(t.kind === 'start' ? '⌂' : (t.kind === 'sftp' ? '▦' : (t.kind === 'settings' ? '⚙' : '▸')))
-        .fontSize(11)
+        .fontSize(14)
         .fontColor(t.id === this.activeTab ? this.th.surface : this.th.inkSubtle)
       Text(t.name)
         .fontSize(12)
@@ -381,26 +413,27 @@ struct Index {
   DockIcon(idx: number) {
     Row({ space: 8 }) {
       Text(this.sideIcons[idx])
-        .fontSize(15)
+        .fontSize(20)
         .fontWeight(FontWeight.Bold)
-        .fontColor(this.sideView === idx ? this.th.brand : this.th.iconMuted)
+        .fontColor(this.sideView === idx ? this.th.surface : this.th.iconStrong)
         .width(28)
         .height(28)
         .textAlign(TextAlign.Center)
         .borderRadius(6)
-        .backgroundColor(this.sideView === idx ? this.th.hover : Color.Transparent)
       if (this.dockWide) {
         Text(this.sideViewNames[idx])
           .fontSize(12)
-          .fontColor(this.sideView === idx ? this.th.ink : this.th.inkSubtle)
+          .fontWeight(this.sideView === idx ? FontWeight.Bold : FontWeight.Normal)
+          .fontColor(this.sideView === idx ? this.th.surface : this.th.inkSubtle)
           .layoutWeight(1)
       }
     }
     .height(32)
     .width(this.dockWide ? '100%' : 56)
     .padding({ left: this.dockWide ? 10 : 14 })
-    .borderRadius(6)
+    .borderRadius(this.dockWide ? 8 : 6)
     .alignItems(VerticalAlign.Center)
+    .backgroundColor(this.sideView === idx ? this.th.brand : (this.hoverOn && this.hoverTip === ('side' + idx.toString()) ? this.th.hover : Color.Transparent))
     .onClick(() => {
       this.sideView = idx
       this.sidebarVisible = true
@@ -449,7 +482,7 @@ struct Index {
         .height(34)
         .textAlign(TextAlign.Center)
         .borderRadius(8)
-        .backgroundColor(this.th.hover)
+        .backgroundColor(this.th.surfaceRaised)
       Column({ space: 2 }) {
         Text(c.name)
           .fontSize(13)
@@ -613,10 +646,55 @@ struct Index {
             .alignSelf(ItemAlign.Start)
             .margin({ left: 40, bottom: 10 })
           Column({ space: 10 }) {
-            Text('暂无连接,点击「新建连接」或左侧「连接」面板开始')
-              .fontSize(13)
-              .fontColor(this.th.inkSubtle)
-              .margin({ top: 40 })
+            // relay4 C3: 空状态引导卡(替代单行文案)
+            Column({ space: 8 }) {
+              Text('+')
+                .fontSize(28)
+                .fontWeight(FontWeight.Bold)
+                .fontColor(this.th.brand)
+                .width(52)
+                .height(52)
+                .textAlign(TextAlign.Center)
+                .borderRadius(26)
+                .backgroundColor(this.th.surfaceRaised)
+                .border({ width: 1, color: this.th.hairline })
+              Text('新建第一个连接')
+                .fontSize(15)
+                .fontWeight(FontWeight.Medium)
+                .fontColor(this.th.ink)
+              Text('连接一台远程主机,或直接开本地终端')
+                .fontSize(12)
+                .fontColor(this.th.inkSubtle)
+              Row({ space: 10 }) {
+                Text('打开连接面板')
+                  .fontSize(13)
+                  .fontColor(this.th.surface)
+                  .height(34)
+                  .padding({ left: 18, right: 18 })
+                  .borderRadius(17)
+                  .backgroundColor(this.th.brand)
+                  .onClick(() => {
+                    this.sideView = 0
+                    this.sidebarVisible = true
+                  })
+                Text('本地终端')
+                  .fontSize(13)
+                  .fontColor(this.th.ink)
+                  .height(34)
+                  .padding({ left: 18, right: 18 })
+                  .borderRadius(17)
+                  .backgroundColor(this.th.surfaceRaised)
+                  .border({ width: 1, color: this.th.hairline })
+                  .onClick(() => this.openLocalTerminal())
+              }
+              .alignItems(VerticalAlign.Center)
+            }
+            .padding({ top: 36, bottom: 36, left: 24, right: 24 })
+            .borderRadius(14)
+            .backgroundColor(this.th.panel)
+            .border({ width: 1, color: this.th.hairline })
+            .alignItems(HorizontalAlign.Center)
+            .margin({ top: 24 })
           }
           .width('100%')
         }
@@ -636,8 +714,9 @@ struct Index {
   PaletteRow(item: PaletteItem, idx: number) {
     Row({ space: 8 }) {
       Text(item.icon)
-        .fontSize(13)
-        .fontColor(this.paletteSel === idx ? this.th.brand : this.th.inkSubtle)
+        .fontSize(15)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(this.paletteSel === idx ? this.th.brand : this.th.iconStrong)
         .width(20)
         .textAlign(TextAlign.Center)
       Text(item.label)
@@ -682,7 +761,7 @@ struct Index {
     .borderRadius(10)
     .backgroundColor(this.th.surfaceRaised)
     .border({ width: 1, color: this.th.hairline })
-    .shadow({ radius: 16, color: '#66000000', offsetX: 0, offsetY: 6 })
+    .shadow({ radius: 24, color: '#99000000', offsetX: 0, offsetY: 8 })
     .position({ x: 210, y: 4 })
   }
 
@@ -756,11 +835,12 @@ struct Index {
     .backgroundColor(this.th.hover)
     .border({ width: 1, color: this.th.hairline })
     .position({ x: '78%', y: 4 })
-    .shadow({ radius: 12, color: '#66000000', offsetX: 0, offsetY: 4 })
+    .shadow({ radius: 24, color: '#99000000', offsetX: 0, offsetY: 8 })
   }
 
   build() {
-    Column() {
+    Stack() {
+      Column() {
       // ===== 命令栏(44px): 品牌 + 坞折叠钮 + 搜索命令面板 + AI/齿轮/分屏 =====
       Row() {
         Text('一站AI终端')
@@ -867,7 +947,8 @@ struct Index {
         .width('100%')
         .padding({ left: 12 })
         .margin({ top: 4, bottom: 4 })
-        .backgroundColor(this.th.surface)
+        .backgroundColor(this.th.surfaceRaised)
+        .border({ width: { top: 1, bottom: 1 }, color: this.th.hairline })
 
       // ===== 主体 =====
       Stack({ alignContent: Alignment.TopEnd }) {
@@ -945,9 +1026,11 @@ struct Index {
             .border({ width: { right: 1 }, color: this.th.hairline })
           }
 
-          // 内容区:主栏 + 可选分屏右栏
+          // 内容区:主栏 + 可选分屏右栏(relay4: 业务窗口外框 1px hairline+圆角,
+          // 外层 Column 承载边框属性,内层保留 layoutWeight/height 链防塌缩)
           Row() {
             Column() {
+              Column() {
               if (this.activeTabKind() === 'terminal') {
                 TerminalPage({ connIdIn: this.activeConnId() })
               } else if (this.activeTabKind() === 'sftp') {
@@ -981,12 +1064,21 @@ struct Index {
               } else {
                 this.StartPane()
               }
+              }
+              .layoutWeight(1)
+              .height('100%')
+              .margin(6)
+              .borderRadius(10)
+              .border({ width: 1, color: this.th.hairline })
+              .clip(true)
+              .backgroundColor(this.th.surface)
             }
             .layoutWeight(1)
             .height('100%')
 
             if (this.splitTab() !== null && this.splitTabId !== this.activeTab) {
               Column() {
+                Column() {
                 if (this.splitTab()!.kind === 'sftp') {
                   SftpPanel({
                     connIdIn: this.splitTab()!.connId,
@@ -1001,6 +1093,14 @@ struct Index {
                 } else {
                   this.StartPane()
                 }
+                }
+                .layoutWeight(1)
+                .height('100%')
+                .margin(6)
+                .borderRadius(10)
+                .border({ width: 1, color: this.th.hairline })
+                .clip(true)
+                .backgroundColor(this.th.surface)
               }
               .layoutWeight(1)
               .height('100%')
@@ -1061,10 +1161,17 @@ struct Index {
       .alignItems(VerticalAlign.Center)
       .backgroundColor(this.th.surfaceRaised)
       .border({ width: { top: 1 }, color: this.th.hairline })
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor(this.th.surface)
+
+      if (this.guideShow) {
+        GuideOverlay({ onFinish: () => this.finishGuide() })
+      }
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(this.th.surface)
   }
 }
 

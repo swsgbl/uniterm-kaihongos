@@ -94,10 +94,12 @@ export struct SettingsTab {
   CatItem(icon: string, label: string, idx: number) {
     Row({ space: 8 }) {
       Text(icon)
-        .fontSize(13)
-        .fontColor(this.cat === idx ? this.th().brand : this.th().inkSubtle)
+        .fontSize(16)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(this.cat === idx ? this.th().brand : this.th().iconStrong)
       Text(label)
         .fontSize(12)
+        .fontWeight(this.cat === idx ? FontWeight.Medium : FontWeight.Normal)
         .fontColor(this.cat === idx ? this.th().brand : this.th().ink)
     }
     .width('100%')
@@ -128,18 +130,20 @@ export struct SettingsTab {
 
   build() {
     Row() {
-      // 左侧分类
+      // 左侧分类(relay4: emoji→几何字符 + 第6类使用帮助 + 右边线分区)
       Column({ space: 2 }) {
-        this.CatItem('🏠', '基础', 0)
+        this.CatItem('⌂', '基础', 0)
         this.CatItem('⌨', '终端', 1)
-        this.CatItem('🎨', '主题', 2)
-        this.CatItem('🌐', '语言', 3)
-        this.CatItem('🤖', 'AI 模型', 4)
+        this.CatItem('◑', '主题', 2)
+        this.CatItem('◎', '语言', 3)
+        this.CatItem('✦', 'AI 模型', 4)
+        this.CatItem('☰', '使用帮助', 5)
       }
       .width(140)
       .height('100%')
       .padding(8)
       .backgroundColor(this.th().surface)
+      .border({ width: { right: 1 }, color: this.th().hairline })
 
       // 右侧配置区
       Scroll() {
@@ -215,7 +219,7 @@ export struct SettingsTab {
             Text('完整 9 语言按官方 i18n 资源接入')
               .fontSize(10)
               .fontColor(this.th().inkSubtle)
-          } else {
+          } else if (this.cat === 4) {
             Text('AI 模型')
               .fontSize(15)
               .fontWeight(FontWeight.Medium)
@@ -392,6 +396,120 @@ export struct SettingsTab {
             Text('自主规划+多步执行的后台智能体,按官方路线图后续开放')
               .fontSize(10)
               .fontColor(this.th().inkSubtle)
+          } else {
+            // ===== relay4 C2: 使用帮助(快捷键 + 连接类型速览 + FAQ) =====
+            Text('使用帮助')
+              .fontSize(15)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(this.th().ink)
+            Text('快捷键')
+              .fontSize(13)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(this.th().ink)
+            Row() {
+              Text('Ctrl + K')
+                .fontSize(11)
+                .fontColor(this.th().ink)
+                .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+                .borderRadius(4)
+                .backgroundColor(this.th().surfaceRaised)
+                .border({ width: 1, color: this.th().hairline })
+              Blank()
+              Text('打开命令面板(搜索命令/连接)')
+                .fontSize(11)
+                .fontColor(this.th().inkSubtle)
+            }
+            .width('100%')
+            .padding(8)
+            .borderRadius(6)
+            .backgroundColor(this.th().panel)
+            Row() {
+              Text('+')
+                .fontSize(11)
+                .fontColor(this.th().ink)
+                .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+                .borderRadius(4)
+                .backgroundColor(this.th().surfaceRaised)
+                .border({ width: 1, color: this.th().hairline })
+              Blank()
+              Text('新建开始标签页(标签条右侧)')
+                .fontSize(11)
+                .fontColor(this.th().inkSubtle)
+            }
+            .width('100%')
+            .padding(8)
+            .borderRadius(6)
+            .backgroundColor(this.th().panel)
+            Row() {
+              Text('长按')
+                .fontSize(11)
+                .fontColor(this.th().ink)
+                .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+                .borderRadius(4)
+                .backgroundColor(this.th().surfaceRaised)
+                .border({ width: 1, color: this.th().hairline })
+              Blank()
+              Text('连接行呼出操作菜单(编辑/删除)')
+                .fontSize(11)
+                .fontColor(this.th().inkSubtle)
+            }
+            .width('100%')
+            .padding(8)
+            .borderRadius(6)
+            .backgroundColor(this.th().panel)
+            Text('连接类型速览')
+              .fontSize(13)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(this.th().ink)
+            ForEach([['⌗', 'SSH', '远程主机的标准通道,22 端口'],
+              ['▤', '本地终端', '设备本地 shell,免配置即开即用'],
+              ['⬮', 'PostgreSQL / Redis / MySQL', '数据库直连,内置命令面板'],
+              ['◫', 'VNC', '远程桌面(跨平台)'],
+              ['▣', 'RDP', 'Windows 远程桌面'],
+              ['◈', 'SPICE', 'Linux 虚拟机远程桌面']], (r: string[]) => {
+              Row({ space: 8 }) {
+                Text(r[0])
+                  .fontSize(14)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor(this.th().iconStrong)
+                  .width(24)
+                  .textAlign(TextAlign.Center)
+                Text(r[1])
+                  .fontSize(12)
+                  .fontColor(this.th().ink)
+                  .constraintSize({ maxWidth: 180 })
+                Blank()
+                Text(r[2])
+                  .fontSize(10)
+                  .fontColor(this.th().inkSubtle)
+              }
+              .width('100%')
+              .padding(8)
+              .borderRadius(6)
+              .backgroundColor(this.th().panel)
+            }, (r: string[]) => r[1])
+            Text('常见问题')
+              .fontSize(13)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(this.th().ink)
+            ForEach([['主密码忘了怎么办?', '首次设置后无法找回,只能重置(数据会清空),请务必牢记。'],
+              ['如何导入 .utm 配置?', '连接面板 → 导入,选择导出的 JSON 文件即可(需相同主密码)。'],
+              ['API Key 存在哪里?', '本地加密存储,不上传任何服务器;切换设备需重新填写。'],
+              ['AI 审批三档有什么区别?', '全部确认=每步都问;仅危险确认=只读直放;全自动=不问(风险自担)。']], (f: string[]) => {
+              Column({ space: 3 }) {
+                Text('Q: ' + f[0])
+                  .fontSize(12)
+                  .fontColor(this.th().ink)
+                Text('A: ' + f[1])
+                  .fontSize(11)
+                  .fontColor(this.th().inkSubtle)
+              }
+              .alignItems(HorizontalAlign.Start)
+              .width('100%')
+              .padding(8)
+              .borderRadius(6)
+              .backgroundColor(this.th().panel)
+            }, (f: string[]) => f[0])
           }
         }
         .alignItems(HorizontalAlign.Start)

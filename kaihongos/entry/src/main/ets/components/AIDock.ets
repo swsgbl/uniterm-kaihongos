@@ -242,8 +242,9 @@ export struct AIDock {
       .width('100%')
       .padding(8)
       .borderRadius(8)
-      .backgroundColor(this.th().hover)
+      .backgroundColor(this.th().surfaceRaised)
       .border({ width: 1, color: this.th().hairline })
+      .shadow({ radius: 12, color: '#66000000', offsetX: 0, offsetY: 2 })
       .margin({ top: 4, bottom: 4 })
     }
   }
@@ -254,8 +255,8 @@ export struct AIDock {
         // ===== Dock 头(32px): 标题+轮次 + 模式三档 + 折叠钮 =====
         Row({ space: 6 }) {
           Text('✦ 智能体')
-            .fontSize(12)
-            .fontWeight(FontWeight.Medium)
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
             .fontColor(this.th().brand)
             .margin({ left: 10 })
           Text(this.running ? ('R' + this.round.toString() + '/12') : '空闲')
@@ -266,8 +267,9 @@ export struct AIDock {
           this.ModePill(this.modeNames[1], 1)
           this.ModePill(this.modeNames[2], 2)
           Text('▾')
-            .fontSize(12)
-            .fontColor(this.th().inkSubtle)
+            .fontSize(16)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(this.th().iconStrong)
             .width(26)
             .height(26)
             .textAlign(TextAlign.Center)
@@ -280,6 +282,7 @@ export struct AIDock {
         .alignItems(VerticalAlign.Center)
         .backgroundColor(this.th().surfaceRaised)
         .border({ width: { bottom: 1 }, color: this.th().hairline })
+        .shadow({ radius: 12, color: '#66000000', offsetX: 0, offsetY: -4 })
 
         // ===== 消息流(layoutWeight 撑满中段) =====
         Scroll(this.scroller) {
@@ -326,11 +329,12 @@ export struct AIDock {
         // ===== 折叠态(28px 细条) =====
         Row({ space: 8 }) {
           Text('✦')
-            .fontSize(12)
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
             .fontColor(this.th().brand)
           Text('智能体')
             .fontSize(11)
-            .fontColor(this.th().inkSubtle)
+            .fontColor(this.th().ink)
           if (this.running) {
             Text('R' + this.round.toString() + '/12')
               .fontSize(10)
@@ -338,8 +342,9 @@ export struct AIDock {
           }
           Blank()
           Text('▴')
-            .fontSize(12)
-            .fontColor(this.th().inkSubtle)
+            .fontSize(16)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(this.th().iconStrong)
         }
         .width('100%')
         .height(28)

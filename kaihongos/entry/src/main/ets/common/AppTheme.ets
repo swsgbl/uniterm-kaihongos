@@ -16,10 +16,12 @@ export class AppTheme {
   danger: number
   inputBg: number
   iconMuted: number
+  iconStrong: number
 
   constructor(surface: number, surfaceRaised: number, panel: number, hover: number,
     ink: number, inkSubtle: number, brand: number, hairline: number,
-    success: number, warn: number, danger: number, inputBg: number, iconMuted: number) {
+    success: number, warn: number, danger: number, inputBg: number, iconMuted: number,
+    iconStrong: number) {
     this.surface = surface
     this.surfaceRaised = surfaceRaised
     this.panel = panel
@@ -33,15 +35,18 @@ export class AppTheme {
     this.danger = danger
     this.inputBg = inputBg
     this.iconMuted = iconMuted
+    this.iconStrong = iconStrong
   }
 }
 
-// dark: 深夜蓝紫底 + 琥珀 brand
-export const THEME_DARK: AppTheme = new AppTheme(0x0F1220, 0x161a2c, 0x181d31, 0x1e2438,
-  0xE8EAF2, 0x8a90a5, 0xF5A524, 0x272d42, 0x34d399, 0xf59e0b, 0xf87171, 0x131729, 0x9aa2b8)
-// light: 暖白底 + 深琥珀 brand
-export const THEME_LIGHT: AppTheme = new AppTheme(0xFAFAF7, 0xF1F0EB, 0xF3F2ED, 0xE8E6DF,
-  0x1c1c1a, 0x6b6a66, 0xD97706, 0xE2E0D8, 0x108038, 0xb45309, 0xc62828, 0xF6F5F1, 0x6b6a66)
+// dark: 深夜蓝紫底 + 琥珀 brand(relay4: 分层亮度差拉大 ≥8%,hairline 提亮,新增 iconStrong 高对比图标色)
+export const THEME_DARK: AppTheme = new AppTheme(0x0F1220, 0x1E2438, 0x232A44, 0x2A3252,
+  0xE8EAF2, 0x8a90a5, 0xF5A524, 0x353D5E, 0x34d399, 0xf59e0b, 0xf87171, 0x131729, 0x9aa2b8,
+  0xF2F4FA)
+// light: 暖白底 + 深琥珀 brand(relay4: 分层亮度差拉大 ≥8%,hairline 加深,新增 iconStrong)
+export const THEME_LIGHT: AppTheme = new AppTheme(0xFAFAF7, 0xE8E5DA, 0xEBE8DE, 0xE0DCCF,
+  0x1c1c1a, 0x6b6a66, 0xD97706, 0xCFCABC, 0x108038, 0xb45309, 0xc62828, 0xF6F5F1, 0x6b6a66,
+  0x26262B)
 
 export function themeByName(name: string): AppTheme {
   if (name === 'light') {
